@@ -11,19 +11,32 @@
 <body>
   <main class="hero" id="home">
     <picture class="hero-media" aria-hidden="true">
-      <source media="(max-width: 700px)" srcset="assets/hero-mobile.webp">
+      <source media="(max-width:700px)" srcset="assets/hero-mobile.webp">
       <img src="assets/hero-desktop.webp" alt="" fetchpriority="high">
     </picture>
-
     <div class="hero-shade" aria-hidden="true"></div>
 
+    <button class="racket-menu" id="menuButton" type="button" aria-label="Άνοιγμα μενού" aria-expanded="false">
+      <span class="racket" aria-hidden="true">
+        <svg viewBox="0 0 70 112"><ellipse cx="34" cy="34" rx="24" ry="30"/><circle cx="25" cy="24" r="2"/><circle cx="34" cy="20" r="2"/><circle cx="43" cy="24" r="2"/><circle cx="24" cy="34" r="2"/><circle cx="34" cy="31" r="2"/><circle cx="44" cy="34" r="2"/><circle cx="27" cy="44" r="2"/><circle cx="38" cy="43" r="2"/><path d="M31 63l-5 34 12 2 4-36z"/><text x="34" y="53">B</text></svg>
+      </span>
+      <span class="menu-ball" aria-hidden="true"></span>
+    </button>
+
+    <aside class="menu-overlay" id="menuOverlay" aria-hidden="true">
+      <button class="menu-backdrop" type="button" data-close-menu aria-label="Κλείσιμο μενού"></button>
+      <nav class="menu-panel" aria-label="Κύριο μενού">
+        <span class="menu-kicker">NORTH PADEL</span>
+        <a href="#">Υπηρεσίες</a>
+        <a href="#">Βρες παίχτη</a>
+        <a href="#">Gallery</a>
+        <a href="#">Σχετικά με εμάς</a>
+        <a href="#">Επικοινωνία</a>
+      </nav>
+    </aside>
+
     <section class="hero-content" aria-label="North Padel booking">
-      <button class="booking-button" id="bookingButton" type="button">
-        <span>ΚΑΝΕ ΚΡΑΤΗΣΗ</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 12h14M13 6l6 6-6 6"/>
-        </svg>
-      </button>
+      <button class="booking-button" id="bookingButton" type="button"><span>ΚΑΝΕ ΚΡΑΤΗΣΗ</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       <p class="micro-copy">PLAY · TRAIN · ENJOY</p>
     </section>
 
@@ -31,14 +44,12 @@
       <button class="popover-backdrop" data-close-booking aria-label="Κλείσιμο"></button>
       <section class="popover-card" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
         <button class="popover-close" type="button" data-close-booking aria-label="Κλείσιμο">×</button>
-        <span class="eyebrow">NORTH PADEL</span>
-        <h1 id="bookingTitle">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</h1>
-        <p>Η αρχική έκδοση είναι έτοιμη. Στο επόμενο βήμα θα χτίσουμε εδώ το ημερολόγιο και τα διαθέσιμα sessions.</p>
+        <span class="eyebrow">NORTH PADEL</span><h1 id="bookingTitle">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</h1>
+        <p>Στο επόμενο βήμα θα χτίσουμε εδώ το ημερολόγιο και τα διαθέσιμα sessions.</p>
         <button class="placeholder-action" type="button" data-close-booking>ΕΠΙΣΤΡΟΦΗ</button>
       </section>
     </div>
   </main>
-
   <script src="app.js"></script>
 </body>
 </html>
