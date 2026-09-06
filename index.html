@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06152b">
+  <meta name="description" content="North Padel — online κρατήσεις padel στη Νέα Καλλικράτεια.">
+  <title>North Padel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="hero" id="home">
+    <picture class="hero-media" aria-hidden="true">
+      <source media="(max-width: 700px)" srcset="assets/hero-mobile.webp">
+      <img src="assets/hero-desktop.webp" alt="" fetchpriority="high">
+    </picture>
+
+    <div class="hero-shade" aria-hidden="true"></div>
+
+    <section class="hero-content" aria-label="North Padel booking">
+      <button class="booking-button" id="bookingButton" type="button">
+        <span>ΚΑΝΕ ΚΡΑΤΗΣΗ</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+      <p class="micro-copy">PLAY · TRAIN · ENJOY</p>
+    </section>
+
+    <div class="booking-popover" id="bookingPopover" aria-hidden="true">
+      <button class="popover-backdrop" data-close-booking aria-label="Κλείσιμο"></button>
+      <section class="popover-card" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
+        <button class="popover-close" type="button" data-close-booking aria-label="Κλείσιμο">×</button>
+        <span class="eyebrow">NORTH PADEL</span>
+        <h1 id="bookingTitle">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</h1>
+        <p>Η αρχική έκδοση είναι έτοιμη. Στο επόμενο βήμα θα χτίσουμε εδώ το ημερολόγιο και τα διαθέσιμα sessions.</p>
+        <button class="placeholder-action" type="button" data-close-booking>ΕΠΙΣΤΡΟΦΗ</button>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
