@@ -1,55 +1,33 @@
 <!doctype html>
 <html lang="el">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#06152b">
-  <meta name="description" content="North Padel — online κρατήσεις padel στη Νέα Καλλικράτεια.">
-  <title>North Padel</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1929">
+<meta name="description" content="North Padel — online κρατήσεις padel.">
+<title>North Padel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0a1929;color:#f4f9ff;font-family:Inter,sans-serif}button,input{font:inherit}.hero{min-height:100svh;position:relative;background:#0a1929 url('assets/hero-mobile.webp') center/cover no-repeat;overflow:hidden}.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,25,41,.12),rgba(10,25,41,.12) 45%,rgba(10,25,41,.7));pointer-events:none}@media(min-width:700px){.hero{background-image:url('assets/hero-desktop.webp')}}.top{position:absolute;inset:18px 18px auto;z-index:5;display:flex;justify-content:space-between}.icon{width:52px;height:52px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(15,37,64,.68);color:#fff;font-size:24px;backdrop-filter:blur(10px);cursor:pointer}.icon.player{border-color:rgba(183,255,74,.35)}.center{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:min(92%,520px)}.brand{font:700 48px/1 Oswald,sans-serif;letter-spacing:.06em;margin:0 0 10px}.tag{font-size:12px;letter-spacing:.28em;color:rgba(255,255,255,.72);margin:0 0 26px}.cta{border:0;border-radius:16px;background:#b7ff4a;color:#071728;padding:18px 28px;font:700 18px Oswald,sans-serif;letter-spacing:.12em;cursor:pointer;box-shadow:0 14px 40px rgba(0,0,0,.28)}.overlay,.panel{position:fixed;inset:0;z-index:20;background:#0a1929;display:none;overflow:auto}.overlay.open,.panel.open{display:block}.menu{padding:90px 28px 40px;max-width:520px;margin:auto}.menu button.close,.back{position:fixed;top:16px;left:16px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:#fff;font-size:25px;z-index:30;cursor:pointer}.menu button.close{left:auto;right:16px}.menu a{display:block;color:#fff;text-decoration:none;font:600 27px Oswald,sans-serif;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.08)}.panel-inner{max-width:620px;margin:auto;padding:82px 20px 40px}.kicker{font:600 12px Oswald,sans-serif;color:#b7ff4a;letter-spacing:.18em}.title{font:700 34px Oswald,sans-serif;margin:6px 0 28px;letter-spacing:.04em}.calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.navbtn{width:42px;height:42px;border:0;border-radius:50%;background:#0f2540;color:#fff;font-size:24px;cursor:pointer}.month{font:600 17px Oswald,sans-serif;letter-spacing:.1em}.week,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.week span{text-align:center;color:rgba(255,255,255,.45);font-size:11px;padding:6px}.day{aspect-ratio:1;border:0;border-radius:11px;background:rgba(255,255,255,.05);color:#fff;cursor:pointer}.day:disabled{opacity:.22;cursor:not-allowed}.day.today{outline:1px solid #b7ff4a}.day:hover:not(:disabled){background:rgba(183,255,74,.15)}.sessions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.slot{padding:16px 10px;border-radius:12px;border:1px solid rgba(183,255,74,.25);background:rgba(183,255,74,.06);color:#fff;font:600 15px Oswald,sans-serif;cursor:pointer}.slot:hover{background:rgba(183,255,74,.14)}.group{margin:22px 0 10px;color:#b7ff4a;font:600 13px Oswald,sans-serif;letter-spacing:.12em}.form{display:grid;gap:17px}.field label{display:block;color:#b7ff4a;font-size:11px;font-weight:700;letter-spacing:.12em;margin-bottom:7px}.field input{width:100%;padding:14px 15px;background:#0f2540;color:#fff;border:1px solid rgba(183,255,74,.22);border-radius:12px}.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#0f2540;padding:4px;border-radius:12px}.seg button{padding:12px;border:0;border-radius:9px;background:transparent;color:#fff;cursor:pointer}.seg button.active{background:#b7ff4a;color:#071728;font-weight:700}.stepper{display:flex;align-items:center;gap:16px}.stepper button{width:38px;height:38px;border:0;border-radius:50%;background:rgba(183,255,74,.15);color:#b7ff4a;font-size:21px}.check{display:flex;align-items:center;gap:10px}.total{display:flex;justify-content:space-between;align-items:center;padding:18px;border:1px solid rgba(183,255,74,.35);border-radius:14px;background:rgba(183,255,74,.08)}.amount{font:700 32px Oswald,sans-serif;color:#b7ff4a}.submit{padding:17px;border:0;border-radius:13px;background:#b7ff4a;color:#071728;font:700 16px Oswald,sans-serif;letter-spacing:.12em;cursor:pointer}.note{font-size:12px;color:rgba(255,255,255,.58);line-height:1.5}.auth{position:fixed;right:0;top:0;bottom:0;width:min(100%,420px);z-index:25;background:#0f2540;padding:75px 24px 30px;display:none}.auth.open{display:block}.auth .closeauth{position:absolute;top:16px;right:16px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.07);color:white;font-size:22px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#0a1929;padding:4px;border-radius:12px;margin-bottom:18px}.tabs button{border:0;border-radius:9px;padding:11px;background:transparent;color:white}.tabs button.active{background:#b7ff4a;color:#071728;font-weight:700}.hidden{display:none!important}
+</style>
 </head>
 <body>
-  <main class="hero" id="home">
-    <picture class="hero-media" aria-hidden="true">
-      <source media="(max-width:700px)" srcset="assets/hero-mobile.webp">
-      <img src="assets/hero-desktop.webp" alt="" fetchpriority="high">
-    </picture>
-    <div class="hero-shade" aria-hidden="true"></div>
-
-    <button class="racket-menu" id="menuButton" type="button" aria-label="Άνοιγμα μενού" aria-expanded="false">
-      <span class="racket" aria-hidden="true">
-        <svg viewBox="0 0 70 112"><ellipse cx="34" cy="34" rx="24" ry="30"/><circle cx="25" cy="24" r="2"/><circle cx="34" cy="20" r="2"/><circle cx="43" cy="24" r="2"/><circle cx="24" cy="34" r="2"/><circle cx="34" cy="31" r="2"/><circle cx="44" cy="34" r="2"/><circle cx="27" cy="44" r="2"/><circle cx="38" cy="43" r="2"/><path d="M31 63l-5 34 12 2 4-36z"/><text x="34" y="53">B</text></svg>
-      </span>
-      <span class="menu-ball" aria-hidden="true"></span>
-    </button>
-
-    <aside class="menu-overlay" id="menuOverlay" aria-hidden="true">
-      <button class="menu-backdrop" type="button" data-close-menu aria-label="Κλείσιμο μενού"></button>
-      <nav class="menu-panel" aria-label="Κύριο μενού">
-        <span class="menu-kicker">NORTH PADEL</span>
-        <a href="#">Υπηρεσίες</a>
-        <a href="#">Βρες παίχτη</a>
-        <a href="#">Gallery</a>
-        <a href="#">Σχετικά με εμάς</a>
-        <a href="#">Επικοινωνία</a>
-      </nav>
-    </aside>
-
-    <section class="hero-content" aria-label="North Padel booking">
-      <button class="booking-button" id="bookingButton" type="button"><span>ΚΑΝΕ ΚΡΑΤΗΣΗ</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-      <p class="micro-copy">PLAY · TRAIN · ENJOY</p>
-    </section>
-
-    <div class="booking-popover" id="bookingPopover" aria-hidden="true">
-      <button class="popover-backdrop" data-close-booking aria-label="Κλείσιμο"></button>
-      <section class="popover-card" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
-        <button class="popover-close" type="button" data-close-booking aria-label="Κλείσιμο">×</button>
-        <span class="eyebrow">NORTH PADEL</span><h1 id="bookingTitle">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</h1>
-        <p>Στο επόμενο βήμα θα χτίσουμε εδώ το ημερολόγιο και τα διαθέσιμα sessions.</p>
-        <button class="placeholder-action" type="button" data-close-booking>ΕΠΙΣΤΡΟΦΗ</button>
-      </section>
-    </div>
-  </main>
-  <script src="app.js"></script>
+<main class="hero" id="hero">
+  <div class="top"><button class="icon" id="menuBtn" aria-label="Μενού">☰</button><button class="icon player" id="playerBtn" aria-label="Λογαριασμός">♙</button></div>
+  <section class="center"><h1 class="brand">NORTH PADEL</h1><p class="tag">PLAY · TRAIN · ENJOY</p><button class="cta" id="bookBtn">ΚΑΝΕ ΚΡΑΤΗΣΗ →</button></section>
+</main>
+<aside class="overlay" id="menu"><div class="menu"><button class="close" id="menuClose">×</button><span class="kicker">NORTH PADEL</span><a href="#">Υπηρεσίες</a><a href="#">Βρες παίκτη</a><a href="#">Padel — Τι είναι;</a><a href="#">Gallery</a><a href="#">Σχετικά με εμάς</a><a href="#">Επικοινωνία</a></div></aside>
+<section class="panel" id="calendarPanel"><button class="back" data-close="calendarPanel">‹</button><div class="panel-inner"><span class="kicker">ΓΗΠΕΔΟ 1</span><h2 class="title">ΔΙΑΛΕΞΕ ΗΜΕΡΑ</h2><div class="calendar-head"><button class="navbtn" id="prev">‹</button><div class="month" id="month"></div><button class="navbtn" id="next">›</button></div><div class="week"><span>Δ</span><span>Τ</span><span>Τ</span><span>Π</span><span>Π</span><span>Σ</span><span>Κ</span></div><div class="days" id="days"></div></div></section>
+<section class="panel" id="sessionsPanel"><button class="back" data-close="sessionsPanel">‹</button><div class="panel-inner"><span class="kicker" id="dateCrumb">ΓΗΠΕΔΟ 1</span><h2 class="title">ΔΙΑΛΕΞΕ ΩΡΑ</h2><div class="group">☀️ ΠΡΩΙ</div><div class="sessions" id="morning"></div><div class="group">🌤 ΑΠΟΓΕΥΜΑ</div><div class="sessions" id="afternoon"></div><div class="group">🌙 ΒΡΑΔΥ</div><div class="sessions" id="night"></div></div></section>
+<section class="panel" id="formPanel"><button class="back" data-close="formPanel">‹</button><div class="panel-inner"><span class="kicker" id="formCrumb">ΓΗΠΕΔΟ 1</span><h2 class="title">ΟΛΟΚΛΗΡΩΣΕ ΤΗΝ ΚΡΑΤΗΣΗ</h2><form class="form" id="bookingForm"><div class="field"><label>ΟΝΟΜΑ</label><input id="name" required></div><div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input id="phone" type="tel" required></div><div class="field"><label>ΠΑΙΚΤΕΣ</label><div class="seg"><button type="button" data-p="4" class="active">4άδα · €44</button><button type="button" data-p="2">2άδα · €30</button></div><p class="note" id="playersNote"></p></div><div class="field"><label>ΡΑΚΕΤΕΣ · €2/ΤΕΜ.</label><div class="stepper"><button type="button" id="minus">−</button><strong id="rackets">0</strong><button type="button" id="plus">+</button></div></div><label class="check"><input type="checkbox" id="balls"> Premium μπάλες · €8</label><div class="total"><div><span class="kicker">ΣΥΝΟΛΟ</span><div class="note" id="breakdown"></div></div><div class="amount" id="amount">€44</div></div><button class="submit">ΕΠΙΒΕΒΑΙΩΣΗ ΚΡΑΤΗΣΗΣ</button><p class="note">Demo έκδοση — η πραγματική αποθήκευση κράτησης θα συνδεθεί με Firebase.</p></form></div></section>
+<aside class="auth" id="auth"><button class="closeauth" id="authClose">×</button><div class="tabs"><button class="active" data-tab="login">ΣΥΝΔΕΣΗ</button><button data-tab="signup">ΕΓΓΡΑΦΗ</button></div><form class="form" id="login"><div class="field"><label>EMAIL</label><input type="email" required></div><div class="field"><label>ΚΩΔΙΚΟΣ</label><input type="password" required></div><button class="submit">ΣΥΝΔΕΣΗ</button></form><form class="form hidden" id="signup"><div class="field"><label>ΟΝΟΜΑ</label><input required></div><div class="field"><label>EMAIL</label><input type="email" required></div><div class="field"><label>ΚΩΔΙΚΟΣ</label><input type="password" required></div><button class="submit">ΕΓΓΡΑΦΗ</button></form></aside>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];const open=id=>{document.getElementById(id).classList.add('open')},close=id=>{document.getElementById(id).classList.remove('open')};$('#menuBtn').onclick=()=>open('menu');$('#menuClose').onclick=()=>close('menu');$('#playerBtn').onclick=()=>open('auth');$('#authClose').onclick=()=>close('auth');$('#bookBtn').onclick=()=>{renderCal();open('calendarPanel')};$$('[data-close]').forEach(b=>b.onclick=()=>close(b.dataset.close));$$('.menu a').forEach(a=>a.onclick=e=>{e.preventDefault();alert('Η ενότητα «'+a.textContent+'» θα προστεθεί στο επόμενο βήμα.')});$$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#login').classList.toggle('hidden',b.dataset.tab!=='login');$('#signup').classList.toggle('hidden',b.dataset.tab!=='signup')});$('#login').onsubmit=e=>{e.preventDefault();alert('Demo σύνδεσης — θα συνδεθεί με Firebase.')};$('#signup').onsubmit=e=>{e.preventDefault();alert('Demo εγγραφής — θα συνδεθεί με Firebase.')};
+const months=['ΙΑΝΟΥΑΡΙΟΣ','ΦΕΒΡΟΥΑΡΙΟΣ','ΜΑΡΤΙΟΣ','ΑΠΡΙΛΙΟΣ','ΜΑΪΟΣ','ΙΟΥΝΙΟΣ','ΙΟΥΛΙΟΣ','ΑΥΓΟΥΣΤΟΣ','ΣΕΠΤΕΜΒΡΙΟΣ','ΟΚΤΩΒΡΙΟΣ','ΝΟΕΜΒΡΙΟΣ','ΔΕΚΕΜΒΡΙΟΣ'];const days=['ΚΥΡ','ΔΕΥ','ΤΡΙ','ΤΕΤ','ΠΕΜ','ΠΑΡ','ΣΑΒ'];let view=new Date(),chosen=null,session='';function renderCal(){let y=view.getFullYear(),m=view.getMonth();$('#month').textContent=months[m]+' '+y;let out='',first=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),today=new Date();today.setHours(0,0,0,0);for(let i=0;i<first;i++)out+='<span></span>';for(let d=1;d<=n;d++){let x=new Date(y,m,d),dis=x<today?'disabled':'',tod=+x===+today?'today':'';out+=`<button class="day ${tod}" data-day="${d}" ${dis}>${d}</button>`}$('#days').innerHTML=out;$$('.day[data-day]').forEach(b=>b.onclick=()=>{chosen=new Date(y,m,+b.dataset.day);$('#dateCrumb').textContent=`${days[chosen.getDay()]} ${chosen.getDate()} ${months[m].slice(0,3)}`;close('calendarPanel');open('sessionsPanel')})}$('#prev').onclick=()=>{view.setMonth(view.getMonth()-1);renderCal()};$('#next').onclick=()=>{view.setMonth(view.getMonth()+1);renderCal()};
+const slots=['07:30-09:00','09:00-10:30','10:30-12:00','12:00-13:30','13:30-15:00','15:00-16:30','16:30-18:00','18:00-19:30','19:30-21:00','21:00-22:30','22:30-00:00','00:00-01:30'];function fill(id,a){document.getElementById(id).innerHTML=a.map(t=>`<button class="slot" data-time="${t}">${t.replace('-',' – ')}</button>`).join('')}fill('morning',slots.slice(0,4));fill('afternoon',slots.slice(4,8));fill('night',slots.slice(8));$$('.slot').forEach(b=>b.onclick=()=>{session=b.dataset.time;$('#formCrumb').textContent=$('#dateCrumb').textContent+' · '+session.replace('-',' – ');let allow2=slots.indexOf(session)<=8;let two=$('[data-p="2"]');two.disabled=!allow2;$('#playersNote').textContent=allow2?'':'Μετά τις 21:00 διαθέσιμη μόνο η 4άδα.';if(!allow2){players=4;$$('.seg button').forEach(x=>x.classList.toggle('active',x.dataset.p==='4'))}update();close('sessionsPanel');open('formPanel')});
+let players=4,rackets=0;$$('.seg button').forEach(b=>b.onclick=()=>{if(b.disabled)return;players=+b.dataset.p;$$('.seg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(rackets>players)rackets=players;update()});$('#plus').onclick=()=>{if(rackets<players)rackets++;update()};$('#minus').onclick=()=>{if(rackets>0)rackets--;update()};$('#balls').onchange=update;function update(){let base=players===4?44:30,total=base+rackets*2+($('#balls').checked?8:0);$('#rackets').textContent=rackets;$('#amount').textContent='€'+total;let p=[players+'άδα · €'+base];if(rackets)p.push(rackets+' ρακέτες · €'+rackets*2);if($('#balls').checked)p.push('μπάλες · €8');$('#breakdown').textContent=p.join(' + ')}update();$('#bookingForm').onsubmit=e=>{e.preventDefault();alert(`Κράτηση demo\n${$('#name').value} · ${$('#phone').value}\n${$('#formCrumb').textContent}\nΣύνολο: ${$('#amount').textContent}\n\nΘα συνδεθεί με Firebase στο επόμενο βήμα.`)};
+</script>
 </body>
 </html>
