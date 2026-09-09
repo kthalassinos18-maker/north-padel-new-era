@@ -382,7 +382,7 @@
 
   <div class="cta-wrap">
     <span class="cta-hint" data-i18n="hero_hint">ΞΕΚΙΝΑ ΤΩΡΑ</span>
-    <button class="cta-btn" id="ctaBtn" type="button">
+    <button class="cta-btn" id="ctaBtn" type="button" data-i18n="hero_cta_btn">
       ΚΡΑΤΗΣΗ
       <svg class="cta-arrow" viewBox="0 0 24 24" fill="none">
         <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -418,9 +418,9 @@
       <div class="combo-badge">2</div>
       <h3 class="combo-title" data-i18n="combo2_title">Γήπεδο + Club Sandwich + Μπύρες</h3>
       <ul class="combo-list">
-        <li>🎾 Γήπεδο padel 4 ατόμων</li>
+        <li data-i18n="c_court4">🎾 Γήπεδο padel 4 ατόμων</li>
         <li data-i18n="c_sandwich">🥪 1 club sandwich</li>
-        <li>🍺 4 μπύρες</li>
+        <li data-i18n="c_beers4">🍺 4 μπύρες</li>
       </ul>
       <div class="combo-price">65€</div>
       <button type="button" class="combo-cta" data-combo="2">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
@@ -440,7 +440,7 @@
   <div class="combo-freebie">
     <span>☕</span>
     <div>
-      <strong>Δωρεάν Νερό &amp; Καφές</strong>
+      <strong data-i18n="c_free_water">Δωρεάν Νερό &amp; Καφές</strong>
       <span data-i18n="combo_free_d">με τη χρήση του γηπέδου — Καθημερινά 08:00–14:00</span>
     </div>
   </div>
@@ -460,11 +460,11 @@
   <div class="court-choose-grid">
     <button type="button" class="court-choose-card" data-court="1">
       <div class="cc-icon">🎾</div>
-      <div class="cc-title">ΓΗΠΕΔΟ 1<span class="cc-status" data-i18n="cc_avail">Διαθέσιμο</span></div>
+      <div class="cc-title"><span data-i18n="cc_court1_label">ΓΗΠΕΔΟ 1</span><span class="cc-status" data-i18n="cc_avail">Διαθέσιμο</span></div>
     </button>
     <button type="button" class="court-choose-card soon" data-court="2">
       <div class="cc-icon">🚧</div>
-      <div class="cc-title">ΓΗΠΕΔΟ 2<span class="cc-status" data-i18n="cc_soon">Προσεχώς</span></div>
+      <div class="cc-title"><span data-i18n="cc_court2_label">ΓΗΠΕΔΟ 2</span><span class="cc-status" data-i18n="cc_soon">Προσεχώς</span></div>
     </button>
   </div>
 </section>
@@ -472,7 +472,7 @@
 <!-- COURT 2 COMING SOON -->
 <section class="step-panel" id="stepCourt2" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="hero" data-reverse-walk="1" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -630,15 +630,15 @@
     </div>
   </header>
   <form class="booking-form" id="bookingForm">
-    <div class="form-field"><label>ΟΝΟΜΑ</label><input type="text" id="fName" placeholder="Το όνομά σου" required></div>
-    <div class="form-field"><label>ΤΗΛΕΦΩΝΟ</label><input type="tel" id="fPhone" placeholder="6XX XXX XXXX" required></div>
+    <div class="form-field"><label data-i18n="form_name">ΟΝΟΜΑ</label><input type="text" id="fName" placeholder="Το όνομά σου" required></div>
+    <div class="form-field"><label data-i18n="form_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="fPhone" placeholder="6XX XXX XXXX" required></div>
     <div class="form-field">
       <label data-i18n="form_players">ΠΑΙΚΤΕΣ</label>
       <div class="segment" id="fPlayers">
         <button type="button" class="seg-opt active" data-players="4" data-i18n="form_4p">4άδα · €44</button>
         <button type="button" class="seg-opt" data-players="2" id="opt2" data-i18n="form_2p">2άδα · €30</button>
       </div>
-      <p class="hint" id="playersHint" style="display:none">Η 2άδα είναι διαθέσιμη μόνο μέχρι το session 19:30–21:00.</p>
+      <p class="hint" id="playersHint" style="display:none" data-i18n="form_2p_note">Η 2άδα είναι διαθέσιμη μόνο μέχρι το session 19:30–21:00.</p>
     </div>
     <div class="form-field">
       <label>ΡΑΚΕΤΕΣ <span class="label-hint" data-i18n="form_rackets_h">(+€2 η καθεμία)</span></label>
@@ -651,7 +651,7 @@
     <div class="form-field">
       <label class="check-line">
         <input type="checkbox" id="fBalls">
-        <span>Premium μπαλάκια <em class="label-hint" data-i18n="form_balls_h">(+€8 σύνολο)</em></span>
+        <span><span data-i18n="form_premium_balls">Premium μπαλάκια</span> <em class="label-hint" data-i18n="form_balls_h">(+€8 σύνολο)</em></span>
       </label>
     </div>
     <div class="total-box">
@@ -668,22 +668,22 @@
 <!-- ============ ΠΑΙΔΙΚΑ ΠΑΡΤΥ MODAL ============ -->
 <div class="info-modal" id="modalParties" aria-hidden="true">
   <div class="im-hdr">
-    <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2>Παιδικά Πάρτυ 🎉</h2></div>
+    <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2 data-i18n="parties_h2">Παιδικά Πάρτυ 🎉</h2></div>
     <button class="im-close" data-close-modal="modalParties" type="button">×</button>
   </div>
   <div class="kp-hero">
     <span class="balloon">🎈🎉🎂</span>
     <h1>PADEL <span class="lime">PARTY!</span></h1>
     <p class="tag1" data-i18n="parties_tag1">ΤΟ ΠΙΟ ACTIVE ΠΑΡΤΥ ΓΕΝΕΘΛΙΩΝ</p>
-    <p class="tag2">Άθληση, παιχνίδι &amp; ατελείωτη διασκέδαση!<br>Γενέθλια ξεχωριστά όπως τα ονειρεύεστε.</p>
+    <p class="tag2" data-i18n-html="parties_tag2">Άθληση, παιχνίδι &amp; ατελείωτη διασκέδαση!<br>Γενέθλια ξεχωριστά όπως τα ονειρεύεστε.</p>
   </div>
   <div class="kp-section">
     <div class="kp-section-title"><div class="bar"></div><h3 data-i18n="parties_inc">ΠΕΡΙΛΑΜΒΑΝΕΙ</h3><div class="bar"></div></div>
     <div class="inc-grid">
       <div class="inc"><span class="em">🎾</span><div class="lbl" data-i18n-html="inc_padel">Padel<br>Παιχνίδι</div></div>
-      <div class="inc"><span class="em">🎮</span><div class="lbl">Παιχνίδια &amp; Δραστηριότητες</div></div>
-      <div class="inc"><span class="em">🎂</span><div class="lbl">Τούρτα &amp; Κεράσματα</div></div>
-      <div class="inc"><span class="em">🎵</span><div class="lbl">Μουσική &amp; Διασκέδαση</div></div>
+      <div class="inc"><span class="em">🎮</span><div class="lbl" data-i18n="inc_games">Παιχνίδια &amp; Δραστηριότητες</div></div>
+      <div class="inc"><span class="em">🎂</span><div class="lbl" data-i18n="inc_cake">Τούρτα &amp; Κεράσματα</div></div>
+      <div class="inc"><span class="em">🎵</span><div class="lbl" data-i18n="inc_music_full">Μουσική &amp; Διασκέδαση</div></div>
       <div class="inc"><span class="em">🛡️</span><div class="lbl" data-i18n-html="inc_safe">Ασφαλές<br>Περιβάλλον</div></div>
       <div class="inc"><span class="em">🎁</span><div class="lbl" data-i18n-html="inc_surprises">Εκπλήξεις<br>για όλους</div></div>
     </div>
@@ -699,7 +699,7 @@
   </div>
   <div class="cta-block">
     <h4 data-i18n="p_cta_t">ΚΛΕΙΣΤΕ ΣΗΜΕΡΑ ΤΟ ΠΑΡΤΥ ΣΑΣ!</h4>
-    <p>Επικοινωνήστε μαζί μας για διαθεσιμότητα &amp; πακέτα</p>
+    <p data-i18n="p_contact_us">Επικοινωνήστε μαζί μας για διαθεσιμότητα &amp; πακέτα</p>
     <div class="btn-row">
       <a href="tel:+306934391978" class="btn-link btn-call">📞 ΚΛΗΣΗ · 693 439 1978</a>
       <a href="mailto:northpadel2026@gmail.com" class="btn-link btn-mail">✉️ northpadel2026@gmail.com</a>
@@ -711,12 +711,12 @@
 <!-- ============ ΕΞΟΠΛΙΣΜΟΣ MODAL ============ -->
 <div class="info-modal" id="modalEquip" aria-hidden="true">
   <div class="im-hdr">
-    <div><span class="k">NORTH PADEL</span><h2>Εξοπλισμός</h2></div>
+    <div><span class="k">NORTH PADEL</span><h2 data-i18n="eq_h2">Εξοπλισμός</h2></div>
     <button class="im-close" data-close-modal="modalEquip" type="button">×</button>
   </div>
   <div class="eq-hero">
-    <h1>Παίξε με τα <span class="lime" data-i18n="eq_h1_l">καλύτερα</span></h1>
-    <p class="sub">Επαγγελματικές ρακέτες &amp; μπάλες Babolat<br>για κάθε επίπεδο παίκτη</p>
+    <h1><span data-i18n="eq_h1_1">Παίξε με τα</span> <span class="lime" data-i18n="eq_h1_l">καλύτερα</span></h1>
+    <p class="sub" data-i18n-html="eq_sub">Επαγγελματικές ρακέτες &amp; μπάλες Babolat<br>για κάθε επίπεδο παίκτη</p>
   </div>
   <div class="kp-section">
     <div class="kp-section-title"><div class="bar"></div><h3 data-i18n="form_rackets_l">ΡΑΚΕΤΕΣ</h3><div class="bar"></div></div>
@@ -741,7 +741,7 @@
       <div class="gear-info">
         <h4>Babolat Rental</h4>
         <span class="tier rent" data-i18n="eq_beg">ΑΡΧΑΡΙΟΣ</span>
-        <p>Ανθεκτική ρακέτα για ενοικίαση. Ιδανική για αρχάριους ή για δοκιμή.</p>
+        <p data-i18n="eq_rental_d">Ανθεκτική ρακέτα για ενοικίαση. Ιδανική για αρχάριους ή για δοκιμή.</p>
       </div>
     </div>
   </div>
@@ -766,12 +766,12 @@
 <!-- ============ ΣΧΕΤΙΚΑ ΜΕ ΕΜΑΣ MODAL ============ -->
 <div class="info-modal" id="modalAbout" aria-hidden="true">
   <div class="im-hdr">
-    <div><span class="k">NORTH PADEL</span><h2>Σχετικά με εμάς</h2></div>
+    <div><span class="k">NORTH PADEL</span><h2 data-i18n="about_h2">Σχετικά με εμάς</h2></div>
     <button class="im-close" data-close-modal="modalAbout" type="button">×</button>
   </div>
   <div class="ab-hero">
     <span class="em">🎾</span>
-    <h1>Η ιστορία <span class="lime" data-i18n="about_h1_l">μας</span></h1>
+    <h1><span data-i18n="about_h1_1">Η ιστορία</span> <span class="lime" data-i18n="about_h1_l">μας</span></h1>
     <p class="loc" data-i18n="about_loc">📍 ΝΕΑ ΚΑΛΛΙΚΡΑΤΕΙΑ · ΧΑΛΚΙΔΙΚΗ</p>
   </div>
   <div class="ab-body">
@@ -831,11 +831,11 @@
 <!-- ============ ΕΠΙΚΟΙΝΩΝΙΑ MODAL ============ -->
 <div class="info-modal" id="modalContact" aria-hidden="true">
   <div class="im-hdr">
-    <div><span class="k">NORTH PADEL</span><h2>Επικοινωνία</h2></div>
+    <div><span class="k">NORTH PADEL</span><h2 data-i18n="co_h2">Επικοινωνία</h2></div>
     <button class="im-close" data-close-modal="modalContact" type="button">×</button>
   </div>
   <div class="co-hero">
-    <h1>Είμαστε <span class="lime" data-i18n="co_h1_l">εδώ</span></h1>
+    <h1><span data-i18n="co_h1_1">Είμαστε</span> <span class="lime" data-i18n="co_h1_l">εδώ</span></h1>
     <p class="sub" data-i18n="co_sub">Κλείσε γήπεδο, ρώτα για μαθήματα ή διοργάνωση event — είμαστε εδώ για σένα.</p>
   </div>
   <div class="co-body">
@@ -874,7 +874,7 @@
 <!-- ============ PADEL — ΤΙ ΕΙΝΑΙ; MODAL ============ -->
 <div class="info-modal" id="modalPadel" aria-hidden="true">
   <div class="im-hdr">
-    <div><span class="k" data-i18n="kicker_info">INFO</span><h2>Padel — Τι είναι;</h2></div>
+    <div><span class="k" data-i18n="kicker_info">INFO</span><h2 data-i18n="padel_h2">Padel — Τι είναι;</h2></div>
     <button class="im-close" data-close-modal="modalPadel" type="button">×</button>
   </div>
   <div class="ab-hero">
@@ -950,7 +950,7 @@
 <!-- ============ PERSONAL COACH / PADEL INFO MODAL ============ -->
 <div class="info-modal" id="modalCoaching" aria-hidden="true">
   <div class="im-hdr">
-    <div><span class="k">ΥΠΗΡΕΣΙΕΣ</span><h2>Personal Coach</h2></div>
+    <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2>Personal Coach</h2></div>
     <button class="im-close" data-close-modal="modalCoaching" type="button">×</button>
   </div>
   <div class="ab-hero">
@@ -1779,6 +1779,46 @@ T.de['padel_cb'] = '🎾 JETZT BUCHEN';
 T.en['foot_np'] = '📍 Nea Kallikratia, Halkidiki';
 T.de['foot_np'] = '📍 Nea Kallikratia, Chalkidiki';
   
+T.en['hero_cta_btn'] = 'BOOKING';
+T.de['hero_cta_btn'] = 'RESERVIEREN';
+T.en['c_court4'] = '🎾 Padel court for 4';
+T.de['c_court4'] = '🎾 Padel-Platz für 4';
+T.en['c_beers4'] = '🍺 4 beers';
+T.de['c_beers4'] = '🍺 4 Bier';
+T.en['c_free_water'] = 'Free Water & Coffee';
+T.de['c_free_water'] = 'Gratis Wasser & Kaffee';
+T.en['cc_court1_label'] = 'COURT 1';
+T.de['cc_court1_label'] = 'PLATZ 1';
+T.en['cc_court2_label'] = 'COURT 2';
+T.de['cc_court2_label'] = 'PLATZ 2';
+T.en['form_name'] = 'NAME';
+T.de['form_name'] = 'NAME';
+T.en['form_phone'] = 'PHONE';
+T.de['form_phone'] = 'TELEFON';
+T.en['form_2p_note'] = 'The 2-player option is available only until the 19:30–21:00 session.';
+T.de['form_2p_note'] = 'Die 2er-Option ist nur bis zur Session 19:30–21:00 verfügbar.';
+T.en['form_premium_balls'] = 'Premium balls';
+T.de['form_premium_balls'] = 'Premium-Bälle';
+T.en['parties_h2'] = "Kids' Parties 🎉";
+T.de['parties_h2'] = 'Kinderpartys 🎉';
+T.en['parties_tag2'] = 'Sports, play & endless fun!<br>Birthdays as special as you dream them.';
+T.de['parties_tag2'] = 'Sport, Spiel & endlose Freude!<br>Geburtstage so besonders, wie Sie sie träumen.';
+T.en['inc_games'] = 'Games & Activities';
+T.de['inc_games'] = 'Spiele & Aktivitäten';
+T.en['inc_cake'] = 'Cake & Treats';
+T.de['inc_cake'] = 'Kuchen & Leckereien';
+T.en['inc_music_full'] = 'Music & Fun';
+T.de['inc_music_full'] = 'Musik & Spaß';
+T.en['p_contact_us'] = 'Contact us for availability & packages';
+T.de['p_contact_us'] = 'Kontaktieren Sie uns für Verfügbarkeit & Pakete';
+T.en['eq_h2'] = 'Equipment';
+T.de['eq_h2'] = 'Ausrüstung';
+T.en['about_h2'] = 'About Us';
+T.de['about_h2'] = 'Über uns';
+T.en['co_h2'] = 'Contact';
+T.de['co_h2'] = 'Kontakt';
+T.en['padel_h2'] = 'Padel — What is it?';
+T.de['padel_h2'] = 'Padel — Was ist das?';
   const originalTexts = new Map();
   
   function setLang(lang){
