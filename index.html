@@ -1074,17 +1074,10 @@
     }, 500);
   });
 
-  // Door hotspot → walk-through → court 2
+  // Door hotspot → slide to court 2 (like other steps)
   doorHotspot.addEventListener('click', () => {
-    if (navigator.vibrate) navigator.vibrate([30,50,80,50,30]);
-    doorTransition.classList.add('active');
-    heroEl.classList.remove('walking-reverse');
-    heroEl.classList.add('walking');
-    setTimeout(() => { slideTo(null, stepCourt2); }, 1000);
-    setTimeout(() => {
-      doorTransition.classList.remove('active');
-      heroEl.classList.remove('walking');
-    }, 1500);
+    if (navigator.vibrate) navigator.vibrate(30);
+    slideTo(null, stepCourt2);
   });
 
   // Player button → auth panel
@@ -1411,7 +1404,8 @@
       const lb = document.getElementById('lightbox');
       if (lb.classList.contains('open')) lb.classList.remove('open');
     }
-  
+  });
+
   /* ============ i18n LANGUAGE SWITCHER ============ */
   const T = { en: {},  de: {} };
 T.en['hero_hint'] = 'START NOW';
@@ -1832,7 +1826,6 @@ T.de['foot_np'] = '📍 Nea Kallikratia, Chalkidiki';
     if (saved !== 'el') setLang(saved);
   })();
 
-});
 </script>
 
 </body>
