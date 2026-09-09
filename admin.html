@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a1929">
+<meta name="robots" content="noindex,nofollow">
+<title>North Padel · Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#0a1929;color:#f4f9ff;font-family:'Inter',sans-serif}
+
+  /* ===== Login gate ===== */
+  .gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#12304f 0%,#0a1929 70%);z-index:100}
+  .gate-card{width:min(90vw,380px);background:#0f2540;border:1px solid rgba(183,255,74,0.2);border-radius:20px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  .gate-brand{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;letter-spacing:0.15em;color:#b7ff4a;text-align:center;margin-bottom:6px}
+  .gate-title{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;letter-spacing:0.08em;text-align:center;margin-bottom:24px}
+  .gate-field{margin-bottom:14px}
+  .gate-field label{display:block;font-size:11px;letter-spacing:0.25em;font-weight:600;color:rgba(244,249,255,0.5);margin-bottom:6px}
+  .gate-field input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:15px;outline:none}
+  .gate-field input:focus{border-color:#b7ff4a}
+  .gate-btn{width:100%;padding:13px;border-radius:10px;border:0;background:#b7ff4a;color:#0a1929;font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.15em;cursor:pointer;margin-top:8px}
+  .gate-btn:hover{background:#a3ec36}
+  .gate-error{color:#ff6b6b;font-size:13px;text-align:center;margin-top:12px;min-height:18px}
+
+  /* ===== App layout ===== */
+  .app{display:none;min-height:100vh}
+  .app.show{display:flex}
+  .sidebar{width:230px;background:#0f2540;border-right:1px solid rgba(183,255,74,0.15);padding:22px 0;display:flex;flex-direction:column;flex-shrink:0}
+  .brand{padding:0 22px 20px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:12px}
+  .brand-t{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;letter-spacing:0.12em;color:#b7ff4a}
+  .brand-s{font-size:11px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);margin-top:2px}
+  .nav-item{background:transparent;border:0;color:rgba(244,249,255,0.75);padding:12px 22px;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;letter-spacing:0.03em;display:flex;align-items:center;gap:12px;transition:background .15s,color .15s;border-left:3px solid transparent}
+  .nav-item:hover{background:rgba(183,255,74,0.05);color:#f4f9ff}
+  .nav-item.active{background:rgba(183,255,74,0.1);color:#b7ff4a;border-left-color:#b7ff4a}
+  .nav-ico{font-size:16px;width:22px;text-align:center}
+  .sidebar-foot{margin-top:auto;padding:16px 22px;border-top:1px solid rgba(255,255,255,0.06)}
+  .logout{background:transparent;border:1px solid rgba(255,107,107,0.4);color:#ff6b6b;padding:8px 14px;border-radius:8px;font-family:inherit;font-size:12px;letter-spacing:0.1em;cursor:pointer;width:100%}
+  .logout:hover{background:rgba(255,107,107,0.1)}
+
+  .main{flex:1;padding:26px 34px;overflow-y:auto}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+  .page-title{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;letter-spacing:0.05em}
+  .page-sub{font-size:13px;color:rgba(244,249,255,0.55);margin-top:2px}
+  .badge-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:0.2em;color:#b7ff4a;background:rgba(183,255,74,0.12);padding:5px 10px;border-radius:6px;font-weight:600}
+  .badge-live::before{content:"";width:6px;height:6px;background:#b7ff4a;border-radius:50%;box-shadow:0 0 8px #b7ff4a;animation:pulse 1.5s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  .section{display:none}
+  .section.active{display:block}
+
+  /* ===== Cards & Stats ===== */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+  .stat{background:#0f2540;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:18px 20px}
+  .stat-label{font-size:11px;letter-spacing:0.2em;font-weight:600;color:rgba(244,249,255,0.5);margin-bottom:8px}
+  .stat-value{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;color:#f4f9ff}
+  .stat-value .unit{font-size:15px;color:rgba(244,249,255,0.5);margin-left:4px}
+  .stat-delta{font-size:12px;color:#b7ff4a;margin-top:4px}
+  .stat-delta.neg{color:#ff6b6b}
+
+  .panel{background:#0f2540;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:20px}
+  .panel h3{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;letter-spacing:0.12em;color:rgba(244,249,255,0.8);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+  .panel h3 .actions{display:flex;gap:8px}
+  .btn{background:rgba(183,255,74,0.15);border:1px solid rgba(183,255,74,0.35);color:#b7ff4a;padding:7px 14px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:0.08em;cursor:pointer}
+  .btn:hover{background:rgba(183,255,74,0.25)}
+  .btn.danger{background:rgba(255,107,107,0.12);border-color:rgba(255,107,107,0.4);color:#ff6b6b}
+  .btn.danger:hover{background:rgba(255,107,107,0.22)}
+  .btn.solid{background:#b7ff4a;color:#0a1929;border-color:#b7ff4a}
+  .btn.solid:hover{background:#a3ec36}
+
+  /* ===== Tables ===== */
+  .tbl{width:100%;border-collapse:collapse;font-size:14px}
+  .tbl thead th{text-align:left;padding:10px 12px;font-size:11px;letter-spacing:0.18em;font-weight:600;color:rgba(244,249,255,0.5);border-bottom:1px solid rgba(255,255,255,0.08);text-transform:uppercase}
+  .tbl tbody td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);color:rgba(244,249,255,0.85)}
+  .tbl tbody tr:hover{background:rgba(183,255,74,0.03)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:0.08em}
+  .pill.ok{background:rgba(183,255,74,0.15);color:#b7ff4a}
+  .pill.pend{background:rgba(255,193,74,0.15);color:#ffc14a}
+  .pill.canc{background:rgba(255,107,107,0.15);color:#ff6b6b}
+
+  /* ===== Forms ===== */
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:11px;letter-spacing:0.18em;color:rgba(244,249,255,0.55);font-weight:600}
+  .field input, .field select{padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;outline:none}
+  .field input:focus, .field select:focus{border-color:#b7ff4a}
+  .field .hint{font-size:11px;color:rgba(244,249,255,0.4)}
+
+  /* ===== Empty state / mock notice ===== */
+  .notice{background:rgba(255,193,74,0.08);border:1px solid rgba(255,193,74,0.3);border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:rgba(255,193,74,0.9);line-height:1.5}
+  .notice strong{color:#ffc14a}
+
+  @media(max-width:820px){
+    .sidebar{width:70px}
+    .brand,.sidebar-foot{padding-left:10px;padding-right:10px}
+    .brand-t,.brand-s,.nav-item span:not(.nav-ico),.logout{display:none}
+    .nav-item{justify-content:center;padding:12px 0}
+    .main{padding:18px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN GATE ============ -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-brand">NORTH PADEL</div>
+    <div class="gate-title">ADMIN</div>
+    <form id="loginForm">
+      <div class="gate-field">
+        <label>ΚΩΔΙΚΟΣ ΔΙΑΧΕΙΡΙΣΤΗ</label>
+        <input type="password" id="pw" autocomplete="current-password" required autofocus>
+      </div>
+      <button type="submit" class="gate-btn">ΕΙΣΟΔΟΣ</button>
+      <div class="gate-error" id="gateError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-t">NORTH PADEL</div>
+      <div class="brand-s">ADMIN PANEL</div>
+    </div>
+    <button class="nav-item active" data-section="dashboard"><span class="nav-ico">📊</span><span>Dashboard</span></button>
+    <button class="nav-item" data-section="bookings"><span class="nav-ico">📅</span><span>Κρατήσεις</span></button>
+    <button class="nav-item" data-section="members"><span class="nav-ico">👥</span><span>Μέλη</span></button>
+    <button class="nav-item" data-section="prices"><span class="nav-ico">💶</span><span>Τιμές</span></button>
+    <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Ώρες</span></button>
+    <div class="sidebar-foot">
+      <button class="logout" id="logout">ΑΠΟΣΥΝΔΕΣΗ</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="page-sub" id="pageSub">Επισκόπηση δραστηριότητας</div>
+      </div>
+      <span class="badge-live">LIVE</span>
+    </div>
+
+    <!-- MOCK DATA NOTICE -->
+    <div class="notice">
+      <strong>⚠️ ΠΡΟΣΩΡΙΝΑ ΔΕΔΟΜΕΝΑ</strong> — Τα δεδομένα αποθηκεύονται τοπικά στον browser σου (localStorage).
+      Για πραγματικές κρατήσεις και εγγραφές από το site, χρειάζεται σύνδεση με βάση δεδομένων (Firebase / Cloudflare D1).
+      Πες μου όποτε θες να το ενεργοποιήσουμε.
+    </div>
+
+    <!-- =========== DASHBOARD =========== -->
+    <section class="section active" id="sec-dashboard">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ</div><div class="stat-value" id="stTodayBookings">0</div><div class="stat-delta" id="stTodayDelta">+0 από χθες</div></div>
+        <div class="stat"><div class="stat-label">ΕΣΟΔΑ ΣΗΜΕΡΑ</div><div class="stat-value" id="stTodayRev">0<span class="unit">€</span></div><div class="stat-delta" id="stRevDelta">+0€ από χθες</div></div>
+        <div class="stat"><div class="stat-label">ΚΡΑΤΗΣΕΙΣ ΜΗΝΑ</div><div class="stat-value" id="stMonthBookings">0</div><div class="stat-delta">Σύνολο</div></div>
+        <div class="stat"><div class="stat-label">ΕΣΟΔΑ ΜΗΝΑ</div><div class="stat-value" id="stMonthRev">0<span class="unit">€</span></div><div class="stat-delta">Σύνολο</div></div>
+        <div class="stat"><div class="stat-label">ΕΝΕΡΓΑ ΜΕΛΗ</div><div class="stat-value" id="stMembers">0</div><div class="stat-delta">Εγγεγραμμένοι</div></div>
+        <div class="stat"><div class="stat-label">ΣΕ ΕΓΚΡΙΣΗ</div><div class="stat-value" id="stPending">0</div><div class="stat-delta">Νέες αιτήσεις</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>ΕΠΟΜΕΝΕΣ ΚΡΑΤΗΣΕΙΣ <span class="actions"><button class="btn" onclick="showSection('bookings')">ΟΛΕΣ →</button></span></h3>
+        <table class="tbl">
+          <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Πακέτο</th><th>Σύνολο</th><th>Κατάσταση</th></tr></thead>
+          <tbody id="tblUpcoming"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =========== BOOKINGS =========== -->
+    <section class="section" id="sec-bookings">
+      <div class="panel">
+        <h3>ΝΕΑ ΚΡΑΤΗΣΗ (ΧΕΙΡΟΚΙΝΗΤΗ) <span class="actions"><button class="btn solid" id="addBookingBtn">+ ΠΡΟΣΘΗΚΗ</button></span></h3>
+        <div class="form-grid">
+          <div class="field"><label>ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="bkDate"></div>
+          <div class="field"><label>ΩΡΑ</label><input type="time" id="bkTime" value="19:30"></div>
+          <div class="field"><label>ΓΗΠΕΔΟ</label><select id="bkCourt"><option>Γήπεδο 1</option><option>Γήπεδο 2</option></select></div>
+          <div class="field"><label>ΠΑΙΚΤΕΣ</label><select id="bkPlayers"><option value="4">4άδα · 44€</option><option value="2">2άδα · 30€</option></select></div>
+          <div class="field"><label>ΟΝΟΜΑ ΠΑΙΚΤΗ</label><input type="text" id="bkName" placeholder="π.χ. Γιάννης Παπαδόπουλος"></div>
+          <div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input type="tel" id="bkPhone" placeholder="69XXXXXXXX"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>ΟΛΕΣ ΟΙ ΚΡΑΤΗΣΕΙΣ</h3>
+        <table class="tbl">
+          <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Κατάσταση</th><th></th></tr></thead>
+          <tbody id="tblBookings"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =========== MEMBERS =========== -->
+    <section class="section" id="sec-members">
+      <div class="panel">
+        <h3>ΜΕΛΗ ΣΕ ΕΓΚΡΙΣΗ <span class="actions"><span class="pill pend" id="pendingCount">0 νέες</span></span></h3>
+        <table class="tbl">
+          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Εγγραφή</th><th style="text-align:right">Ενέργειες</th></tr></thead>
+          <tbody id="tblPending"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h3>ΕΝΕΡΓΑ ΜΕΛΗ</h3>
+        <table class="tbl">
+          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Κρατήσεις</th><th>Εγγραφή</th><th style="text-align:right">Ενέργειες</th></tr></thead>
+          <tbody id="tblMembers"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =========== PRICES =========== -->
+    <section class="section" id="sec-prices">
+      <div class="panel">
+        <h3>ΤΙΜΕΣ ΚΡΑΤΗΣΕΩΝ <span class="actions"><button class="btn solid" id="savePricesBtn">ΑΠΟΘΗΚΕΥΣΗ</button></span></h3>
+        <div class="form-grid">
+          <div class="field"><label>ΤΙΜΗ 4άδας (€)</label><input type="number" id="pr4" value="44" min="0"></div>
+          <div class="field"><label>ΤΙΜΗ 2άδας (€)</label><input type="number" id="pr2" value="30" min="0"></div>
+          <div class="field"><label>ΕΝΟΙΚ. ΡΑΚΕΤΑΣ (€)</label><input type="number" id="prRacket" value="2" min="0"></div>
+          <div class="field"><label>PREMIUM ΜΠΑΛΕΣ (€)</label><input type="number" id="prBalls" value="8" min="0"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>COMBO ΠΡΟΣΦΟΡΕΣ</h3>
+        <div class="form-grid">
+          <div class="field"><label>COMBO 1 (Πίτσα + Μπύρες)</label><input type="number" id="prC1" value="70"></div>
+          <div class="field"><label>COMBO 2 (Club Sandwich + Μπύρες)</label><input type="number" id="prC2" value="65"></div>
+          <div class="field"><label>COMBO 3 (Μπέργκερ + Μπύρες)</label><input type="number" id="prC3" value="75"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========== HOURS =========== -->
+    <section class="section" id="sec-hours">
+      <div class="panel">
+        <h3>ΩΡΕΣ ΛΕΙΤΟΥΡΓΙΑΣ <span class="actions"><button class="btn solid" id="saveHoursBtn">ΑΠΟΘΗΚΕΥΣΗ</button></span></h3>
+        <table class="tbl">
+          <thead><tr><th>Ημέρα</th><th>Άνοιγμα</th><th>Κλείσιμο</th><th>Κλειστά</th></tr></thead>
+          <tbody id="tblHours"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ============ AUTH ============ */
+const ADMIN_PW = 'northpadel2026';  // Άλλαξέ το εδώ. (Στην επόμενη φάση θα μπει σε Firebase Auth.)
+const gate = document.getElementById('gate');
+const app = document.getElementById('app');
+const loginForm = document.getElementById('loginForm');
+const gateError = document.getElementById('gateError');
+const pwField = document.getElementById('pw');
+
+function unlock(){
+  gate.style.display = 'none';
+  app.classList.add('show');
+  refreshAll();
+}
+function lock(){
+  gate.style.display = 'flex';
+  app.classList.remove('show');
+  pwField.value='';
+  pwField.focus();
+}
+
+if (sessionStorage.getItem('adminAuth') === '1') unlock();
+
+loginForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (pwField.value === ADMIN_PW){
+    sessionStorage.setItem('adminAuth','1');
+    gateError.textContent = '';
+    unlock();
+  } else {
+    gateError.textContent = 'Λάθος κωδικός.';
+    pwField.value = '';
+    pwField.focus();
+  }
+});
+
+document.getElementById('logout').addEventListener('click', () => {
+  sessionStorage.removeItem('adminAuth');
+  lock();
+});
+
+/* ============ NAV ============ */
+const titles = {
+  dashboard: ['Dashboard', 'Επισκόπηση δραστηριότητας'],
+  bookings:  ['Κρατήσεις', 'Διαχείριση όλων των κρατήσεων'],
+  members:   ['Μέλη', 'Έγκριση, απόρριψη και διαχείριση μελών'],
+  prices:    ['Τιμές', 'Τιμοκατάλογος γηπέδων και combo'],
+  hours:     ['Ώρες', 'Ωράριο λειτουργίας ανά ημέρα'],
+};
+function showSection(name){
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === name));
+  document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === 'sec-'+name));
+  document.getElementById('pageTitle').textContent = titles[name][0];
+  document.getElementById('pageSub').textContent = titles[name][1];
+}
+document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => showSection(n.dataset.section)));
+
+/* ============ STORAGE ============ */
+function getStore(key, fallback){
+  try { const raw = localStorage.getItem('np_admin_'+key); return raw ? JSON.parse(raw) : fallback; } catch(e){ return fallback; }
+}
+function setStore(key, val){
+  try { localStorage.setItem('np_admin_'+key, JSON.stringify(val)); } catch(e){}
+}
+
+/* ============ SEED DATA ============ */
+function seedIfEmpty(){
+  if (!localStorage.getItem('np_admin_bookings')){
+    const today = new Date().toISOString().slice(0,10);
+    const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
+    setStore('bookings', [
+      { id:1, date:today, time:'19:30', court:'Γήπεδο 1', name:'Γιάννης Παπαδόπουλος', phone:'6971234567', players:4, total:44, status:'ok' },
+      { id:2, date:today, time:'21:00', court:'Γήπεδο 1', name:'Μαρία Κ.', phone:'6987654321', players:2, total:30, status:'ok' },
+      { id:3, date:tomorrow, time:'18:00', court:'Γήπεδο 1', name:'Νίκος Δ.', phone:'6944556677', players:4, total:52, status:'pend' },
+    ]);
+  }
+  if (!localStorage.getItem('np_admin_pending')){
+    setStore('pending', [
+      { id:11, name:'Πέτρος Αναγνώστου', email:'petros@example.com', phone:'6971112222', created:'2026-09-08' },
+      { id:12, name:'Ελένη Παπαδοπούλου', email:'eleni@example.com', phone:'6983334444', created:'2026-09-09' },
+    ]);
+  }
+  if (!localStorage.getItem('np_admin_members')){
+    setStore('members', [
+      { id:101, name:'Κώστας Θαλασσινός', email:'k.thalassinos18@gmail.com', phone:'6951784471', bookings:12, joined:'2026-07-15' },
+      { id:102, name:'Ανδρέας Ν.', email:'andreas@example.com', phone:'6934391978', bookings:8, joined:'2026-07-20' },
+      { id:103, name:'Δημήτρης Λ.', email:'dimitris@example.com', phone:'6900112233', bookings:5, joined:'2026-08-01' },
+    ]);
+  }
+  if (!localStorage.getItem('np_admin_hours')){
+    setStore('hours', [
+      { day:'Δευτέρα',   open:'08:00', close:'23:00', closed:false },
+      { day:'Τρίτη',     open:'08:00', close:'23:00', closed:false },
+      { day:'Τετάρτη',   open:'08:00', close:'23:00', closed:false },
+      { day:'Πέμπτη',    open:'08:00', close:'23:00', closed:false },
+      { day:'Παρασκευή', open:'08:00', close:'00:00', closed:false },
+      { day:'Σάββατο',   open:'09:00', close:'00:00', closed:false },
+      { day:'Κυριακή',   open:'09:00', close:'23:00', closed:false },
+    ]);
+  }
+}
+
+/* ============ RENDERERS ============ */
+function fmtDate(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit'});
+}
+function pillFor(status){
+  if (status==='ok')   return '<span class="pill ok">ΕΓΚΕΚΡΙΜΕΝΗ</span>';
+  if (status==='pend') return '<span class="pill pend">ΣΕ ΑΝΑΜΟΝΗ</span>';
+  return '<span class="pill canc">ΑΚΥΡΩΘΗΚΕ</span>';
+}
+
+function renderDashboard(){
+  const bookings = getStore('bookings', []);
+  const pending  = getStore('pending', []);
+  const members  = getStore('members', []);
+  const today = new Date().toISOString().slice(0,10);
+  const month = today.slice(0,7);
+  const todayBk = bookings.filter(b => b.date === today);
+  const monthBk = bookings.filter(b => b.date.startsWith(month));
+  document.getElementById('stTodayBookings').textContent = todayBk.length;
+  document.getElementById('stTodayRev').innerHTML = todayBk.reduce((s,b)=>s+b.total,0) + '<span class="unit">€</span>';
+  document.getElementById('stMonthBookings').textContent = monthBk.length;
+  document.getElementById('stMonthRev').innerHTML = monthBk.reduce((s,b)=>s+b.total,0) + '<span class="unit">€</span>';
+  document.getElementById('stMembers').textContent = members.length;
+  document.getElementById('stPending').textContent = pending.length;
+
+  const upcoming = [...bookings].sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time)).slice(0,5);
+  document.getElementById('tblUpcoming').innerHTML = upcoming.map(b => `
+    <tr><td>${fmtDate(b.date)}</td><td>${b.time}</td><td>${b.court}</td><td>${b.name}</td><td>${b.players}άδα</td><td>${b.total}€</td><td>${pillFor(b.status)}</td></tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
+}
+
+function renderBookings(){
+  const bookings = getStore('bookings', []);
+  document.getElementById('tblBookings').innerHTML = bookings.map(b => `
+    <tr>
+      <td>${fmtDate(b.date)}</td><td>${b.time}</td><td>${b.court}</td>
+      <td>${b.name}</td><td>${b.phone}</td><td>${b.players}άδα</td><td>${b.total}€</td>
+      <td>${pillFor(b.status)}</td>
+      <td style="text-align:right"><button class="btn danger" data-del-bk="${b.id}">Διαγραφή</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
+  document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', () => {
+    if (!confirm('Διαγραφή κράτησης;')) return;
+    const list = getStore('bookings', []).filter(b => b.id !== +btn.dataset.delBk);
+    setStore('bookings', list); refreshAll();
+  }));
+}
+
+function renderMembers(){
+  const pending = getStore('pending', []);
+  const members = getStore('members', []);
+  document.getElementById('pendingCount').textContent = pending.length + ' νέες';
+  document.getElementById('tblPending').innerHTML = pending.map(m => `
+    <tr>
+      <td>${m.name}</td><td>${m.email}</td><td>${m.phone}</td><td>${m.created}</td>
+      <td style="text-align:right">
+        <button class="btn" data-approve="${m.id}">Έγκριση</button>
+        <button class="btn danger" data-reject="${m.id}">Απόρριψη</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία εκκρεμότητα.</td></tr>';
+  document.getElementById('tblMembers').innerHTML = members.map(m => `
+    <tr>
+      <td>${m.name}</td><td>${m.email}</td><td>${m.phone}</td><td>${m.bookings}</td><td>${m.joined}</td>
+      <td style="text-align:right"><button class="btn danger" data-del-mem="${m.id}">Διαγραφή</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος.</td></tr>';
+
+  document.querySelectorAll('[data-approve]').forEach(btn => btn.addEventListener('click', () => {
+    const id = +btn.dataset.approve;
+    const p = getStore('pending', []); const m = p.find(x => x.id === id);
+    if (!m) return;
+    const members = getStore('members', []);
+    members.push({ ...m, bookings:0, joined:new Date().toISOString().slice(0,10) });
+    setStore('members', members);
+    setStore('pending', p.filter(x => x.id !== id));
+    refreshAll();
+  }));
+  document.querySelectorAll('[data-reject]').forEach(btn => btn.addEventListener('click', () => {
+    if (!confirm('Απόρριψη αίτησης;')) return;
+    setStore('pending', getStore('pending', []).filter(x => x.id !== +btn.dataset.reject));
+    refreshAll();
+  }));
+  document.querySelectorAll('[data-del-mem]').forEach(btn => btn.addEventListener('click', () => {
+    if (!confirm('Διαγραφή μέλους;')) return;
+    setStore('members', getStore('members', []).filter(x => x.id !== +btn.dataset.delMem));
+    refreshAll();
+  }));
+}
+
+function renderHours(){
+  const hours = getStore('hours', []);
+  document.getElementById('tblHours').innerHTML = hours.map((h,i) => `
+    <tr>
+      <td>${h.day}</td>
+      <td><input type="time" data-h="${i}" data-f="open" value="${h.open}" ${h.closed?'disabled':''}></td>
+      <td><input type="time" data-h="${i}" data-f="close" value="${h.close}" ${h.closed?'disabled':''}></td>
+      <td><input type="checkbox" data-h="${i}" data-f="closed" ${h.closed?'checked':''}></td>
+    </tr>
+  `).join('');
+}
+
+function renderPrices(){
+  const p = getStore('prices', null);
+  if (p){
+    document.getElementById('pr4').value = p.p4;
+    document.getElementById('pr2').value = p.p2;
+    document.getElementById('prRacket').value = p.racket;
+    document.getElementById('prBalls').value = p.balls;
+    document.getElementById('prC1').value = p.c1;
+    document.getElementById('prC2').value = p.c2;
+    document.getElementById('prC3').value = p.c3;
+  }
+}
+
+/* ============ ACTIONS ============ */
+document.getElementById('addBookingBtn').addEventListener('click', () => {
+  const date = document.getElementById('bkDate').value;
+  const time = document.getElementById('bkTime').value;
+  const court = document.getElementById('bkCourt').value;
+  const players = +document.getElementById('bkPlayers').value;
+  const name = document.getElementById('bkName').value.trim();
+  const phone = document.getElementById('bkPhone').value.trim();
+  if (!date || !name || !phone){ alert('Συμπλήρωσε ημερομηνία, όνομα και τηλέφωνο.'); return; }
+  const total = players === 4 ? 44 : 30;
+  const list = getStore('bookings', []);
+  list.push({ id: Date.now(), date, time, court, name, phone, players, total, status:'ok' });
+  setStore('bookings', list);
+  document.getElementById('bkName').value = ''; document.getElementById('bkPhone').value = '';
+  refreshAll();
+  alert('Η κράτηση προστέθηκε.');
+});
+
+document.getElementById('savePricesBtn').addEventListener('click', () => {
+  setStore('prices', {
+    p4: +document.getElementById('pr4').value,
+    p2: +document.getElementById('pr2').value,
+    racket: +document.getElementById('prRacket').value,
+    balls: +document.getElementById('prBalls').value,
+    c1: +document.getElementById('prC1').value,
+    c2: +document.getElementById('prC2').value,
+    c3: +document.getElementById('prC3').value,
+  });
+  alert('Οι τιμές αποθηκεύτηκαν.');
+});
+
+document.getElementById('saveHoursBtn').addEventListener('click', () => {
+  const hours = getStore('hours', []);
+  document.querySelectorAll('#tblHours input').forEach(inp => {
+    const i = +inp.dataset.h; const f = inp.dataset.f;
+    hours[i][f] = f === 'closed' ? inp.checked : inp.value;
+  });
+  setStore('hours', hours);
+  alert('Το ωράριο αποθηκεύτηκε.');
+  renderHours();
+});
+
+/* ============ INIT ============ */
+function refreshAll(){
+  seedIfEmpty();
+  renderDashboard(); renderBookings(); renderMembers(); renderHours(); renderPrices();
+}
+document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
+window.showSection = showSection;
+</script>
+
+</body>
+</html>

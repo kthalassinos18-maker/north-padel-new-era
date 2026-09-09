@@ -38,6 +38,10 @@
   .court2-image{width:100%;aspect-ratio:16/10;background:url('court2-image.jpg') center/cover no-repeat;border-radius:16px;position:relative;border:1px solid rgba(183,255,74,0.2)}
   .court2-image::after{content:"ΠΡΟΣΕΧΩΣ";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,25,41,0.65);color:#b7ff4a;font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;letter-spacing:0.15em;border-radius:16px}
   .court2-msg{text-align:center;color:rgba(244,249,255,0.75);font-size:15px;line-height:1.6;max-width:400px}
+  .switch-court-btn{margin-top:18px;display:inline-flex;align-items:center;gap:10px;padding:14px 26px;background:linear-gradient(90deg,rgba(183,255,74,0.15) 0%,rgba(183,255,74,0.35) 100%);border:1px solid rgba(183,255,74,0.5);border-radius:12px;color:#b7ff4a;font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:0.15em;cursor:pointer;box-shadow:0 0 20px rgba(183,255,74,0.25);transition:transform .2s,box-shadow .2s,background .2s;animation:doorGlow 2.5s ease-in-out infinite}
+  .switch-court-btn:hover{transform:scale(1.04);box-shadow:0 0 30px rgba(183,255,74,0.5)}
+  .switch-court-btn:active{transform:scale(0.98)}
+  .switch-court-btn .arrow{font-size:20px;line-height:1}
   .auth-panel{position:fixed;top:0;right:0;bottom:0;width:100%;max-width:420px;background:#0f2540;border-left:1px solid rgba(183,255,74,0.2);z-index:210;transform:translateX(100%);transition:transform .4s cubic-bezier(.4,0,.2,1);padding:60px 28px 40px;overflow-y:auto}
   .auth-panel.open{transform:translateX(0)}
   .auth-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:#f4f9ff;font-size:22px;cursor:pointer}
@@ -483,6 +487,10 @@
   <div class="court2-content">
     <div class="court2-image"></div>
     <p class="court2-msg" data-i18n="court2_msg">Το δεύτερο γήπεδο ετοιμάζεται. Σύντομα κοντά σας!</p>
+    <button type="button" class="switch-court-btn" id="switchToCourt1">
+      <span class="arrow">←</span>
+      <span class="switch-label" data-i18n="switch_to_c1">ΓΗΠΕΔΟ 1</span>
+    </button>
   </div>
 </section>
 
@@ -539,7 +547,7 @@
   </div>
   <button class="menu-close" id="menuClose" type="button" aria-label="Κλείσιμο">×</button>
   <nav class="menu-nav">
-    <button type="button" class="mnu-item" data-menu-item data-open-section="combos">Προσφορές &amp; Combo</button>
+    <button type="button" class="mnu-item" data-menu-item data-open-section="combos" data-i18n="menu_combos">Προσφορές &amp; Combo</button>
     <div class="menu-expandable">
       <button class="menu-toggle" id="svcToggle" type="button" aria-expanded="false">
         <span data-i18n="menu_services">Υπηρεσίες</span><span class="chev">›</span>
@@ -1079,6 +1087,16 @@
     if (navigator.vibrate) navigator.vibrate(30);
     slideTo(null, stepCourt2);
   });
+
+  // Court 2 → switch back to Court 1 (hero) with slide
+  const switchToCourt1 = document.getElementById('switchToCourt1');
+  if (switchToCourt1){
+    switchToCourt1.addEventListener('click', () => {
+      if (navigator.vibrate) navigator.vibrate(30);
+      stepCourt2.classList.remove('open');
+      stepCourt2.setAttribute('aria-hidden','true');
+    });
+  }
 
   // Player button → auth panel
   playerBtn.addEventListener('click', () => {
@@ -1781,6 +1799,8 @@ T.de['foot_np'] = '📍 Nea Kallikratia, Chalkidiki';
   
 T.en['hero_cta_btn'] = 'BOOKING';
 T.de['hero_cta_btn'] = 'RESERVIEREN';
+T.en['switch_to_c1'] = 'COURT 1';
+T.de['switch_to_c1'] = 'PLATZ 1';
 T.en['c_court4'] = '🎾 Padel court for 4';
 T.de['c_court4'] = '🎾 Padel-Platz für 4';
 T.en['c_beers4'] = '🍺 4 beers';
