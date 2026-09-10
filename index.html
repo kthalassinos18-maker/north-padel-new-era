@@ -1174,6 +1174,20 @@
     const snap = await getDoc(doc(db, 'config', name));
     return snap.exists() ? snap.data() : null;
   }
+  // ---- WhatsApp notification to admin via CallMeBot ----
+  // Fire-and-forget; failure never blocks the booking.
+  const CALLMEBOT_PHONE  = '306951784471';
+  const CALLMEBOT_APIKEY = '7073800';
+  async function notifyAdminWhatsApp(text){
+    try {
+      const url = 'https://api.callmebot.com/whatsapp.php'
+        + '?phone=' + encodeURIComponent(CALLMEBOT_PHONE)
+        + '&apikey=' + encodeURIComponent(CALLMEBOT_APIKEY)
+        + '&text=' + encodeURIComponent(text);
+      await fetch(url, { mode: 'no-cors' });
+    } catch(e){ console.warn('callmebot', e); }
+  }
+
   async function findBooking(date, time, court){
     const q = query(
       collection(db, 'bookings'),
@@ -1197,6 +1211,7 @@
     onAuth: (cb) => onAuthStateChanged(auth, cb),
     fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
     resetPassword, changePassword, getConfig, resendVerification, findBooking,
+    notifyAdminWhatsApp,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
   window.dispatchEvent(new Event('npFBReady'));
@@ -2033,6 +2048,18 @@
         Object.assign(currentProfile, patch);
         currentProfile.bookings = [...(currentProfile.bookings||[]), record];
       } catch(err){ console.warn('profile update failed', err); }
+
+      // Fire-and-forget WhatsApp notification to the admin (owner phone)
+      const waText =
+        '🎾 Νέα κράτηση North Padel!\n' +
+        '👤 ' + name + '\n' +
+        '📞 ' + phone + '\n' +
+        '📅 ' + dateISO + '\n' +
+        '⏰ ' + selectedSession + '\n' +
+        '🏟️ ' + court + '\n' +
+        '👥 ' + players + 'άδα · ' + rackets + ' ρακέτες' + (premiumBalls?' · premium μπάλες':'') + '\n' +
+        '💶 Σύνολο: ' + total + '€' + (discountKind ? ' (' + (discountKind==='freeCourt' ? 'δωρεάν γήπεδο' : '−30% καλωσόρισμα') + ')' : '');
+      window.npFB.notifyAdminWhatsApp(waText);
 
       alert('✅ Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + dateISO + ' · ' + selectedSession + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: €' + total);
       renderAuth();
