@@ -81,6 +81,11 @@
   .pill.pend{background:rgba(255,193,74,0.15);color:#ffc14a}
   .pill.canc{background:rgba(255,107,107,0.15);color:#ff6b6b}
 
+  .season-radio{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:rgba(244,249,255,0.75)}
+  .season-radio input{margin:0;accent-color:#b7ff4a}
+  .season-radio:has(input:checked){background:rgba(183,255,74,0.15);border-color:#b7ff4a;color:#b7ff4a}
+  .edit-season-btn.active{background:#b7ff4a;color:#0a1929;border-color:#b7ff4a}
+
   /* Toggle switch */
   .sw{position:relative;display:inline-block;width:46px;height:24px;vertical-align:middle}
   .sw input{opacity:0;width:0;height:0}
@@ -243,14 +248,29 @@
       </div>
     </section>
 
-    <!-- =========== HOURS =========== -->
+    <!-- =========== HOURS / SCHEDULE =========== -->
     <section class="section" id="sec-hours">
       <div class="panel">
-        <h3>SESSIONS — ΕΝΕΡΓΑ / ΚΛΕΙΣΤΑ <span class="actions"><button class="btn solid" id="saveSessionsBtn">ΑΠΟΘΗΚΕΥΣΗ</button></span></h3>
-        <p style="color:rgba(244,249,255,0.55);font-size:13px;margin-bottom:14px">Απενεργοποίησε ένα session και θα εξαφανιστεί αυτόματα από το site — δεν θα μπορεί κανείς να το κλείσει.</p>
+        <h3>ΠΡΟΓΡΑΜΜΑ ΩΡΩΝ <span class="actions"><button class="btn solid" id="saveScheduleBtn">ΑΠΟΘΗΚΕΥΣΗ</button></span></h3>
+        <p style="color:rgba(244,249,255,0.55);font-size:13px;margin-bottom:14px">Άλλαξε το πρόγραμμα (καλοκαιρινό / χειμερινό) ή τα slots του κάθε προγράμματος. Επίλεξε ποιο είναι ενεργό — το site θα το χρησιμοποιήσει άμεσα.</p>
+
+        <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+          <span style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.15em;color:rgba(244,249,255,0.6);margin-right:6px">ΕΝΕΡΓΟ ΠΡΟΓΡΑΜΜΑ:</span>
+          <label class="season-radio"><input type="radio" name="activeSeason" value="summer"><span>☀️ Καλοκαιρινό</span></label>
+          <label class="season-radio"><input type="radio" name="activeSeason" value="winter"><span>❄️ Χειμερινό</span></label>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:12px">
+          <span style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.15em;color:rgba(244,249,255,0.6);align-self:center;margin-right:6px">ΕΠΕΞΕΡΓΑΣΙΑ:</span>
+          <button type="button" class="btn edit-season-btn active" data-edit-season="summer">☀️ Καλοκαιρινό</button>
+          <button type="button" class="btn edit-season-btn" data-edit-season="winter">❄️ Χειμερινό</button>
+          <span style="flex:1"></span>
+          <button type="button" class="btn" id="addSlotBtn">+ Slot</button>
+        </div>
+
         <table class="tbl">
-          <thead><tr><th>Session</th><th>Περίοδος</th><th style="text-align:center">Κατάσταση</th></tr></thead>
-          <tbody id="tblSessions"></tbody>
+          <thead><tr><th>Ώρα Έναρξης</th><th>Ώρα Λήξης</th><th>Περίοδος</th><th style="text-align:center">Ενεργό</th><th></th></tr></thead>
+          <tbody id="tblSchedule"></tbody>
         </table>
       </div>
     </section>
@@ -401,36 +421,52 @@ function pillFor(status){
   return '<span class="pill canc">ΑΚΥΡΩΘΗΚΕ</span>';
 }
 
-const ALL_SESSIONS = [
-  { time:'07:30-09:00', label:'07:30 – 09:00', period:'ΠΡΩΙ' },
-  { time:'09:00-10:30', label:'09:00 – 10:30', period:'ΠΡΩΙ' },
-  { time:'10:30-12:00', label:'10:30 – 12:00', period:'ΠΡΩΙ' },
-  { time:'12:00-13:30', label:'12:00 – 13:30', period:'ΠΡΩΙ' },
-  { time:'13:30-15:00', label:'13:30 – 15:00', period:'ΜΕΣΗΜΕΡΙ' },
-  { time:'15:00-16:30', label:'15:00 – 16:30', period:'ΑΠΟΓΕΥΜΑ' },
-  { time:'16:30-18:00', label:'16:30 – 18:00', period:'ΑΠΟΓΕΥΜΑ' },
-  { time:'18:00-19:30', label:'18:00 – 19:30', period:'ΑΠΟΓΕΥΜΑ' },
-  { time:'19:30-21:00', label:'19:30 – 21:00', period:'ΒΡΑΔΥ' },
-  { time:'21:00-22:30', label:'21:00 – 22:30', period:'ΒΡΑΔΥ' },
-  { time:'22:30-24:00', label:'22:30 – 00:00', period:'ΝΥΧΤΑ' },
-  { time:'00:00-01:30', label:'00:00 – 01:30', period:'ΝΥΧΤΑ' },
+const PERIODS = ['ΠΡΩΙ','ΜΕΣΗΜΕΡΙ','ΑΠΟΓΕΥΜΑ','ΒΡΑΔΥ','ΝΥΧΤΑ'];
+
+// Default schedules if none exist yet in Firestore.
+const DEFAULT_SUMMER = [
+  { start:'07:30', end:'09:00', period:'ΠΡΩΙ',     enabled:true },
+  { start:'09:00', end:'10:30', period:'ΠΡΩΙ',     enabled:true },
+  { start:'10:30', end:'12:00', period:'ΠΡΩΙ',     enabled:true },
+  { start:'12:00', end:'13:30', period:'ΠΡΩΙ',     enabled:true },
+  { start:'13:30', end:'15:00', period:'ΜΕΣΗΜΕΡΙ', enabled:true },
+  { start:'15:00', end:'16:30', period:'ΑΠΟΓΕΥΜΑ', enabled:true },
+  { start:'16:30', end:'18:00', period:'ΑΠΟΓΕΥΜΑ', enabled:true },
+  { start:'18:00', end:'19:30', period:'ΑΠΟΓΕΥΜΑ', enabled:true },
+  { start:'19:30', end:'21:00', period:'ΒΡΑΔΥ',    enabled:true },
+  { start:'21:00', end:'22:30', period:'ΒΡΑΔΥ',    enabled:true },
+  { start:'22:30', end:'24:00', period:'ΝΥΧΤΑ',    enabled:true },
+  { start:'00:00', end:'01:30', period:'ΝΥΧΤΑ',    enabled:true },
+];
+const DEFAULT_WINTER = [
+  { start:'09:00', end:'10:30', period:'ΠΡΩΙ',     enabled:true },
+  { start:'10:30', end:'12:00', period:'ΠΡΩΙ',     enabled:true },
+  { start:'12:00', end:'13:30', period:'ΠΡΩΙ',     enabled:true },
+  { start:'15:00', end:'16:30', period:'ΑΠΟΓΕΥΜΑ', enabled:true },
+  { start:'16:30', end:'18:00', period:'ΑΠΟΓΕΥΜΑ', enabled:true },
+  { start:'18:00', end:'19:30', period:'ΑΠΟΓΕΥΜΑ', enabled:true },
+  { start:'19:30', end:'21:00', period:'ΒΡΑΔΥ',    enabled:true },
+  { start:'21:00', end:'22:30', period:'ΒΡΑΔΥ',    enabled:true },
 ];
 const DEFAULT_PRICES = { p4:44, p2:30, racket:2, balls:8, c1:70, c2:65, c3:75 };
 
-let CACHE = { bookings:[], users:[], disabledSessions:[], prices:DEFAULT_PRICES };
+let CACHE = { bookings:[], users:[], prices:DEFAULT_PRICES, schedule: { activeSeason:'summer', summer:DEFAULT_SUMMER, winter:DEFAULT_WINTER } };
+let EDIT_SEASON = 'summer';
 
 async function loadAll(){
   try {
-    const [bookings, users, sessionsCfg, pricesCfg] = await Promise.all([
+    const [bookings, users, scheduleCfg, pricesCfg] = await Promise.all([
       window.npFB.listAllBookings(),
       window.npFB.listAllUsers(),
-      window.npFB.getConfig('sessions'),
+      window.npFB.getConfig('schedule'),
       window.npFB.getConfig('prices'),
     ]);
-    CACHE.bookings         = bookings;
-    CACHE.users            = users;
-    CACHE.disabledSessions = (sessionsCfg && sessionsCfg.disabled) || [];
-    CACHE.prices           = pricesCfg || DEFAULT_PRICES;
+    CACHE.bookings = bookings;
+    CACHE.users    = users;
+    CACHE.prices   = pricesCfg || DEFAULT_PRICES;
+    if (scheduleCfg && Array.isArray(scheduleCfg.summer) && Array.isArray(scheduleCfg.winter)){
+      CACHE.schedule = { activeSeason: scheduleCfg.activeSeason || 'summer', summer: scheduleCfg.summer, winter: scheduleCfg.winter };
+    }
   } catch(e){
     console.warn('Firestore load failed:', e);
     alert('Σφάλμα σύνδεσης με τη βάση: ' + e.message + '\n\nΈλεγξε ότι έχεις κάνει Enable στο Firestore και στα Security Rules.');
@@ -507,29 +543,50 @@ function renderMembers(){
   }));
 }
 
-function renderSessions(){
-  const disabled = new Set(CACHE.disabledSessions);
-  document.getElementById('tblSessions').innerHTML = ALL_SESSIONS.map(s => {
-    const on = !disabled.has(s.time);
-    return `
-      <tr>
-        <td style="font-family:'Oswald',sans-serif;font-size:15px">${esc(s.label)}</td>
-        <td><span class="pill ${on?'ok':'canc'}">${esc(s.period)}</span></td>
-        <td style="text-align:center">
-          <label class="sw"><input type="checkbox" data-sess="${esc(s.time)}" ${on?'checked':''}><span class="sw-slider"></span></label>
-          <span class="sw-txt" style="margin-left:10px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.12em;color:${on?'#b7ff4a':'#ff6b6b'}">${on?'ΕΝΕΡΓΟ':'ΚΛΕΙΣΤΟ'}</span>
-        </td>
-      </tr>`;
-  }).join('');
-  // Live pill/text update on toggle
-  document.querySelectorAll('#tblSessions input[data-sess]').forEach(inp => {
-    inp.addEventListener('change', () => {
-      const txt = inp.closest('td').querySelector('.sw-txt');
-      txt.textContent = inp.checked ? 'ΕΝΕΡΓΟ' : 'ΚΛΕΙΣΤΟ';
-      txt.style.color = inp.checked ? '#b7ff4a' : '#ff6b6b';
+function renderSchedule(){
+  // Update the active-season radios
+  document.querySelectorAll('input[name="activeSeason"]').forEach(r => {
+    r.checked = (r.value === CACHE.schedule.activeSeason);
+  });
+  // Update the edit-season tab buttons
+  document.querySelectorAll('.edit-season-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.editSeason === EDIT_SEASON);
+  });
+  // Render the slot table for the selected season
+  const slots = CACHE.schedule[EDIT_SEASON] || [];
+  document.getElementById('tblSchedule').innerHTML = slots.map((s, i) => `
+    <tr>
+      <td><input type="time" data-i="${i}" data-f="start" value="${esc(s.start)}"></td>
+      <td><input type="time" data-i="${i}" data-f="end"   value="${esc(s.end)}"></td>
+      <td>
+        <select data-i="${i}" data-f="period">
+          ${PERIODS.map(p => `<option value="${p}" ${p===s.period?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </td>
+      <td style="text-align:center">
+        <label class="sw"><input type="checkbox" data-i="${i}" data-f="enabled" ${s.enabled?'checked':''}><span class="sw-slider"></span></label>
+      </td>
+      <td style="text-align:right"><button class="btn danger" data-del-slot="${i}">✕</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία ώρα — πάτα "+ Slot"</td></tr>';
+
+  // Wire the delete buttons + edits
+  document.querySelectorAll('#tblSchedule [data-del-slot]').forEach(b => {
+    b.addEventListener('click', () => {
+      CACHE.schedule[EDIT_SEASON].splice(+b.dataset.delSlot, 1);
+      renderSchedule();
+    });
+  });
+  document.querySelectorAll('#tblSchedule [data-i]').forEach(el => {
+    el.addEventListener('change', () => {
+      const i = +el.dataset.i, f = el.dataset.f;
+      if (!CACHE.schedule[EDIT_SEASON][i]) return;
+      CACHE.schedule[EDIT_SEASON][i][f] = (el.type === 'checkbox') ? el.checked : el.value;
     });
   });
 }
+// Alias so the existing refreshAll call keeps working
+function renderSessions(){ renderSchedule(); }
 
 function renderPrices(){
   const p = CACHE.prices;
@@ -578,16 +635,30 @@ document.getElementById('savePricesBtn').addEventListener('click', async () => {
   } catch(e){ alert('Αποτυχία: '+e.message); }
 });
 
-document.getElementById('saveSessionsBtn').addEventListener('click', async () => {
-  const disabled = [];
-  document.querySelectorAll('#tblSessions input[data-sess]').forEach(inp => {
-    if (!inp.checked) disabled.push(inp.dataset.sess);
-  });
+// Save whole schedule (both seasons + which is active) to Firestore
+document.getElementById('saveScheduleBtn').addEventListener('click', async () => {
+  const activeSeason = document.querySelector('input[name="activeSeason"]:checked')?.value || 'summer';
   try {
-    await window.npFB.setConfig('sessions', { disabled });
-    CACHE.disabledSessions = disabled;
-    alert('✅ Οι αλλαγές αποθηκεύτηκαν. Το site ενημερώθηκε.');
+    await window.npFB.setConfig('schedule', {
+      activeSeason,
+      summer: CACHE.schedule.summer,
+      winter: CACHE.schedule.winter,
+    });
+    CACHE.schedule.activeSeason = activeSeason;
+    alert('✅ Το πρόγραμμα αποθηκεύτηκε. Το site ενημερώθηκε.');
   } catch(e){ alert('Αποτυχία: '+e.message); }
+});
+// Tab switching between summer/winter (edit)
+document.querySelectorAll('.edit-season-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    EDIT_SEASON = b.dataset.editSeason;
+    renderSchedule();
+  });
+});
+// Add a new slot to the currently-edited season
+document.getElementById('addSlotBtn').addEventListener('click', () => {
+  CACHE.schedule[EDIT_SEASON].push({ start:'09:00', end:'10:30', period:'ΠΡΩΙ', enabled:true });
+  renderSchedule();
 });
 
 /* ============ INIT ============ */

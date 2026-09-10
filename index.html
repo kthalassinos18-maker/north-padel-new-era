@@ -2157,6 +2157,52 @@
 
   /* ============ SESSIONS ON/OFF from Firestore config ============ */
   let DISABLED_SESSIONS = new Set();
+
+  // Fetch the active season's schedule from Firestore and rebuild the
+  // session buttons dynamically. Falls back to whatever is in the HTML
+  // if the config doc is missing (first-ever load).
+  const PERIOD_META = {
+    'ΠΡΩΙ':     { icon:'☀️',  key:'sess_morning'   },
+    'ΜΕΣΗΜΕΡΙ': { icon:'🍽️', key:'sess_noon'      },
+    'ΑΠΟΓΕΥΜΑ': { icon:'🌤️', key:'sess_afternoon' },
+    'ΒΡΑΔΥ':    { icon:'🌙',  key:'sess_night'     },
+    'ΝΥΧΤΑ':    { icon:'🌌',  key:'sess_late'      },
+  };
+  async function loadSchedule(){
+    await waitFB();
+    try {
+      const cfg = await window.npFB.getConfig('schedule');
+      if (!cfg || !cfg.summer || !cfg.winter) return;
+      const active = cfg.activeSeason || 'summer';
+      const slots = (cfg[active] || []).filter(s => s.enabled !== false);
+      buildSessionsUI(slots);
+    } catch(e){ console.warn('schedule load failed', e); }
+  }
+  function buildSessionsUI(slots){
+    const container = document.querySelector('.sessions');
+    if (!container) return;
+    // Group by period preserving PERIOD_META order
+    const grouped = {};
+    for (const s of slots){
+      (grouped[s.period] = grouped[s.period] || []).push(s);
+    }
+    const orderedPeriods = Object.keys(PERIOD_META).filter(p => grouped[p] && grouped[p].length);
+    container.innerHTML = orderedPeriods.map(p => {
+      const meta = PERIOD_META[p];
+      const items = grouped[p].map(s => {
+        const time = `${s.start}-${s.end}`;
+        const label = `${s.start} – ${s.end === '24:00' ? '00:00' : s.end}`;
+        return `<button class="session-slot" data-time="${time}">${label}</button>`;
+      }).join('');
+      return `<div class="session-group">
+        <h3 class="session-label" data-i18n="${meta.key}">${meta.icon} ${p}</h3>
+        <div class="session-grid">${items}</div>
+      </div>`;
+    }).join('');
+    // Re-apply any active language + occupancy state
+    applyDisabledSessions();
+  }
+
   async function loadDisabledSessions(){
     await waitFB();
     try {
@@ -2165,6 +2211,8 @@
       applyDisabledSessions();
     } catch(e){ console.warn('sessions cfg load failed', e); }
   }
+  // Load the admin's chosen schedule at boot
+  loadSchedule();
   let OCCUPIED_SLOTS = new Set();
   function applyDisabledSessions(){
     document.querySelectorAll('.session-slot').forEach(btn => {
@@ -2427,29 +2475,30 @@
     });
   });
 
-  // Session slot handling
+  // Session slot handling — use event delegation so it also works for
+  // slots that were rendered dynamically from the admin's schedule.
   let selectedSession = null;
-  document.querySelectorAll('.session-slot').forEach(slot => {
-    slot.addEventListener('click', () => {
-      if (slot.classList.contains('taken')) return;
-      if (navigator.vibrate) navigator.vibrate(40);
-      selectedSession = slot.dataset.time;
-      const twoAllowed = ['07:30-09:00','09:00-10:30','10:30-12:00','12:00-13:30','13:30-15:00','15:00-16:30','16:30-18:00','18:00-19:30','19:30-21:00'];
-      const opt2 = document.getElementById('opt2');
-      if (twoAllowed.includes(selectedSession)){
-        opt2.disabled = false;
-        document.getElementById('playersHint').style.display = 'none';
-      } else {
-        opt2.disabled = true;
-        opt2.classList.remove('active');
-        document.querySelector('.seg-opt[data-players="4"]').classList.add('active');
-        document.getElementById('playersHint').style.display = 'block';
-        document.getElementById('playersHint').textContent = 'Μετά τις 21:00 διαθέσιμη μόνο η 4άδα.';
-      }
-      formCrumb.textContent = sessionsCrumb.textContent + ' · ' + selectedSession.replace('-',' – ');
-      updateTotal();
-      slideTo(stepSessions, stepForm);
-    });
+  document.querySelector('.sessions').addEventListener('click', (e) => {
+    const slot = e.target.closest('.session-slot');
+    if (!slot) return;
+    if (slot.classList.contains('taken')) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    selectedSession = slot.dataset.time;
+    const twoAllowed = ['07:30-09:00','09:00-10:30','10:30-12:00','12:00-13:30','13:30-15:00','15:00-16:30','16:30-18:00','18:00-19:30','19:30-21:00'];
+    const opt2 = document.getElementById('opt2');
+    if (twoAllowed.includes(selectedSession)){
+      opt2.disabled = false;
+      document.getElementById('playersHint').style.display = 'none';
+    } else {
+      opt2.disabled = true;
+      opt2.classList.remove('active');
+      document.querySelector('.seg-opt[data-players="4"]').classList.add('active');
+      document.getElementById('playersHint').style.display = 'block';
+      document.getElementById('playersHint').textContent = 'Μετά τις 21:00 διαθέσιμη μόνο η 4άδα.';
+    }
+    formCrumb.textContent = sessionsCrumb.textContent + ' · ' + selectedSession.replace('-',' – ');
+    updateTotal();
+    slideTo(stepSessions, stepForm);
   });
 
   // Form controls
