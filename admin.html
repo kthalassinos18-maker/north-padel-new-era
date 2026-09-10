@@ -81,6 +81,14 @@
   .pill.pend{background:rgba(255,193,74,0.15);color:#ffc14a}
   .pill.canc{background:rgba(255,107,107,0.15);color:#ff6b6b}
 
+  /* Toggle switch */
+  .sw{position:relative;display:inline-block;width:46px;height:24px;vertical-align:middle}
+  .sw input{opacity:0;width:0;height:0}
+  .sw-slider{position:absolute;cursor:pointer;inset:0;background:rgba(255,107,107,0.35);border-radius:24px;transition:.2s}
+  .sw-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+  .sw input:checked + .sw-slider{background:rgba(183,255,74,0.55)}
+  .sw input:checked + .sw-slider::before{transform:translateX(22px);background:#0a1929}
+
   /* ===== Forms ===== */
   .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
   .field{display:flex;flex-direction:column;gap:6px}
@@ -135,7 +143,7 @@
     <button class="nav-item" data-section="bookings"><span class="nav-ico">📅</span><span>Κρατήσεις</span></button>
     <button class="nav-item" data-section="members"><span class="nav-ico">👥</span><span>Μέλη</span></button>
     <button class="nav-item" data-section="prices"><span class="nav-ico">💶</span><span>Τιμές</span></button>
-    <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Ώρες</span></button>
+    <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Sessions</span></button>
     <div class="sidebar-foot">
       <button class="logout" id="logout">ΑΠΟΣΥΝΔΕΣΗ</button>
     </div>
@@ -207,7 +215,7 @@
       <div class="panel">
         <h3>ΕΝΕΡΓΑ ΜΕΛΗ</h3>
         <table class="tbl">
-          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Κρατήσεις</th><th>Εγγραφή</th><th style="text-align:right">Ενέργειες</th></tr></thead>
+          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Επίπεδο</th><th>Κρατήσεις</th><th>Marketing</th><th>Εγγραφή</th><th style="text-align:right">Ενέργειες</th></tr></thead>
           <tbody id="tblMembers"></tbody>
         </table>
       </div>
@@ -238,10 +246,11 @@
     <!-- =========== HOURS =========== -->
     <section class="section" id="sec-hours">
       <div class="panel">
-        <h3>ΩΡΕΣ ΛΕΙΤΟΥΡΓΙΑΣ <span class="actions"><button class="btn solid" id="saveHoursBtn">ΑΠΟΘΗΚΕΥΣΗ</button></span></h3>
+        <h3>SESSIONS — ΕΝΕΡΓΑ / ΚΛΕΙΣΤΑ <span class="actions"><button class="btn solid" id="saveSessionsBtn">ΑΠΟΘΗΚΕΥΣΗ</button></span></h3>
+        <p style="color:rgba(244,249,255,0.55);font-size:13px;margin-bottom:14px">Απενεργοποίησε ένα session και θα εξαφανιστεί αυτόματα από το site — δεν θα μπορεί κανείς να το κλείσει.</p>
         <table class="tbl">
-          <thead><tr><th>Ημέρα</th><th>Άνοιγμα</th><th>Κλείσιμο</th><th>Κλειστά</th></tr></thead>
-          <tbody id="tblHours"></tbody>
+          <thead><tr><th>Session</th><th>Περίοδος</th><th style="text-align:center">Κατάσταση</th></tr></thead>
+          <tbody id="tblSessions"></tbody>
         </table>
       </div>
     </section>
@@ -364,7 +373,7 @@ const titles = {
   bookings:  ['Κρατήσεις', 'Διαχείριση όλων των κρατήσεων'],
   members:   ['Μέλη', 'Έγκριση, απόρριψη και διαχείριση μελών'],
   prices:    ['Τιμές', 'Τιμοκατάλογος γηπέδων και combo'],
-  hours:     ['Ώρες', 'Ωράριο λειτουργίας ανά ημέρα'],
+  hours:     ['Sessions', 'Ενεργοποίηση/απενεργοποίηση slot κράτησης'],
 };
 function showSection(name){
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === name));
@@ -392,31 +401,36 @@ function pillFor(status){
   return '<span class="pill canc">ΑΚΥΡΩΘΗΚΕ</span>';
 }
 
-const DEFAULT_HOURS = [
-  { day:'Δευτέρα',   open:'08:00', close:'23:00', closed:false },
-  { day:'Τρίτη',     open:'08:00', close:'23:00', closed:false },
-  { day:'Τετάρτη',   open:'08:00', close:'23:00', closed:false },
-  { day:'Πέμπτη',    open:'08:00', close:'23:00', closed:false },
-  { day:'Παρασκευή', open:'08:00', close:'00:00', closed:false },
-  { day:'Σάββατο',   open:'09:00', close:'00:00', closed:false },
-  { day:'Κυριακή',   open:'09:00', close:'23:00', closed:false },
+const ALL_SESSIONS = [
+  { time:'07:30-09:00', label:'07:30 – 09:00', period:'ΠΡΩΙ' },
+  { time:'09:00-10:30', label:'09:00 – 10:30', period:'ΠΡΩΙ' },
+  { time:'10:30-12:00', label:'10:30 – 12:00', period:'ΠΡΩΙ' },
+  { time:'12:00-13:30', label:'12:00 – 13:30', period:'ΠΡΩΙ' },
+  { time:'13:30-15:00', label:'13:30 – 15:00', period:'ΜΕΣΗΜΕΡΙ' },
+  { time:'15:00-16:30', label:'15:00 – 16:30', period:'ΑΠΟΓΕΥΜΑ' },
+  { time:'16:30-18:00', label:'16:30 – 18:00', period:'ΑΠΟΓΕΥΜΑ' },
+  { time:'18:00-19:30', label:'18:00 – 19:30', period:'ΑΠΟΓΕΥΜΑ' },
+  { time:'19:30-21:00', label:'19:30 – 21:00', period:'ΒΡΑΔΥ' },
+  { time:'21:00-22:30', label:'21:00 – 22:30', period:'ΒΡΑΔΥ' },
+  { time:'22:30-24:00', label:'22:30 – 00:00', period:'ΝΥΧΤΑ' },
+  { time:'00:00-01:30', label:'00:00 – 01:30', period:'ΝΥΧΤΑ' },
 ];
 const DEFAULT_PRICES = { p4:44, p2:30, racket:2, balls:8, c1:70, c2:65, c3:75 };
 
-let CACHE = { bookings:[], users:[], hours:DEFAULT_HOURS, prices:DEFAULT_PRICES };
+let CACHE = { bookings:[], users:[], disabledSessions:[], prices:DEFAULT_PRICES };
 
 async function loadAll(){
   try {
-    const [bookings, users, hoursCfg, pricesCfg] = await Promise.all([
+    const [bookings, users, sessionsCfg, pricesCfg] = await Promise.all([
       window.npFB.listAllBookings(),
       window.npFB.listAllUsers(),
-      window.npFB.getConfig('hours'),
+      window.npFB.getConfig('sessions'),
       window.npFB.getConfig('prices'),
     ]);
-    CACHE.bookings = bookings;
-    CACHE.users    = users;
-    CACHE.hours    = (hoursCfg && hoursCfg.days) || DEFAULT_HOURS;
-    CACHE.prices   = pricesCfg || DEFAULT_PRICES;
+    CACHE.bookings         = bookings;
+    CACHE.users            = users;
+    CACHE.disabledSessions = (sessionsCfg && sessionsCfg.disabled) || [];
+    CACHE.prices           = pricesCfg || DEFAULT_PRICES;
   } catch(e){
     console.warn('Firestore load failed:', e);
     alert('Σφάλμα σύνδεσης με τη βάση: ' + e.message + '\n\nΈλεγξε ότι έχεις κάνει Enable στο Firestore και στα Security Rules.');
@@ -466,16 +480,23 @@ function renderMembers(){
   const users = CACHE.users;
   document.getElementById('pendingCount').textContent = '0 νέες';
   document.getElementById('tblPending').innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν χρησιμοποιείται (Firebase auto-approves email/password).</td></tr>';
-  document.getElementById('tblMembers').innerHTML = users.map(m => `
+  const LEVEL_ICONS = ['🔰','🥉','🥈','🥇','🏆'];
+  const LEVEL_NAMES = ['Beginner','Amateur','Regular','Pro','Champion'];
+  document.getElementById('tblMembers').innerHTML = users.map(m => {
+    const lvIdx = Math.max(0, Math.min(4, (m.level || 1) - 1));
+    const marketing = m.consent && m.consent.marketing ? '<span class="pill ok">ΝΑΙ</span>' : '<span class="pill canc">ΟΧΙ</span>';
+    return `
     <tr>
       <td>${esc((m.name||'') + ' ' + (m.surname||''))}</td>
       <td>${esc(m.email)}</td>
       <td>${esc(m.phone)}</td>
+      <td>${LEVEL_ICONS[lvIdx]} ${esc(LEVEL_NAMES[lvIdx])}</td>
       <td>${+m.bookingsCount||0}</td>
+      <td>${marketing}</td>
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
       <td style="text-align:right"><button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος ακόμα.</td></tr>';
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος ακόμα.</td></tr>';
 
   document.querySelectorAll('[data-del-mem]').forEach(btn => btn.addEventListener('click', async () => {
     if (!confirm('Διαγραφή μέλους από τη βάση; (Ο λογαριασμός στο Firebase Auth ΔΕΝ διαγράφεται αυτόματα.)')) return;
@@ -486,16 +507,28 @@ function renderMembers(){
   }));
 }
 
-function renderHours(){
-  const hours = CACHE.hours;
-  document.getElementById('tblHours').innerHTML = hours.map((h,i) => `
-    <tr>
-      <td>${esc(h.day)}</td>
-      <td><input type="time" data-h="${+i}" data-f="open" value="${esc(h.open)}" ${h.closed?'disabled':''}></td>
-      <td><input type="time" data-h="${+i}" data-f="close" value="${esc(h.close)}" ${h.closed?'disabled':''}></td>
-      <td><input type="checkbox" data-h="${+i}" data-f="closed" ${h.closed?'checked':''}></td>
-    </tr>
-  `).join('');
+function renderSessions(){
+  const disabled = new Set(CACHE.disabledSessions);
+  document.getElementById('tblSessions').innerHTML = ALL_SESSIONS.map(s => {
+    const on = !disabled.has(s.time);
+    return `
+      <tr>
+        <td style="font-family:'Oswald',sans-serif;font-size:15px">${esc(s.label)}</td>
+        <td><span class="pill ${on?'ok':'canc'}">${esc(s.period)}</span></td>
+        <td style="text-align:center">
+          <label class="sw"><input type="checkbox" data-sess="${esc(s.time)}" ${on?'checked':''}><span class="sw-slider"></span></label>
+          <span class="sw-txt" style="margin-left:10px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.12em;color:${on?'#b7ff4a':'#ff6b6b'}">${on?'ΕΝΕΡΓΟ':'ΚΛΕΙΣΤΟ'}</span>
+        </td>
+      </tr>`;
+  }).join('');
+  // Live pill/text update on toggle
+  document.querySelectorAll('#tblSessions input[data-sess]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const txt = inp.closest('td').querySelector('.sw-txt');
+      txt.textContent = inp.checked ? 'ΕΝΕΡΓΟ' : 'ΚΛΕΙΣΤΟ';
+      txt.style.color = inp.checked ? '#b7ff4a' : '#ff6b6b';
+    });
+  });
 }
 
 function renderPrices(){
@@ -545,24 +578,22 @@ document.getElementById('savePricesBtn').addEventListener('click', async () => {
   } catch(e){ alert('Αποτυχία: '+e.message); }
 });
 
-document.getElementById('saveHoursBtn').addEventListener('click', async () => {
-  const hours = CACHE.hours.map(h => ({...h}));
-  document.querySelectorAll('#tblHours input').forEach(inp => {
-    const i = +inp.dataset.h; const f = inp.dataset.f;
-    hours[i][f] = f === 'closed' ? inp.checked : inp.value;
+document.getElementById('saveSessionsBtn').addEventListener('click', async () => {
+  const disabled = [];
+  document.querySelectorAll('#tblSessions input[data-sess]').forEach(inp => {
+    if (!inp.checked) disabled.push(inp.dataset.sess);
   });
   try {
-    await window.npFB.setConfig('hours', { days: hours });
-    CACHE.hours = hours;
-    alert('Το ωράριο αποθηκεύτηκε.');
-    renderHours();
+    await window.npFB.setConfig('sessions', { disabled });
+    CACHE.disabledSessions = disabled;
+    alert('✅ Οι αλλαγές αποθηκεύτηκαν. Το site ενημερώθηκε.');
   } catch(e){ alert('Αποτυχία: '+e.message); }
 });
 
 /* ============ INIT ============ */
 async function refreshAll(){
   await loadAll();
-  renderDashboard(); renderBookings(); renderMembers(); renderHours(); renderPrices();
+  renderDashboard(); renderBookings(); renderMembers(); renderSessions(); renderPrices();
 }
 document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
 window.showSection = showSection;

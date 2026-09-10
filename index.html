@@ -1097,7 +1097,7 @@
 <!-- ============ FIREBASE (Auth + Firestore) ============ -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, getDocs, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1124,7 +1124,13 @@
       consent: consent || null,
       createdAt: serverTimestamp(),
     });
+    // Send verification email — non-blocking; failure shouldn't block signup
+    try { await sendEmailVerification(cred.user); } catch(e){ console.warn('verify email', e); }
     return cred.user;
+  }
+  async function resendVerification(){
+    if (auth.currentUser) return sendEmailVerification(auth.currentUser);
+    throw new Error('Δεν είσαι συνδεδεμένος.');
   }
   async function signInUser(email, password){
     const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -1164,6 +1170,10 @@
     return snap.docs.map(d => ({ id:d.id, ...d.data() }));
   }
   async function resetPassword(email){ return sendPasswordResetEmail(auth, email); }
+  async function getConfig(name){
+    const snap = await getDoc(doc(db, 'config', name));
+    return snap.exists() ? snap.data() : null;
+  }
   async function changePassword(currentPassword, newPassword){
     const user = auth.currentUser;
     if (!user || !user.email) throw new Error('Δεν είσαι συνδεδεμένος.');
@@ -1178,7 +1188,7 @@
     signOutUser: () => signOut(auth),
     onAuth: (cb) => onAuthStateChanged(auth, cb),
     fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
-    resetPassword, changePassword,
+    resetPassword, changePassword, getConfig, resendVerification,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
   window.dispatchEvent(new Event('npFBReady'));
@@ -1325,10 +1335,13 @@
       const lv = LEVELS[lvIdx];
       const isAdmin = window.npFB && window.npFB.isAdmin(u);
       const initials = ((u.name||'')[0]||'') + ((u.surname||'')[0]||'');
+      const verifiedBadge = u.emailVerified
+        ? '<span style="display:inline-block;margin-left:6px;color:#b7ff4a;font-size:14px" title="Επιβεβαιωμένο email">✓</span>'
+        : '<span style="display:inline-block;margin-left:6px;color:#ffc14a;font-size:12px" title="Μη επιβεβαιωμένο">⚠</span>';
       document.getElementById('profileHero').innerHTML = `
         <div class="pf-avatar">${esc(initials.toUpperCase())||'👤'}</div>
         <div class="pf-name">${esc(u.name||'')} ${esc(u.surname||'')}</div>
-        <div class="pf-email">${esc(u.email)}</div>
+        <div class="pf-email">${esc(u.email)}${verifiedBadge}</div>
         <div class="pf-badge">${lv.icon} ${esc(lv.name)}</div>
         <button type="button" class="pf-cta outline" id="changeLevelBtn" style="margin-top:12px;font-size:11px;padding:8px">✎ ΑΛΛΑΓΗ ΕΠΙΠΕΔΟΥ</button>`;
 
@@ -1357,10 +1370,27 @@
           <div class="pf-card-title">ΤΕΛΕΥΤΑΙΕΣ ΚΡΑΤΗΣΕΙΣ <span style="color:rgba(244,249,255,0.4)">${+(u.bookingsCount||0)} συνολικά</span></div>
           ${bookingRows}
         </div>
+        ${!u.emailVerified ? `
+        <div class="pf-card" style="border-color:rgba(255,193,74,0.4)">
+          <div class="pf-card-title" style="color:#ffc14a">⚠ ΜΗ ΕΠΙΒΕΒΑΙΩΜΕΝΟ EMAIL</div>
+          <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5;margin-bottom:10px">Στείλαμε email στο <strong>${esc(u.email)}</strong>. Πάτα τον σύνδεσμο μέσα του για να το επιβεβαιώσεις.</p>
+          <button type="button" class="pf-cta outline" id="resendVerifyBtn" style="font-size:12px">📧 ΞΑΝΑΣΤΕΙΛΕ EMAIL</button>
+        </div>` : ''}
         <button type="button" class="pf-cta outline" id="changePwBtn">🔒 ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ</button>
         ${profileMissing ? `<button type="button" class="pf-cta outline" id="completeProfileBtn">ΣΥΜΠΛΗΡΩΣΕ ΤΟ ΠΡΟΦΙΛ</button>` : ''}
         ${isAdmin ? `<a href="admin.html" class="auth-admin-link" id="adminLink">🔐 ADMIN PANEL</a>` : ''}
       `;
+
+      // Resend verification
+      const rv = document.getElementById('resendVerifyBtn');
+      if (rv){
+        rv.addEventListener('click', async () => {
+          try {
+            await window.npFB.resendVerification();
+            alert('✅ Στάλθηκε νέο email επαλήθευσης στο ' + u.email);
+          } catch(ex){ alert('Σφάλμα: ' + ex.message); }
+        });
+      }
 
       // Change-password flow
       const chgPw = document.getElementById('changePwBtn');
@@ -1537,9 +1567,9 @@
             // Fetch user's bookings for the profile view
             let bookings = [];
             try { bookings = await window.npFB.listUserBookings(fbUser.uid); } catch(e){}
-            currentProfile = { ...prof, uid: fbUser.uid, email: fbUser.email, bookings };
+            currentProfile = { ...prof, uid: fbUser.uid, email: fbUser.email, emailVerified: !!fbUser.emailVerified, bookings };
           } else {
-            currentProfile = { uid: fbUser.uid, email: fbUser.email, name: '', surname: '', level: 1, bookings: [] };
+            currentProfile = { uid: fbUser.uid, email: fbUser.email, emailVerified: !!fbUser.emailVerified, name: '', surname: '', level: 1, bookings: [] };
           }
         } catch(e){
           console.warn('Profile fetch failed', e);
@@ -1554,6 +1584,37 @@
 
   // Rerender profile when the auth panel opens (in case bookings changed elsewhere)
   playerBtn.addEventListener('click', () => { setTimeout(renderAuth, 0); });
+
+  /* ============ SESSIONS ON/OFF from Firestore config ============ */
+  let DISABLED_SESSIONS = new Set();
+  async function loadDisabledSessions(){
+    await waitFB();
+    try {
+      const cfg = await window.npFB.getConfig('sessions');
+      DISABLED_SESSIONS = new Set((cfg && cfg.disabled) || []);
+      applyDisabledSessions();
+    } catch(e){ console.warn('sessions cfg load failed', e); }
+  }
+  function applyDisabledSessions(){
+    document.querySelectorAll('.session-slot').forEach(btn => {
+      const t = btn.dataset.time;
+      if (DISABLED_SESSIONS.has(t)){
+        btn.classList.add('taken');
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled','true');
+        btn.title = 'Δεν είναι διαθέσιμο';
+      } else {
+        btn.classList.remove('taken');
+        btn.disabled = false;
+        btn.removeAttribute('aria-disabled');
+        btn.title = '';
+      }
+    });
+  }
+  loadDisabledSessions();
+  // Refresh disabled state each time sessions step opens (in case admin
+  // just toggled something in the other tab).
+  ctaBtn.addEventListener('click', () => setTimeout(loadDisabledSessions, 100));
 
   // Menu open with racket swing + flying ball + crack
   menuBtn.addEventListener('click', () => {
