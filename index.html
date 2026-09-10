@@ -1079,6 +1079,70 @@
   Νέα Καλλικράτεια
 </a>
 
+<!-- ============ FIREBASE (Auth + Firestore) ============ -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, getDocs, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnn6RtsAqfJxeWesN3WF1jVv_egCDb21k",
+    authDomain: "north-padel-18763.firebaseapp.com",
+    projectId: "north-padel-18763",
+    storageBucket: "north-padel-18763.firebasestorage.app",
+    messagingSenderId: "955194973640",
+    appId: "1:955194973640:web:b37f431ccaf6aabafb74fd",
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const ADMIN_EMAILS = ['k.thalassinos18@gmail.com'];
+
+  async function signUpUser({ name, surname, phone, email, password, level, consent }){
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      name, surname, phone, email,
+      level: level || 1,
+      welcomeCoupon: true,
+      freeCourts: 0,
+      bookingsCount: 0,
+      consent: consent || null,
+      createdAt: serverTimestamp(),
+    });
+    return cred.user;
+  }
+  async function signInUser(email, password){
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    return cred.user;
+  }
+  async function fetchProfile(uid){
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? { uid, ...snap.data() } : null;
+  }
+  async function updateProfile(uid, patch){
+    await updateDoc(doc(db, 'users', uid), patch);
+  }
+  async function createBookingDoc(data){
+    return await addDoc(collection(db, 'bookings'), { ...data, createdAt: serverTimestamp() });
+  }
+  async function listUserBookings(uid){
+    const q = query(collection(db, 'bookings'), where('userId','==',uid), orderBy('date','desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  }
+  async function resetPassword(email){ return sendPasswordResetEmail(auth, email); }
+
+  window.npFB = {
+    auth, db, ADMIN_EMAILS,
+    signUpUser, signInUser,
+    signOutUser: () => signOut(auth),
+    onAuth: (cb) => onAuthStateChanged(auth, cb),
+    fetchProfile, updateProfile, createBookingDoc, listUserBookings, resetPassword,
+    isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
+  };
+  window.dispatchEvent(new Event('npFBReady'));
+</script>
+
 <script>
   const ctaBtn = document.getElementById('ctaBtn');
   const menuBtn = document.getElementById('menuBtn');
@@ -1179,8 +1243,7 @@
     });
   });
 
-  /* ============ USER ACCOUNTS (localStorage — προσωρινό μέχρι το Firebase) ============ */
-  const ADMIN_EMAILS = ['k.thalassinos18@gmail.com'];
+  /* ============ USER ACCOUNTS (Firebase Auth + Firestore) ============ */
   const LEVELS = [
     { name:'Beginner',  icon:'🔰' },
     { name:'Amateur',   icon:'🥉' },
@@ -1194,22 +1257,16 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
-  function getUsers(){
-    try { return JSON.parse(localStorage.getItem('np_users') || '[]'); } catch(e){ return []; }
-  }
-  function saveUsers(list){
-    try { localStorage.setItem('np_users', JSON.stringify(list)); } catch(e){}
-  }
-  function currentUser(){
-    try {
-      const email = localStorage.getItem('np_currentUser');
-      if (!email) return null;
-      return getUsers().find(u => u.email === email) || null;
-    } catch(e){ return null; }
-  }
-  function setCurrentUser(email){
-    if (email) localStorage.setItem('np_currentUser', email);
-    else localStorage.removeItem('np_currentUser');
+
+  // Current profile is a plain object with { uid, name, surname, email, level, ... }
+  let currentProfile = null;
+  function currentUser(){ return currentProfile; }
+  function fbReady(){ return !!window.npFB; }
+  function waitFB(){
+    return new Promise(resolve => {
+      if (window.npFB) resolve();
+      else window.addEventListener('npFBReady', resolve, { once: true });
+    });
   }
 
   function renderAuth(){
@@ -1225,7 +1282,7 @@
       profile.style.display = 'flex';
       const lvIdx = Math.max(0, Math.min(4, (u.level || 1) - 1));
       const lv = LEVELS[lvIdx];
-      const isAdmin = ADMIN_EMAILS.includes(u.email);
+      const isAdmin = window.npFB && window.npFB.isAdmin(u);
       const initials = ((u.name||'')[0]||'') + ((u.surname||'')[0]||'');
       document.getElementById('profileHero').innerHTML = `
         <div class="pf-avatar">${esc(initials.toUpperCase())||'👤'}</div>
@@ -1241,8 +1298,9 @@
 
       const rewards = [];
       if (u.welcomeCoupon) rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🎁</div><div><div class="pf-reward-t">Καλωσόρισμα −30%</div><div class="pf-reward-s">Εφαρμόζεται αυτόματα στην πρώτη κράτηση</div></div></div>`);
-      const untilFree = 10 - ((u.bookings||[]).length % 10);
-      if ((u.bookings||[]).length > 0 && untilFree < 10)
+      const totalBookings = u.bookingsCount || 0;
+      const untilFree = 10 - (totalBookings % 10);
+      if (totalBookings > 0 && untilFree < 10)
         rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🎾</div><div><div class="pf-reward-t">${+untilFree} κρατήσεις για δωρεάν γήπεδο</div><div class="pf-reward-s">Ανά 10 κρατήσεις παίρνεις 1 δωρεάν</div></div></div>`);
       if (u.freeCourts > 0)
         rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🏆</div><div><div class="pf-reward-t">${+u.freeCourts} × δωρεάν γήπεδο</div><div class="pf-reward-s">Εφαρμόζεται αυτόματα στην επόμενη κράτηση</div></div></div>`);
@@ -1255,29 +1313,30 @@
           ${rewards.join('')}
         </div>
         <div class="pf-card">
-          <div class="pf-card-title">ΤΕΛΕΥΤΑΙΕΣ ΚΡΑΤΗΣΕΙΣ <span style="color:rgba(244,249,255,0.4)">${+(u.bookings||[]).length} συνολικά</span></div>
+          <div class="pf-card-title">ΤΕΛΕΥΤΑΙΕΣ ΚΡΑΤΗΣΕΙΣ <span style="color:rgba(244,249,255,0.4)">${+(u.bookingsCount||0)} συνολικά</span></div>
           ${bookingRows}
         </div>
         ${profileMissing ? `<button type="button" class="pf-cta outline" id="completeProfileBtn">ΣΥΜΠΛΗΡΩΣΕ ΤΟ ΠΡΟΦΙΛ</button>` : ''}
         ${isAdmin ? `<a href="admin.html" class="auth-admin-link" id="adminLink">🔐 ADMIN PANEL</a>` : ''}
       `;
 
-      // Wire up level change
+      // Wire up level change (persists to Firestore)
       const changeBtn = document.getElementById('changeLevelBtn');
       if (changeBtn){
-        changeBtn.addEventListener('click', () => {
+        changeBtn.addEventListener('click', async () => {
           const opts = LEVELS.map((l,i)=>`${i+1}. ${l.icon} ${l.name}`).join('\n');
           const ans = prompt('Επίλεξε νέο επίπεδο (1-5):\n\n'+opts+'\n\nΤρέχον: '+(lvIdx+1), String(lvIdx+1));
           const n = parseInt(ans,10);
-          if (n >= 1 && n <= 5){
-            const users = getUsers();
-            const idx = users.findIndex(x => x.email === u.email);
-            if (idx >= 0){ users[idx].level = n; saveUsers(users); renderAuth(); }
+          if (n >= 1 && n <= 5 && window.npFB){
+            try {
+              await window.npFB.updateProfile(u.uid, { level: n });
+              currentProfile.level = n;
+              renderAuth();
+            } catch(err){ alert('Αποτυχία αλλαγής: '+err.message); }
           }
         });
       }
-      // NOTE: admin panel access requires its own auth on admin.html
-      // (do NOT set sessionStorage.adminAuth here — see security review)
+      // NOTE: admin panel access requires its own auth on admin.html.
     } else {
       profile.style.display = 'none';
       tabs.style.display = 'flex';
@@ -1286,72 +1345,102 @@
     }
   }
 
-  document.getElementById('loginForm').addEventListener('submit', (e) => {
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('li_email').value.trim().toLowerCase();
     const pass  = document.getElementById('li_pass').value;
     const err = document.getElementById('loginError');
-    err.textContent = '';
-    const users = getUsers();
-    const u = users.find(x => x.email === email);
-    if (!u || u.password !== pass){
-      err.textContent = 'Λάθος email ή κωδικός.';
-      return;
+    err.textContent = 'Σύνδεση...';
+    await waitFB();
+    try {
+      await window.npFB.signInUser(email, pass);
+      err.textContent = '';
+      // onAuth listener below will render the profile
+    } catch(ex){
+      const map = {
+        'auth/invalid-credential':'Λάθος email ή κωδικός.',
+        'auth/user-not-found':'Δεν υπάρχει λογαριασμός με αυτό το email.',
+        'auth/wrong-password':'Λάθος κωδικός.',
+        'auth/invalid-email':'Μη έγκυρο email.',
+        'auth/too-many-requests':'Πολλές αποτυχημένες προσπάθειες. Δοκίμασε αργότερα.',
+      };
+      err.textContent = map[ex.code] || ('Σφάλμα: ' + ex.message);
     }
-    setCurrentUser(email);
-    renderAuth();
-    // NOTE: admin panel requires its own password entry on admin.html.
-    // Do NOT auto-authenticate here — a client-side email match is not a security check.
   });
 
-  document.getElementById('signupForm').addEventListener('submit', (e) => {
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const err = document.getElementById('signupError');
     err.textContent = '';
-    const email = document.getElementById('si_email').value.trim().toLowerCase();
-    const users = getUsers();
-    if (users.some(u => u.email === email)){
-      err.textContent = 'Το email είναι ήδη εγγεγραμμένο.';
-      return;
-    }
     if (!document.getElementById('si_consent_essential').checked){
       err.textContent = 'Πρέπει να αποδεχτείς τη χρήση των στοιχείων για τη διαχείριση του λογαριασμού.';
       return;
     }
-    const u = {
+    const email = document.getElementById('si_email').value.trim().toLowerCase();
+    const payload = {
       name:    document.getElementById('si_name').value.trim(),
       surname: document.getElementById('si_surname').value.trim(),
       phone:   document.getElementById('si_phone').value.trim(),
       email,
       password:document.getElementById('si_pass').value,
       level:   +document.getElementById('si_level').value,
-      points:  0,
-      bookings:[],
-      welcomeCoupon: true,
-      freeCourts: 0,
       consent: {
         essential:  true,
         marketing:  document.getElementById('si_consent_marketing').checked,
         acceptedAt: new Date().toISOString(),
       },
-      createdAt: new Date().toISOString(),
     };
-    users.push(u);
-    saveUsers(users);
-    setCurrentUser(email);
-    renderAuth();
+    err.textContent = 'Εγγραφή...';
+    await waitFB();
+    try {
+      await window.npFB.signUpUser(payload);
+      err.textContent = '';
+      // onAuth will fire and render profile
+    } catch(ex){
+      const map = {
+        'auth/email-already-in-use':'Το email είναι ήδη εγγεγραμμένο.',
+        'auth/invalid-email':'Μη έγκυρο email.',
+        'auth/weak-password':'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.',
+      };
+      err.textContent = map[ex.code] || ('Σφάλμα: ' + ex.message);
+    }
   });
 
-  document.getElementById('authLogout').addEventListener('click', () => {
-    setCurrentUser(null);
+  document.getElementById('authLogout').addEventListener('click', async () => {
+    if (window.npFB) { try { await window.npFB.signOutUser(); } catch(e){} }
+    currentProfile = null;
     sessionStorage.removeItem('adminAuth');
     renderAuth();
   });
 
-  // Init auth view when auth panel opens
-  const _origPlayerBtn = playerBtn.onclick;
+  // Init: subscribe to Firebase auth state
+  (async function initAuth(){
+    await waitFB();
+    window.npFB.onAuth(async (fbUser) => {
+      if (fbUser){
+        try {
+          const prof = await window.npFB.fetchProfile(fbUser.uid);
+          if (prof){
+            // Fetch user's bookings for the profile view
+            let bookings = [];
+            try { bookings = await window.npFB.listUserBookings(fbUser.uid); } catch(e){}
+            currentProfile = { ...prof, uid: fbUser.uid, email: fbUser.email, bookings };
+          } else {
+            currentProfile = { uid: fbUser.uid, email: fbUser.email, name: '', surname: '', level: 1, bookings: [] };
+          }
+        } catch(e){
+          console.warn('Profile fetch failed', e);
+          currentProfile = { uid: fbUser.uid, email: fbUser.email };
+        }
+      } else {
+        currentProfile = null;
+      }
+      renderAuth();
+    });
+  })();
+
+  // Rerender profile when the auth panel opens (in case bookings changed elsewhere)
   playerBtn.addEventListener('click', () => { setTimeout(renderAuth, 0); });
-  renderAuth();
 
   // Menu open with racket swing + flying ball + crack
   menuBtn.addEventListener('click', () => {
@@ -1613,7 +1702,7 @@
       if ((u.freeCourts||0) > 0){
         total = 0; // free court
         discountLine = ' − 🏆 δωρεάν γήπεδο (−' + (base+racketCost+ballCost) + '€)';
-      } else if (u.welcomeCoupon && (u.bookings||[]).length === 0){
+      } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
         const disc = Math.round(total * 0.30);
         total = total - disc;
         discountLine = ' − 🎁 καλωσόρισμα (−' + disc + '€)';
@@ -1654,7 +1743,7 @@
     if (navigator.vibrate) navigator.vibrate(20);
     updateTotal();
   });
-  document.getElementById('bookingForm').addEventListener('submit', (e) => {
+  document.getElementById('bookingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('fName').value.trim();
     const phone = document.getElementById('fPhone').value.trim();
@@ -1664,48 +1753,45 @@
     const totalStr = document.getElementById('totalAmount').textContent;
     const totalNum = parseInt(totalStr.replace(/[^0-9]/g,''), 10) || 0;
     const bookingCrumb = formCrumb.textContent;
-
-    // Attach booking to logged-in user and apply rewards
     const u = currentUser();
-    if (u){
-      const users = getUsers();
-      const idx = users.findIndex(x => x.email === u.email);
-      const rec = {
-        date: (new Date()).toISOString().slice(0,10),
-        time: bookingCrumb,
-        players, rackets, premiumBalls,
-        total: totalNum,
-        court: 'Γήπεδο 1',
-      };
-      if ((users[idx].freeCourts||0) > 0){
-        users[idx].freeCourts -= 1;
-      } else if (users[idx].welcomeCoupon && (users[idx].bookings||[]).length === 0){
-        users[idx].welcomeCoupon = false;
-      }
-      users[idx].bookings = users[idx].bookings || [];
-      users[idx].bookings.push(rec);
-      // Award free court every 10 bookings (levels are self-selected, no points)
-      if (users[idx].bookings.length > 0 && users[idx].bookings.length % 10 === 0){
-        users[idx].freeCourts = (users[idx].freeCourts||0) + 1;
-      }
-      saveUsers(users);
-    }
 
-    // Also mirror to admin bookings list
+    const record = {
+      date: (new Date()).toISOString().slice(0,10),
+      time: bookingCrumb,
+      court: 'Γήπεδο 1',
+      players, rackets, premiumBalls,
+      total: totalNum,
+      name, phone,
+      status: 'ok',
+      userId: u ? u.uid : null,
+      userEmail: u ? u.email : null,
+    };
+
+    await waitFB();
     try {
-      const list = JSON.parse(localStorage.getItem('np_admin_bookings') || '[]');
-      list.push({
-        id: Date.now(),
-        date: (new Date()).toISOString().slice(0,10),
-        time: bookingCrumb,
-        court: 'Γήπεδο 1',
-        name, phone, players, total: totalNum, status: 'ok'
-      });
-      localStorage.setItem('np_admin_bookings', JSON.stringify(list));
-    } catch(err){}
-
-    alert('Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + bookingCrumb + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: ' + totalStr);
-    if (u) renderAuth();
+      await window.npFB.createBookingDoc(record);
+      // If user is logged in, update their loyalty counters
+      if (u){
+        const patch = { bookingsCount: (u.bookingsCount||0) + 1 };
+        if ((u.freeCourts||0) > 0){
+          patch.freeCourts = u.freeCourts - 1;
+        } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
+          patch.welcomeCoupon = false;
+        }
+        if (((u.bookingsCount||0) + 1) % 10 === 0){
+          patch.freeCourts = (patch.freeCourts != null ? patch.freeCourts : (u.freeCourts||0)) + 1;
+        }
+        try {
+          await window.npFB.updateProfile(u.uid, patch);
+          Object.assign(currentProfile, patch);
+          currentProfile.bookings = [...(currentProfile.bookings||[]), record];
+        } catch(err){ console.warn('profile update failed', err); }
+      }
+      alert('Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + bookingCrumb + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: ' + totalStr);
+      if (u) renderAuth();
+    } catch(err){
+      alert('Αποτυχία καταχώρησης: ' + err.message);
+    }
   });
 
   document.addEventListener('keydown', (e) => {

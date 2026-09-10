@@ -1,0 +1,49 @@
+// North Padel — Firestore Security Rules
+// Copy-paste this into Firebase Console:
+// Firestore Database → Rules → Publish
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isAdmin() {
+      // Add more admin emails here if needed
+      return isSignedIn() && request.auth.token.email in [
+        'k.thalassinos18@gmail.com'
+      ];
+    }
+
+    // /users/{uid} — profile per registered user
+    match /users/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /bookings/{id} — any signed-in user can create their own booking
+    match /bookings/{id} {
+      allow read:   if isAdmin() ||
+                       (isSignedIn() && resource.data.userId == request.auth.uid);
+      // On create, force userId to match the caller so nobody can plant
+      // bookings under someone else's account.
+      allow create: if isSignedIn() &&
+                       (request.resource.data.userId == request.auth.uid ||
+                        request.resource.data.userId == null);
+      allow update, delete: if isAdmin();
+    }
+
+    // /config/{doc} — prices, hours. Public read, admin-only write.
+    match /config/{doc} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -111,8 +111,12 @@
     <div class="gate-title">ADMIN</div>
     <form id="loginForm">
       <div class="gate-field">
-        <label>ΚΩΔΙΚΟΣ ΔΙΑΧΕΙΡΙΣΤΗ</label>
-        <input type="password" id="pw" autocomplete="current-password" required autofocus>
+        <label>EMAIL ΔΙΑΧΕΙΡΙΣΤΗ</label>
+        <input type="email" id="adEmail" autocomplete="email" required autofocus>
+      </div>
+      <div class="gate-field">
+        <label>ΚΩΔΙΚΟΣ</label>
+        <input type="password" id="pw" autocomplete="current-password" required>
       </div>
       <button type="submit" class="gate-btn">ΕΙΣΟΔΟΣ</button>
       <div class="gate-error" id="gateError"></div>
@@ -250,46 +254,115 @@
   </main>
 </div>
 
+<!-- ============ FIREBASE ============ -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnn6RtsAqfJxeWesN3WF1jVv_egCDb21k",
+    authDomain: "north-padel-18763.firebaseapp.com",
+    projectId: "north-padel-18763",
+    storageBucket: "north-padel-18763.firebasestorage.app",
+    messagingSenderId: "955194973640",
+    appId: "1:955194973640:web:b37f431ccaf6aabafb74fd",
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const ADMIN_EMAILS = ['k.thalassinos18@gmail.com'];
+
+  window.npFB = {
+    auth, db, ADMIN_EMAILS,
+    signIn: (e,p) => signInWithEmailAndPassword(auth, e, p),
+    signOutUser: () => signOut(auth),
+    onAuth: (cb) => onAuthStateChanged(auth, cb),
+    isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
+    listAllBookings: async () => {
+      const snap = await getDocs(query(collection(db, 'bookings'), orderBy('date','desc')));
+      return snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    },
+    listAllUsers: async () => {
+      const snap = await getDocs(collection(db, 'users'));
+      return snap.docs.map(d => ({ uid:d.id, ...d.data() }));
+    },
+    deleteBooking: (id) => deleteDoc(doc(db, 'bookings', id)),
+    deleteUser:    (uid) => deleteDoc(doc(db, 'users', uid)),
+    getConfig: async (name) => {
+      const snap = await getDoc(doc(db, 'config', name));
+      return snap.exists() ? snap.data() : null;
+    },
+    setConfig: (name, data) => setDoc(doc(db, 'config', name), data),
+  };
+  window.dispatchEvent(new Event('npFBReady'));
+</script>
+
 <script>
-/* ============ AUTH ============ */
-const ADMIN_PW = 'northpadel2026';  // Άλλαξέ το εδώ. (Στην επόμενη φάση θα μπει σε Firebase Auth.)
+/* ============ AUTH (Firebase) ============ */
 const gate = document.getElementById('gate');
-const app = document.getElementById('app');
+const appEl = document.getElementById('app');
 const loginForm = document.getElementById('loginForm');
 const gateError = document.getElementById('gateError');
 const pwField = document.getElementById('pw');
+const emailField = document.getElementById('adEmail');
 
 function unlock(){
   gate.style.display = 'none';
-  app.classList.add('show');
+  appEl.classList.add('show');
   refreshAll();
 }
 function lock(){
   gate.style.display = 'flex';
-  app.classList.remove('show');
+  appEl.classList.remove('show');
   pwField.value='';
-  pwField.focus();
 }
 
-if (sessionStorage.getItem('adminAuth') === '1') unlock();
+function waitFB(){
+  return new Promise(r => window.npFB ? r() : window.addEventListener('npFBReady', r, {once:true}));
+}
 
-loginForm.addEventListener('submit', (e) => {
+loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (pwField.value === ADMIN_PW){
-    sessionStorage.setItem('adminAuth','1');
+  gateError.textContent = 'Σύνδεση...';
+  await waitFB();
+  const email = emailField.value.trim().toLowerCase();
+  const pw = pwField.value;
+  try {
+    await window.npFB.signIn(email, pw);
+    if (!window.npFB.ADMIN_EMAILS.includes(email)){
+      await window.npFB.signOutUser();
+      gateError.textContent = 'Αυτός ο λογαριασμός δεν έχει δικαιώματα admin.';
+      return;
+    }
     gateError.textContent = '';
-    unlock();
-  } else {
-    gateError.textContent = 'Λάθος κωδικός.';
-    pwField.value = '';
-    pwField.focus();
+    // onAuth listener below will unlock
+  } catch(ex){
+    const map = {
+      'auth/invalid-credential':'Λάθος email ή κωδικός.',
+      'auth/user-not-found':'Δεν υπάρχει τέτοιος λογαριασμός.',
+      'auth/wrong-password':'Λάθος κωδικός.',
+      'auth/too-many-requests':'Πολλές προσπάθειες. Δοκίμασε αργότερα.',
+    };
+    gateError.textContent = map[ex.code] || ('Σφάλμα: ' + ex.message);
   }
 });
 
-document.getElementById('logout').addEventListener('click', () => {
-  sessionStorage.removeItem('adminAuth');
-  lock();
+document.getElementById('logout').addEventListener('click', async () => {
+  if (window.npFB) { try { await window.npFB.signOutUser(); } catch(e){} }
 });
+
+// Subscribe to auth state — only admin emails unlock
+(async function initAuth(){
+  await waitFB();
+  window.npFB.onAuth((user) => {
+    if (window.npFB.isAdmin(user)){
+      unlock();
+    } else {
+      lock();
+    }
+  });
+})();
 
 /* ============ NAV ============ */
 const titles = {
@@ -314,52 +387,7 @@ function esc(s){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/* ============ STORAGE ============ */
-function getStore(key, fallback){
-  try { const raw = localStorage.getItem('np_admin_'+key); return raw ? JSON.parse(raw) : fallback; } catch(e){ return fallback; }
-}
-function setStore(key, val){
-  try { localStorage.setItem('np_admin_'+key, JSON.stringify(val)); } catch(e){}
-}
-
-/* ============ SEED DATA ============ */
-function seedIfEmpty(){
-  if (!localStorage.getItem('np_admin_bookings')){
-    const today = new Date().toISOString().slice(0,10);
-    const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
-    setStore('bookings', [
-      { id:1, date:today, time:'19:30', court:'Γήπεδο 1', name:'Demo Booking A', phone:'6900000000', players:4, total:44, status:'ok' },
-      { id:2, date:today, time:'21:00', court:'Γήπεδο 1', name:'Demo Booking B', phone:'6900000000', players:2, total:30, status:'ok' },
-      { id:3, date:tomorrow, time:'18:00', court:'Γήπεδο 1', name:'Demo Booking C', phone:'6900000000', players:4, total:52, status:'pend' },
-    ]);
-  }
-  if (!localStorage.getItem('np_admin_pending')){
-    setStore('pending', [
-      { id:11, name:'Demo User A', email:'demo-a@example.com', phone:'6900000001', created:'2026-09-08' },
-      { id:12, name:'Demo User B', email:'demo-b@example.com', phone:'6900000002', created:'2026-09-09' },
-    ]);
-  }
-  if (!localStorage.getItem('np_admin_members')){
-    setStore('members', [
-      { id:101, name:'Demo Member 1', email:'member1@example.com', phone:'6900000101', bookings:12, joined:'2026-07-15' },
-      { id:102, name:'Demo Member 2', email:'member2@example.com', phone:'6900000102', bookings:8, joined:'2026-07-20' },
-      { id:103, name:'Demo Member 3', email:'member3@example.com', phone:'6900000103', bookings:5, joined:'2026-08-01' },
-    ]);
-  }
-  if (!localStorage.getItem('np_admin_hours')){
-    setStore('hours', [
-      { day:'Δευτέρα',   open:'08:00', close:'23:00', closed:false },
-      { day:'Τρίτη',     open:'08:00', close:'23:00', closed:false },
-      { day:'Τετάρτη',   open:'08:00', close:'23:00', closed:false },
-      { day:'Πέμπτη',    open:'08:00', close:'23:00', closed:false },
-      { day:'Παρασκευή', open:'08:00', close:'00:00', closed:false },
-      { day:'Σάββατο',   open:'09:00', close:'00:00', closed:false },
-      { day:'Κυριακή',   open:'09:00', close:'23:00', closed:false },
-    ]);
-  }
-}
-
-/* ============ RENDERERS ============ */
+/* ============ RENDERERS (Firestore-backed) ============ */
 function fmtDate(iso){
   const d = new Date(iso+'T00:00:00');
   return d.toLocaleDateString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit'});
@@ -370,88 +398,102 @@ function pillFor(status){
   return '<span class="pill canc">ΑΚΥΡΩΘΗΚΕ</span>';
 }
 
+const DEFAULT_HOURS = [
+  { day:'Δευτέρα',   open:'08:00', close:'23:00', closed:false },
+  { day:'Τρίτη',     open:'08:00', close:'23:00', closed:false },
+  { day:'Τετάρτη',   open:'08:00', close:'23:00', closed:false },
+  { day:'Πέμπτη',    open:'08:00', close:'23:00', closed:false },
+  { day:'Παρασκευή', open:'08:00', close:'00:00', closed:false },
+  { day:'Σάββατο',   open:'09:00', close:'00:00', closed:false },
+  { day:'Κυριακή',   open:'09:00', close:'23:00', closed:false },
+];
+const DEFAULT_PRICES = { p4:44, p2:30, racket:2, balls:8, c1:70, c2:65, c3:75 };
+
+let CACHE = { bookings:[], users:[], hours:DEFAULT_HOURS, prices:DEFAULT_PRICES };
+
+async function loadAll(){
+  try {
+    const [bookings, users, hoursCfg, pricesCfg] = await Promise.all([
+      window.npFB.listAllBookings(),
+      window.npFB.listAllUsers(),
+      window.npFB.getConfig('hours'),
+      window.npFB.getConfig('prices'),
+    ]);
+    CACHE.bookings = bookings;
+    CACHE.users    = users;
+    CACHE.hours    = (hoursCfg && hoursCfg.days) || DEFAULT_HOURS;
+    CACHE.prices   = pricesCfg || DEFAULT_PRICES;
+  } catch(e){
+    console.warn('Firestore load failed:', e);
+    alert('Σφάλμα σύνδεσης με τη βάση: ' + e.message + '\n\nΈλεγξε ότι έχεις κάνει Enable στο Firestore και στα Security Rules.');
+  }
+}
+
 function renderDashboard(){
-  const bookings = getStore('bookings', []);
-  const pending  = getStore('pending', []);
-  const members  = getStore('members', []);
+  const bookings = CACHE.bookings;
+  const users    = CACHE.users;
   const today = new Date().toISOString().slice(0,10);
   const month = today.slice(0,7);
-  const todayBk = bookings.filter(b => b.date === today);
-  const monthBk = bookings.filter(b => b.date.startsWith(month));
+  const todayBk = bookings.filter(b => (b.date||'') === today);
+  const monthBk = bookings.filter(b => (b.date||'').startsWith(month));
   document.getElementById('stTodayBookings').textContent = todayBk.length;
-  document.getElementById('stTodayRev').innerHTML = todayBk.reduce((s,b)=>s+b.total,0) + '<span class="unit">€</span>';
+  document.getElementById('stTodayRev').innerHTML = todayBk.reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
   document.getElementById('stMonthBookings').textContent = monthBk.length;
-  document.getElementById('stMonthRev').innerHTML = monthBk.reduce((s,b)=>s+b.total,0) + '<span class="unit">€</span>';
-  document.getElementById('stMembers').textContent = members.length;
-  document.getElementById('stPending').textContent = pending.length;
+  document.getElementById('stMonthRev').innerHTML = monthBk.reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
+  document.getElementById('stMembers').textContent = users.length;
+  document.getElementById('stPending').textContent = 0;
 
-  const upcoming = [...bookings].sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time)).slice(0,5);
+  const upcoming = [...bookings].sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).slice(0,5);
   document.getElementById('tblUpcoming').innerHTML = upcoming.map(b => `
     <tr><td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td><td>${esc(b.name)}</td><td>${+b.players}άδα</td><td>${+b.total}€</td><td>${pillFor(b.status)}</td></tr>
   `).join('') || '<tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
 }
 
 function renderBookings(){
-  const bookings = getStore('bookings', []);
+  const bookings = CACHE.bookings;
   document.getElementById('tblBookings').innerHTML = bookings.map(b => `
     <tr>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
       <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td><td>${+b.total}€</td>
       <td>${pillFor(b.status)}</td>
-      <td style="text-align:right"><button class="btn danger" data-del-bk="${+b.id}">Διαγραφή</button></td>
+      <td style="text-align:right"><button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button></td>
     </tr>
   `).join('') || '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
-  document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', async () => {
     if (!confirm('Διαγραφή κράτησης;')) return;
-    const list = getStore('bookings', []).filter(b => b.id !== +btn.dataset.delBk);
-    setStore('bookings', list); refreshAll();
+    try {
+      await window.npFB.deleteBooking(btn.dataset.delBk);
+      await refreshAll();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
 }
 
 function renderMembers(){
-  const pending = getStore('pending', []);
-  const members = getStore('members', []);
-  document.getElementById('pendingCount').textContent = pending.length + ' νέες';
-  document.getElementById('tblPending').innerHTML = pending.map(m => `
+  const users = CACHE.users;
+  document.getElementById('pendingCount').textContent = '0 νέες';
+  document.getElementById('tblPending').innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν χρησιμοποιείται (Firebase auto-approves email/password).</td></tr>';
+  document.getElementById('tblMembers').innerHTML = users.map(m => `
     <tr>
-      <td>${esc(m.name)}</td><td>${esc(m.email)}</td><td>${esc(m.phone)}</td><td>${esc(m.created)}</td>
-      <td style="text-align:right">
-        <button class="btn" data-approve="${+m.id}">Έγκριση</button>
-        <button class="btn danger" data-reject="${+m.id}">Απόρριψη</button>
-      </td>
+      <td>${esc((m.name||'') + ' ' + (m.surname||''))}</td>
+      <td>${esc(m.email)}</td>
+      <td>${esc(m.phone)}</td>
+      <td>${+m.bookingsCount||0}</td>
+      <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
+      <td style="text-align:right"><button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button></td>
     </tr>
-  `).join('') || '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία εκκρεμότητα.</td></tr>';
-  document.getElementById('tblMembers').innerHTML = members.map(m => `
-    <tr>
-      <td>${esc(m.name)}</td><td>${esc(m.email)}</td><td>${esc(m.phone)}</td><td>${+m.bookings}</td><td>${esc(m.joined)}</td>
-      <td style="text-align:right"><button class="btn danger" data-del-mem="${+m.id}">Διαγραφή</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος.</td></tr>';
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος ακόμα.</td></tr>';
 
-  document.querySelectorAll('[data-approve]').forEach(btn => btn.addEventListener('click', () => {
-    const id = +btn.dataset.approve;
-    const p = getStore('pending', []); const m = p.find(x => x.id === id);
-    if (!m) return;
-    const members = getStore('members', []);
-    members.push({ ...m, bookings:0, joined:new Date().toISOString().slice(0,10) });
-    setStore('members', members);
-    setStore('pending', p.filter(x => x.id !== id));
-    refreshAll();
-  }));
-  document.querySelectorAll('[data-reject]').forEach(btn => btn.addEventListener('click', () => {
-    if (!confirm('Απόρριψη αίτησης;')) return;
-    setStore('pending', getStore('pending', []).filter(x => x.id !== +btn.dataset.reject));
-    refreshAll();
-  }));
-  document.querySelectorAll('[data-del-mem]').forEach(btn => btn.addEventListener('click', () => {
-    if (!confirm('Διαγραφή μέλους;')) return;
-    setStore('members', getStore('members', []).filter(x => x.id !== +btn.dataset.delMem));
-    refreshAll();
+  document.querySelectorAll('[data-del-mem]').forEach(btn => btn.addEventListener('click', async () => {
+    if (!confirm('Διαγραφή μέλους από τη βάση; (Ο λογαριασμός στο Firebase Auth ΔΕΝ διαγράφεται αυτόματα.)')) return;
+    try {
+      await window.npFB.deleteUser(btn.dataset.delMem);
+      await refreshAll();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
 }
 
 function renderHours(){
-  const hours = getStore('hours', []);
+  const hours = CACHE.hours;
   document.getElementById('tblHours').innerHTML = hours.map((h,i) => `
     <tr>
       <td>${esc(h.day)}</td>
@@ -463,20 +505,18 @@ function renderHours(){
 }
 
 function renderPrices(){
-  const p = getStore('prices', null);
-  if (p){
-    document.getElementById('pr4').value = p.p4;
-    document.getElementById('pr2').value = p.p2;
-    document.getElementById('prRacket').value = p.racket;
-    document.getElementById('prBalls').value = p.balls;
-    document.getElementById('prC1').value = p.c1;
-    document.getElementById('prC2').value = p.c2;
-    document.getElementById('prC3').value = p.c3;
-  }
+  const p = CACHE.prices;
+  document.getElementById('pr4').value = p.p4;
+  document.getElementById('pr2').value = p.p2;
+  document.getElementById('prRacket').value = p.racket;
+  document.getElementById('prBalls').value = p.balls;
+  document.getElementById('prC1').value = p.c1;
+  document.getElementById('prC2').value = p.c2;
+  document.getElementById('prC3').value = p.c3;
 }
 
 /* ============ ACTIONS ============ */
-document.getElementById('addBookingBtn').addEventListener('click', () => {
+document.getElementById('addBookingBtn').addEventListener('click', async () => {
   const date = document.getElementById('bkDate').value;
   const time = document.getElementById('bkTime').value;
   const court = document.getElementById('bkCourt').value;
@@ -484,17 +524,18 @@ document.getElementById('addBookingBtn').addEventListener('click', () => {
   const name = document.getElementById('bkName').value.trim();
   const phone = document.getElementById('bkPhone').value.trim();
   if (!date || !name || !phone){ alert('Συμπλήρωσε ημερομηνία, όνομα και τηλέφωνο.'); return; }
-  const total = players === 4 ? 44 : 30;
-  const list = getStore('bookings', []);
-  list.push({ id: Date.now(), date, time, court, name, phone, players, total, status:'ok' });
-  setStore('bookings', list);
-  document.getElementById('bkName').value = ''; document.getElementById('bkPhone').value = '';
-  refreshAll();
-  alert('Η κράτηση προστέθηκε.');
+  const total = players === 4 ? CACHE.prices.p4 : CACHE.prices.p2;
+  try {
+    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+    await addDoc(collection(window.npFB.db, 'bookings'), { date, time, court, name, phone, players, total, status:'ok', userId:null, createdAt: serverTimestamp() });
+    document.getElementById('bkName').value = ''; document.getElementById('bkPhone').value = '';
+    await refreshAll();
+    alert('Η κράτηση προστέθηκε.');
+  } catch(e){ alert('Αποτυχία: '+e.message); }
 });
 
-document.getElementById('savePricesBtn').addEventListener('click', () => {
-  setStore('prices', {
+document.getElementById('savePricesBtn').addEventListener('click', async () => {
+  const p = {
     p4: +document.getElementById('pr4').value,
     p2: +document.getElementById('pr2').value,
     racket: +document.getElementById('prRacket').value,
@@ -502,24 +543,31 @@ document.getElementById('savePricesBtn').addEventListener('click', () => {
     c1: +document.getElementById('prC1').value,
     c2: +document.getElementById('prC2').value,
     c3: +document.getElementById('prC3').value,
-  });
-  alert('Οι τιμές αποθηκεύτηκαν.');
+  };
+  try {
+    await window.npFB.setConfig('prices', p);
+    CACHE.prices = p;
+    alert('Οι τιμές αποθηκεύτηκαν.');
+  } catch(e){ alert('Αποτυχία: '+e.message); }
 });
 
-document.getElementById('saveHoursBtn').addEventListener('click', () => {
-  const hours = getStore('hours', []);
+document.getElementById('saveHoursBtn').addEventListener('click', async () => {
+  const hours = CACHE.hours.map(h => ({...h}));
   document.querySelectorAll('#tblHours input').forEach(inp => {
     const i = +inp.dataset.h; const f = inp.dataset.f;
     hours[i][f] = f === 'closed' ? inp.checked : inp.value;
   });
-  setStore('hours', hours);
-  alert('Το ωράριο αποθηκεύτηκε.');
-  renderHours();
+  try {
+    await window.npFB.setConfig('hours', { days: hours });
+    CACHE.hours = hours;
+    alert('Το ωράριο αποθηκεύτηκε.');
+    renderHours();
+  } catch(e){ alert('Αποτυχία: '+e.message); }
 });
 
 /* ============ INIT ============ */
-function refreshAll(){
-  seedIfEmpty();
+async function refreshAll(){
+  await loadAll();
   renderDashboard(); renderBookings(); renderMembers(); renderHours(); renderPrices();
 }
 document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
