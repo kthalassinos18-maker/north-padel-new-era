@@ -51,6 +51,9 @@
   .auth-form{display:flex;flex-direction:column;gap:16px}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .auth-note{font-size:12px;color:rgba(183,255,74,0.7);line-height:1.5;margin:-4px 0 0}
+  .consent-row{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.5;color:rgba(244,249,255,0.75);padding:6px 0;cursor:pointer}
+  .consent-row input[type="checkbox"]{margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:#b7ff4a;cursor:pointer}
+  .consent-row span{flex:1}
   .auth-profile{display:none;flex-direction:column;gap:16px}
   .profile-hero{background:linear-gradient(135deg,rgba(183,255,74,0.15) 0%,rgba(183,255,74,0.02) 100%);border:1px solid rgba(183,255,74,0.3);border-radius:16px;padding:22px 20px;text-align:center}
   .profile-hero .pf-avatar{width:64px;height:64px;border-radius:50%;background:#b7ff4a;color:#0a1929;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;margin:0 auto 10px}
@@ -555,6 +558,16 @@
       </select>
     </div>
     <p class="auth-note" style="color:#b7ff4a">🎁 Καλωσόρισμα: -30% στην πρώτη σου κράτηση!</p>
+
+    <label class="consent-row">
+      <input type="checkbox" id="si_consent_essential" required>
+      <span>Αποδέχομαι τη χρήση των στοιχείων μου (όνομα, email, τηλέφωνο) για τη διαχείριση του λογαριασμού και των κρατήσεών μου. <span style="color:#ff6b6b">*</span></span>
+    </label>
+    <label class="consent-row">
+      <input type="checkbox" id="si_consent_marketing">
+      <span>Θέλω να λαμβάνω ενημερώσεις για τουρνουά, προσφορές και events του North Padel μέσω email / SMS. <em style="color:rgba(244,249,255,0.5)">(προαιρετικό — μπορώ να το ανακαλέσω ανά πάσα στιγμή)</em></span>
+    </label>
+
     <button type="submit" class="submit-btn">ΕΓΓΡΑΦΗ</button>
     <p class="auth-error" id="signupError" style="color:#ff6b6b;font-size:13px;text-align:center;min-height:16px"></p>
   </form>
@@ -1294,6 +1307,10 @@
       err.textContent = 'Το email είναι ήδη εγγεγραμμένο.';
       return;
     }
+    if (!document.getElementById('si_consent_essential').checked){
+      err.textContent = 'Πρέπει να αποδεχτείς τη χρήση των στοιχείων για τη διαχείριση του λογαριασμού.';
+      return;
+    }
     const u = {
       name:    document.getElementById('si_name').value.trim(),
       surname: document.getElementById('si_surname').value.trim(),
@@ -1305,6 +1322,11 @@
       bookings:[],
       welcomeCoupon: true,
       freeCourts: 0,
+      consent: {
+        essential:  true,
+        marketing:  document.getElementById('si_consent_marketing').checked,
+        acceptedAt: new Date().toISOString(),
+      },
       createdAt: new Date().toISOString(),
     };
     users.push(u);
