@@ -105,6 +105,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // /slots/{slotId} — public occupancy marker per date+court+time.
+    //   No PII stored, just the slot id + who owns it, so anyone can
+    //   see "this slot is taken" without seeing WHO booked it.
+    //   Create: any signed-in user, must set userId to their own uid.
+    //           Because slot doc id is deterministic (date_court_time),
+    //           create fails if the slot already exists → serves as an
+    //           atomic double-booking guard.
+    //   Delete: owner of the slot (booking cancel) or admin.
+    //   Update: admin only (shouldn't happen in normal flow).
+    match /slots/{slotId} {
+      allow read:   if true;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin();
+    }
+
     // /public_profiles/{uid} — Match-making snapshot.
     //   Owner writes/deletes. Any signed-in user reads (so Find a Player
     //   works). Only fields the user opted to share are stored here.

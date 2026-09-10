@@ -221,7 +221,7 @@
   .cta-hint{font-size:11px;letter-spacing:0.35em;color:#b7ff4a;text-transform:uppercase;font-weight:600;opacity:0.85}
   @keyframes pulse{0%,100%{box-shadow:0 8px 28px rgba(183,255,74,0.35),0 0 0 0 rgba(183,255,74,0.5)}50%{box-shadow:0 8px 28px rgba(183,255,74,0.5),0 0 0 16px rgba(183,255,74,0)}}
   @keyframes shake{10%,90%{transform:translate3d(-2px,0,0) rotate(-2deg)}20%,80%{transform:translate3d(3px,0,0) rotate(2deg)}30%,50%,70%{transform:translate3d(-5px,0,0) rotate(-3deg)}40%,60%{transform:translate3d(5px,0,0) rotate(3deg)}}
-  .step-panel{position:fixed;inset:0;z-index:120;background:rgba(10,25,41,0.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-y:auto;padding:64px 20px 40px;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1),visibility 0s linear .55s,opacity .55s ease;opacity:0;visibility:hidden}
+  .step-panel{position:fixed;inset:0;z-index:120;background:rgba(10,25,41,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overflow-y:auto;padding:64px 20px 40px;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1),visibility 0s linear .55s,opacity .55s ease;opacity:0;visibility:hidden}
   .step-panel.open{transform:translateX(0);opacity:1;visibility:visible;transition:transform .55s cubic-bezier(.4,0,.2,1),visibility 0s,opacity .35s ease}
   .step-panel.exit-left{transform:translateX(-100%)}
   .step-header{display:flex;align-items:center;gap:14px;margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto}
@@ -639,11 +639,11 @@
     <div class="form-field">
       <label data-i18n="auth_level">ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ</label>
       <select id="si_level" required style="padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px">
-        <option value="1">🔰 Beginner — Πρώτες μπαλιές</option>
-        <option value="2">🥉 Amateur — Λίγες φορές έχω παίξει</option>
-        <option value="3">🥈 Regular — Παίζω σταθερά</option>
-        <option value="4">🥇 Pro — Έμπειρος παίκτης</option>
-        <option value="5">🏆 Champion — Ανταγωνιστικό επίπεδο</option>
+        <option value="1" data-i18n="level_opt_1">🔰 Beginner — Πρώτες μπαλιές</option>
+        <option value="2" data-i18n="level_opt_2">🥉 Amateur — Λίγες φορές έχω παίξει</option>
+        <option value="3" data-i18n="level_opt_3">🥈 Regular — Παίζω σταθερά</option>
+        <option value="4" data-i18n="level_opt_4">🥇 Pro — Έμπειρος παίκτης</option>
+        <option value="5" data-i18n="level_opt_5">🏆 Champion — Ανταγωνιστικό επίπεδο</option>
       </select>
     </div>
     <p class="auth-note" style="color:#b7ff4a" data-i18n="auth_welcome_note">🎁 Καλωσόρισμα: -30% στην πρώτη σου κράτηση!</p>
@@ -1220,7 +1220,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
   import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs, deleteDoc, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyAnn6RtsAqfJxeWesN3WF1jVv_egCDb21k",
@@ -1310,8 +1310,44 @@
     } catch(e){ console.warn('callmebot', e); }
   }
 
-  async function cancelBookingDoc(id){
-    return updateDoc(doc(db, 'bookings', id), { status: 'cancelled', cancelledAt: serverTimestamp() });
+  function slotId(date, court, time){
+    return (date + '_' + court + '_' + time).replace(/[^a-zA-Z0-9_-]/g, '_');
+  }
+  async function isSlotFree(date, court, time){
+    const snap = await getDoc(doc(db, 'slots', slotId(date, court, time)));
+    return !snap.exists();
+  }
+  async function listOccupiedTimes(date, court){
+    const q = query(collection(db, 'slots'),
+      where('date','==', date), where('court','==', court));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data().time);
+  }
+  // Atomically create booking + slot marker (public occupancy indicator).
+  async function createBookingWithSlot(data){
+    const sId = slotId(data.date, data.court, data.time);
+    // Pre-check (rule will also enforce uniqueness because create fails if doc exists)
+    const slotRef = doc(db, 'slots', sId);
+    const existing = await getDoc(slotRef);
+    if (existing.exists()) throw new Error('Το slot κρατήθηκε ήδη από άλλον χρήστη.');
+    const bookingRef = doc(collection(db, 'bookings'));
+    const batch = writeBatch(db);
+    batch.set(bookingRef, { ...data, createdAt: serverTimestamp() });
+    batch.set(slotRef, {
+      date: data.date, court: data.court, time: data.time,
+      userId: data.userId, bookingId: bookingRef.id,
+      createdAt: serverTimestamp(),
+    });
+    await batch.commit();
+    return bookingRef.id;
+  }
+  async function cancelBookingDoc(id, date, court, time){
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'bookings', id), { status: 'cancelled', cancelledAt: serverTimestamp() });
+    if (date && court && time){
+      batch.delete(doc(db, 'slots', slotId(date, court, time)));
+    }
+    await batch.commit();
   }
   async function ensureGuestAuth(){
     if (auth.currentUser) return auth.currentUser;
@@ -1373,6 +1409,7 @@
     fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
     resetPassword, changePassword, getConfig, resendVerification, findBooking, listBookingsOnDate,
     notifyAdminWhatsApp, cancelBookingDoc, ensureGuestAuth,
+    createBookingWithSlot, listOccupiedTimes, isSlotFree,
     upsertPublicProfile, removePublicProfile, listLookingForGame,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
@@ -2087,7 +2124,7 @@
       } else if (past){
         action = '<span class="mb-pill neutral">Ολοκληρώθηκε</span>';
       } else if (hoursTo >= 48){
-        action = `<button class="mb-cancel" data-cancel="${esc(b.id)}">ΑΚΥΡΩΣΗ</button>`;
+        action = `<button class="mb-cancel" data-cancel="${esc(b.id)}" data-date="${esc(b.date||'')}" data-court="${esc(b.court||'')}" data-time="${esc(b.time||'')}">ΑΚΥΡΩΣΗ</button>`;
       } else if (hoursTo >= 24){
         action = '<span class="mb-pill warn" title="Πάρε τηλέφωνο 693 439 1978 ή 695 178 4471">📞 Τηλεφωνικά</span>';
       } else {
@@ -2107,7 +2144,7 @@
         if (!confirm('Σίγουρα θέλεις να ακυρώσεις αυτή την κράτηση;')) return;
         btn.disabled = true; btn.textContent = 'Ακύρωση...';
         try {
-          await window.npFB.cancelBookingDoc(btn.dataset.cancel);
+          await window.npFB.cancelBookingDoc(btn.dataset.cancel, btn.dataset.date, btn.dataset.court, btn.dataset.time);
           renderMyBookings(u);
         } catch(err){
           alert('Σφάλμα ακύρωσης: ' + err.message);
@@ -2153,8 +2190,8 @@
     const iso = `${y}-${m}-${d}`;
     try {
       await waitFB();
-      const bookings = await window.npFB.listBookingsOnDate(iso, 'Γήπεδο 1');
-      OCCUPIED_SLOTS = new Set(bookings.map(b => b.time));
+      const times = await window.npFB.listOccupiedTimes(iso, 'Γήπεδο 1');
+      OCCUPIED_SLOTS = new Set(times);
     } catch(e){ console.warn('occupancy fetch failed', e); OCCUPIED_SLOTS = new Set(); }
     // Also refresh admin's global disabled list at the same moment
     try {
@@ -2594,7 +2631,7 @@
     };
 
     try {
-      await window.npFB.createBookingDoc(record);
+      await window.npFB.createBookingWithSlot(record);
 
       // Update loyalty counters (only for signed-in users, not guests)
       if (u){
@@ -2839,7 +2876,7 @@ T.de['eq_r_title'] = 'SCHLÄGER';
 T.en['eq_beg'] = 'BEGINNER';
 T.de['eq_beg'] = 'ANFÄNGER';
 T.en['eq_med'] = 'INTERMEDIATE';
-T.de['eq_med'] = 'FORTGESCHRITTEN';
+T.de['eq_med'] = 'MITTELSTUFE';
 T.en['eq_veron_d'] = 'Professional racket for advanced players. Carbon flex, 3D spin, holes pattern.';
 T.de['eq_veron_d'] = 'Profi-Schläger für Fortgeschrittene. Carbon Flex, 3D Spin, Lochmuster.';
 T.en['eq_counter_d'] = 'Oversize sweetspot, hybrid frame, soft EVA, lightweight. Ideal for progression.';
@@ -2862,16 +2899,16 @@ T.en['about_h1_l'] = 'story';
 T.de['about_h1_l'] = 'Geschichte';
 T.en['about_loc'] = '📍 NEA KALLIKRATIA · HALKIDIKI';
 T.de['about_loc'] = '📍 NEA KALLIKRATIA · CHALKIDIKI';
-T.en['about_lead'] = 'In Nea Kallikratia we\'ve created a space for you to enjoy padel the way it should be.';
-T.de['about_lead'] = 'In Nea Kallikratia haben wir einen Ort geschaffen, um Padel so zu genießen, wie es sein sollte.';
-T.en['about_p1'] = 'We\'re a <strong>family business</strong> passionate about the sport. We started with a modern outdoor glass-back court and are already preparing the second, to host more groups and more moments.';
-T.de['about_p1'] = 'Wir sind ein <strong>Familienunternehmen</strong> mit Leidenschaft für den Sport. Wir begannen mit einem modernen Outdoor-Glass-Back-Platz und bereiten bereits den zweiten vor, um mehr Gruppen und mehr Momente zu ermöglichen.';
+T.en['about_lead'] = 'In Nea Kallikratia we built a place to enjoy padel the way it should be.';
+T.de['about_lead'] = 'In Nea Kallikratia haben wir einen Ort geschaffen, an dem Padel Spaß macht — so, wie es sein soll.';
+T.en['about_p1'] = 'We\'re a <strong>family-run business</strong> with a real love for the sport. We started with a modern outdoor glass-back court and the second one is already on the way — for more players, more groups, more good times.';
+T.de['about_p1'] = 'Wir sind ein <strong>Familienbetrieb</strong> mit echter Leidenschaft für den Sport. Wir haben mit einem modernen Outdoor-Glass-Back-Platz gestartet und der zweite ist schon in Arbeit — für mehr Spieler, mehr Gruppen, mehr schöne Momente.';
 T.en['about_s1'] = 'COURT OPEN';
 T.de['about_s1'] = 'PLATZ OFFEN';
 T.en['about_s2'] = 'COMING SOON';
 T.de['about_s2'] = 'DEMNÄCHST';
-T.en['about_p2'] = 'North Padel is not just a court — it is the place where the sport meets good company, food and fun.';
-T.de['about_p2'] = 'North Padel ist nicht nur ein Platz — es ist der Ort, an dem der Sport auf gute Gesellschaft, Essen und Spaß trifft.';
+T.en['about_p2'] = 'North Padel isn\'t just a court — it\'s where the sport meets great company, good food and real fun.';
+T.de['about_p2'] = 'North Padel ist nicht einfach nur ein Platz — hier treffen sich Sport, gute Gesellschaft, gutes Essen und echter Spaß.';
 T.en['about_ft'] = 'WHAT YOU\'LL FIND HERE';
 T.de['about_ft'] = 'WAS SIE HIER FINDEN';
 T.en['about_f1'] = '<span class="em">🎾</span> Professional Babolat rackets & balls';
@@ -2920,8 +2957,8 @@ T.en['coach_loc'] = 'THE SPORT · THE COMPANY · THE EXPERIENCE';
 T.de['coach_loc'] = 'DER SPORT · DIE GESELLSCHAFT · DAS ERLEBNIS';
 T.en['coach_lead'] = 'Padel is the fastest-growing racket sport in the world — easy to pick up, hard to put down, for every age.';
 T.de['coach_lead'] = 'Padel ist die am schnellsten wachsende Schlägersportart der Welt — leicht zu lernen, richtig fesselnd, für jedes Alter.';
-T.en['coach_p1'] = 'Want to get to know the sport up close, ask about technique, equipment or rules? We are here for every question you have.';
-T.de['coach_p1'] = 'Möchten Sie den Sport aus der Nähe kennenlernen, nach Technik, Ausrüstung oder Regeln fragen? Wir sind für jede Ihrer Fragen da.';
+T.en['coach_p1'] = 'Want to try the sport up close, or ask about technique, gear or the rules? We\'re here for every question.';
+T.de['coach_p1'] = 'Willst du den Sport hautnah erleben oder was zu Technik, Ausrüstung oder Regeln fragen? Wir beantworten jede Frage.';
 T.en['coach_why'] = 'WHY START';
 T.de['coach_why'] = 'WARUM ANFANGEN';
 T.en['coach_w1'] = '<span class="em">🚀</span> Easy to start — simple rules, quick to pick up';
@@ -3039,8 +3076,8 @@ T.en['form_name'] = 'NAME';
 T.de['form_name'] = 'NAME';
 T.en['form_phone'] = 'PHONE';
 T.de['form_phone'] = 'TELEFON';
-T.en['form_2p_note'] = 'The 2-player option is available only until the 19:30–21:00 session.';
-T.de['form_2p_note'] = 'Die 2er-Option ist nur bis zur Session 19:30–21:00 verfügbar.';
+T.en['form_2p_note'] = 'The 2-player option is only available up to and including the 19:30–21:00 session.';
+T.de['form_2p_note'] = 'Die 2er-Option ist nur bis einschließlich der Session 19:30–21:00 verfügbar.';
 T.en['form_premium_balls'] = 'Premium balls';
 T.de['form_premium_balls'] = 'Premium-Bälle';
 T.en['parties_h2'] = "Kids' Parties 🎉";
@@ -3063,6 +3100,53 @@ T.en['co_h2'] = 'Contact';
 T.de['co_h2'] = 'Kontakt';
 T.en['padel_h2'] = 'Padel — What is it?';
 T.de['padel_h2'] = 'Padel — Was ist das?';
+
+/* ============ Auth panel — extra keys ============ */
+T.en['auth_login_btn'] = 'LOG IN';
+T.de['auth_login_btn'] = 'ANMELDEN';
+T.en['auth_signup_btn'] = 'SIGN UP';
+T.de['auth_signup_btn'] = 'REGISTRIEREN';
+T.en['auth_logout'] = 'LOG OUT';
+T.de['auth_logout'] = 'ABMELDEN';
+T.en['auth_pass_hint'] = 'PASSWORD (at least 6 characters)';
+T.de['auth_pass_hint'] = 'PASSWORT (mindestens 6 Zeichen)';
+T.en['auth_pass_confirm'] = 'CONFIRM PASSWORD';
+T.de['auth_pass_confirm'] = 'PASSWORT BESTÄTIGEN';
+T.en['auth_welcome_note'] = '🎁 Welcome bonus: -30% off your first booking!';
+T.de['auth_welcome_note'] = '🎁 Willkommensbonus: -30% auf deine erste Buchung!';
+T.en['auth_consent_essential'] = 'I agree to the use of my details (name, email, phone) to manage my account and my bookings. <span style="color:#ff6b6b">*</span>';
+T.de['auth_consent_essential'] = 'Ich bin damit einverstanden, dass meine Daten (Name, E-Mail, Telefon) zur Verwaltung meines Kontos und meiner Buchungen verwendet werden. <span style="color:#ff6b6b">*</span>';
+T.en['auth_consent_marketing'] = 'I\'d like to receive updates about tournaments, offers and events at North Padel by email / SMS. <em style="color:rgba(244,249,255,0.5)">(optional — I can opt out any time)</em>';
+T.de['auth_consent_marketing'] = 'Ich möchte per E-Mail / SMS über Turniere, Angebote und Events von North Padel informiert werden. <em style="color:rgba(244,249,255,0.5)">(optional — jederzeit widerrufbar)</em>';
+
+/* ============ Profile & Find-a-player step headers ============ */
+T.en['profile_crumb'] = 'PROFILE';
+T.de['profile_crumb'] = 'PROFIL';
+T.en['profile_title'] = 'My details';
+T.de['profile_title'] = 'Meine Daten';
+T.en['findplayer_crumb'] = 'MATCH-MAKING';
+T.de['findplayer_crumb'] = 'MATCH-MAKING';
+T.en['findplayer_title'] = 'Find a player';
+T.de['findplayer_title'] = 'Spieler finden';
+
+/* ============ Signup: player-level options ============ */
+T.en['level_opt_1'] = '🔰 Beginner — Just picked up a racket';
+T.de['level_opt_1'] = '🔰 Anfänger — Gerade den Schläger entdeckt';
+T.en['level_opt_2'] = '🥉 Amateur — I\'ve played a few times';
+T.de['level_opt_2'] = '🥉 Amateur — Ein paar Mal gespielt';
+T.en['level_opt_3'] = '🥈 Regular — I play regularly';
+T.de['level_opt_3'] = '🥈 Regular — Ich spiele regelmäßig';
+T.en['level_opt_4'] = '🥇 Pro — Experienced player';
+T.de['level_opt_4'] = '🥇 Pro — Erfahrener Spieler';
+T.en['level_opt_5'] = '🏆 Champion — Competitive level';
+T.de['level_opt_5'] = '🏆 Champion — Wettkampf-Niveau';
+
+/* ============ Booking form — guest note + cancel policy ============ */
+T.en['guest_note'] = '💡 <b>You\'re booking as a guest.</b> No sign-up needed!<br><span style="color:rgba(244,249,255,0.6)">If you <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">log in / sign up</button>, you get -30% on your first booking + a free court every 10 bookings.</span>';
+T.de['guest_note'] = '💡 <b>Du buchst als Gast.</b> Keine Registrierung nötig!<br><span style="color:rgba(244,249,255,0.6)">Wenn du dich <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">anmeldest / registrierst</button>, bekommst du -30% auf deine erste Buchung + einen Gratis-Platz pro 10 Buchungen.</span>';
+T.en['cancel_inline'] = '📋 <b>Cancellation policy:</b> Free <b>&gt;48h</b> before, from your profile · <b>24-48h</b> by phone only (693 439 1978 / 695 178 4471) · <b>&lt;24h or no-show</b> you owe the court price (€44 for 4 players, €30 for 2).';
+T.de['cancel_inline'] = '📋 <b>Stornierungsrichtlinie:</b> Kostenlos <b>&gt;48h</b> vorher, im Profil · <b>24-48h</b> nur telefonisch (693 439 1978 / 695 178 4471) · <b>&lt;24h oder no-show</b> zahlst du den Platzpreis (€44 für 4 Spieler, €30 für 2).';
+
   const originalTexts = new Map();
   
   function setLang(lang){
