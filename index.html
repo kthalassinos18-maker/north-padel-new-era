@@ -129,6 +129,33 @@
   .fp-contact{background:rgba(183,255,74,0.15);border:1px solid rgba(183,255,74,0.4);color:#b7ff4a;padding:8px 14px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0}
   .fp-contact:hover{background:rgba(183,255,74,0.25)}
   .fp-count{text-align:center;color:rgba(244,249,255,0.55);font-size:12px;padding:8px}
+
+  /* My bookings + cancellation policy */
+  .mb-row{display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(10,25,41,0.5);border:1px solid rgba(255,255,255,0.06);border-radius:10px}
+  .mb-row.is-cancelled{opacity:0.55;text-decoration:line-through}
+  .mb-row.is-past{opacity:0.7}
+  .mb-info{flex:1;min-width:0}
+  .mb-when{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.03em}
+  .mb-sub{font-size:12px;color:rgba(244,249,255,0.55);margin-top:2px}
+  .mb-action{flex-shrink:0}
+  .mb-cancel{background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.4);color:#ff6b6b;padding:8px 12px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:0.1em;cursor:pointer}
+  .mb-cancel:hover{background:rgba(255,107,107,0.22)}
+  .mb-cancel:disabled{opacity:0.5;cursor:default}
+  .mb-pill{display:inline-block;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:600;letter-spacing:0.08em}
+  .mb-pill.warn{background:rgba(255,193,74,0.15);color:#ffc14a;cursor:help}
+  .mb-pill.bad{background:rgba(255,107,107,0.15);color:#ff6b6b;cursor:help}
+  .mb-pill.canc{background:rgba(255,107,107,0.1);color:rgba(255,107,107,0.7)}
+  .mb-pill.neutral{background:rgba(255,255,255,0.06);color:rgba(244,249,255,0.5)}
+  .cancel-policy{margin-top:14px;padding:12px 14px;background:rgba(10,25,41,0.5);border:1px solid rgba(255,255,255,0.08);border-radius:10px}
+  .cp-title{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:0.2em;color:rgba(244,249,255,0.7);margin-bottom:8px;font-weight:600}
+  .cp-list{list-style:none;padding:0;margin:0;font-size:12px;line-height:1.6;color:rgba(244,249,255,0.75)}
+  .cp-list li{padding:3px 0;display:flex;gap:6px;align-items:flex-start}
+  .cp-list b{color:#f4f9ff}
+  .cp-ok{color:#b7ff4a}
+  .cp-warn{color:#ffc14a}
+  .cp-bad{color:#ff6b6b}
+  .cancel-inline{font-size:11px;line-height:1.5;color:rgba(244,249,255,0.65);background:rgba(255,193,74,0.08);border:1px solid rgba(255,193,74,0.2);border-radius:8px;padding:8px 10px;margin:12px 0}
+  .cancel-inline b{color:#ffc14a}
   .auth-link{display:block;text-align:center;color:rgba(244,249,255,0.6);font-size:13px;text-decoration:none;margin-top:8px}
   .auth-link:hover{color:#b7ff4a}
   .menu-icon-wrap{position:relative;width:48px;height:44px;display:block;overflow:visible}
@@ -832,6 +859,7 @@
       </div>
       <div class="total-amount" id="totalAmount">€44</div>
     </div>
+    <p class="cancel-inline">📋 <b>Πολιτική ακύρωσης:</b> Δωρεάν <b>&gt;48h</b> πριν από το προφίλ σου · <b>24-48h</b> μόνο τηλεφωνικά (693 439 1978) · <b>&lt;24h</b> οφείλεις το ελάχιστο γήπεδο (30€).</p>
     <button type="submit" class="submit-btn" data-i18n="form_submit">ΕΠΙΒΕΒΑΙΩΣΗ ΚΡΑΤΗΣΗΣ</button>
   </form>
 </section>
@@ -1276,6 +1304,9 @@
     } catch(e){ console.warn('callmebot', e); }
   }
 
+  async function cancelBookingDoc(id){
+    return updateDoc(doc(db, 'bookings', id), { status: 'cancelled', cancelledAt: serverTimestamp() });
+  }
   async function findBooking(date, time, court){
     const q = query(
       collection(db, 'bookings'),
@@ -1317,7 +1348,7 @@
     onAuth: (cb) => onAuthStateChanged(auth, cb),
     fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
     resetPassword, changePassword, getConfig, resendVerification, findBooking,
-    notifyAdminWhatsApp,
+    notifyAdminWhatsApp, cancelBookingDoc,
     upsertPublicProfile, removePublicProfile, listLookingForGame,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
@@ -1827,9 +1858,26 @@
         ${rewardBits.map(r => `<div style="padding:6px 0;font-size:14px">${r}</div>`).join('')}
       </div>` : ''}
 
+      <div class="pf-section">
+        <h3><span class="ico">📅</span>ΟΙ ΚΡΑΤΗΣΕΙΣ ΜΟΥ</h3>
+        <div id="myBookingsList" style="display:flex;flex-direction:column;gap:8px">
+          <div style="color:rgba(244,249,255,0.5);font-size:13px">Φόρτωση...</div>
+        </div>
+        <div class="cancel-policy">
+          <div class="cp-title">ℹ️ ΠΟΛΙΤΙΚΗ ΑΚΥΡΩΣΗΣ</div>
+          <ul class="cp-list">
+            <li><span class="cp-ok">✅</span> <b>Πάνω από 48 ώρες πριν:</b> Δωρεάν ακύρωση από εδώ.</li>
+            <li><span class="cp-warn">⚠️</span> <b>24–48 ώρες πριν:</b> Απαιτείται τηλέφωνο — <a href="tel:+306934391978" style="color:#b7ff4a">693 439 1978</a>.</li>
+            <li><span class="cp-bad">❌</span> <b>Κάτω από 24 ώρες:</b> Οφείλεις το ελάχιστο γήπεδο (30€). Επικοινώνησε μαζί μας.</li>
+          </ul>
+        </div>
+      </div>
+
       <button type="button" class="pf-save-btn" id="saveProfileBtn">ΑΠΟΘΗΚΕΥΣΗ</button>
       <div class="pf-save-msg" id="saveProfileMsg"></div>
     `;
+
+    renderMyBookings(u);
 
     // Chip toggles
     document.querySelectorAll('#profileFull .pf-chip').forEach(c => {
@@ -1973,6 +2021,61 @@
   // expose so onclick inline can call
   window.renderFindPlayer = renderFindPlayer;
   window.renderFullProfile = renderFullProfile;
+
+  /* ============ MY BOOKINGS + CANCELLATION ============ */
+  async function renderMyBookings(u){
+    const list = document.getElementById('myBookingsList');
+    if (!list) return;
+    let bookings = [];
+    try { bookings = await window.npFB.listUserBookings(u.uid); } catch(e){ console.warn(e); }
+    // Newest upcoming first, then past
+    const now = Date.now();
+    bookings.sort((a,b) => (b.startsAt||0) - (a.startsAt||0));
+    if (!bookings.length){
+      list.innerHTML = '<div style="color:rgba(244,249,255,0.4);font-size:13px;padding:8px 0">Δεν έχεις κρατήσεις ακόμα.</div>';
+      return;
+    }
+    list.innerHTML = bookings.map(b => {
+      const startsAt = b.startsAt || 0;
+      const hoursTo = (startsAt - now) / 3600000;
+      const cancelled = b.status === 'cancelled';
+      const past = startsAt && startsAt < now;
+      let action;
+      if (cancelled){
+        action = '<span class="mb-pill canc">Ακυρώθηκε</span>';
+      } else if (past){
+        action = '<span class="mb-pill neutral">Ολοκληρώθηκε</span>';
+      } else if (hoursTo >= 48){
+        action = `<button class="mb-cancel" data-cancel="${esc(b.id)}">ΑΚΥΡΩΣΗ</button>`;
+      } else if (hoursTo >= 24){
+        action = '<span class="mb-pill warn" title="Πάρε τηλέφωνο 693 439 1978">📞 Τηλεφωνικά</span>';
+      } else {
+        action = '<span class="mb-pill bad" title="Οφείλεις το ελάχιστο γήπεδο 30€">❌ &lt;24h</span>';
+      }
+      const dt = b.date ? new Date(b.date + 'T00:00:00').toLocaleDateString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit'}) : '—';
+      return `<div class="mb-row ${cancelled?'is-cancelled':''}${past?' is-past':''}">
+        <div class="mb-info">
+          <div class="mb-when">${esc(dt)} · ${esc(b.time||'')}</div>
+          <div class="mb-sub">${esc(b.court||'')} · ${+b.players||0}άδα · €${+b.total||0}</div>
+        </div>
+        <div class="mb-action">${action}</div>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-cancel]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Σίγουρα θέλεις να ακυρώσεις αυτή την κράτηση;')) return;
+        btn.disabled = true; btn.textContent = 'Ακύρωση...';
+        try {
+          await window.npFB.cancelBookingDoc(btn.dataset.cancel);
+          renderMyBookings(u);
+        } catch(err){
+          alert('Σφάλμα ακύρωσης: ' + err.message);
+          btn.disabled = false; btn.textContent = 'ΑΚΥΡΩΣΗ';
+        }
+      });
+    });
+  }
+  window.renderMyBookings = renderMyBookings;
 
   /* ============ SESSIONS ON/OFF from Firestore config ============ */
   let DISABLED_SESSIONS = new Set();
@@ -2352,6 +2455,10 @@
 
     const dateISO = selectedDate.toISOString().slice(0,10);
     const court = 'Γήπεδο 1';
+    // Precompute booking start + cancel cutoff so client + rule can check
+    const startTime = selectedSession.split('-')[0]; // "19:30"
+    const startsAt = new Date(dateISO + 'T' + startTime + ':00').getTime();
+    const cancellableUntil = startsAt - 48 * 3600 * 1000; // 48h before
 
     await waitFB();
 
@@ -2400,6 +2507,8 @@
       status: 'ok',
       userId: u.uid,
       userEmail: u.email,
+      startsAt,
+      cancellableUntil,
     };
 
     try {

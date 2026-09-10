@@ -68,9 +68,18 @@ service cloud.firestore {
         && request.resource.data.time is string
         && request.resource.data.court is string
         && request.resource.data.court in ['Γήπεδο 1', 'Γήπεδο 2']
-        // Admin-manual bookings from admin.html don't hit this branch;
-        // they use the admin branch below.
         ;
+
+      // Owner may cancel their own booking if it's still >48h before start.
+      // Only the status field may change (to 'cancelled'), plus cancelledAt timestamp.
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && resource.data.status == 'ok'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status','cancelledAt'])
+        && ('cancellableUntil' in resource.data)
+        && request.time.toMillis() < resource.data.cancellableUntil;
 
       // Admin may also write anything (used by admin's Add booking form and deletes).
       allow write:  if isAdmin();
