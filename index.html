@@ -84,6 +84,51 @@
   .auth-logout{background:transparent;border:1px solid rgba(255,107,107,0.4);color:#ff6b6b;padding:10px;border-radius:8px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.15em;font-weight:600;cursor:pointer;margin-top:8px}
   .auth-logout:hover{background:rgba(255,107,107,0.1)}
   .auth-admin-link{display:block;text-align:center;background:linear-gradient(90deg,#ffc14a 0%,#ff9a4a 100%);color:#0a1929;padding:12px;border-radius:10px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.12em;text-decoration:none;margin-top:8px}
+
+  /* Full profile step-panel */
+  .profile-full{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+  .pf-section{background:rgba(15,37,64,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:18px 20px}
+  .pf-section h3{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.18em;color:rgba(244,249,255,0.55);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .pf-section h3 .ico{font-size:16px}
+  .pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.pf-grid{grid-template-columns:1fr}}
+  .pf-field{display:flex;flex-direction:column;gap:6px}
+  .pf-field label{font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600}
+  .pf-field input, .pf-field select, .pf-field textarea{padding:11px 13px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;outline:none;width:100%}
+  .pf-field input:focus, .pf-field select:focus, .pf-field textarea:focus{border-color:#b7ff4a}
+  .pf-field textarea{resize:vertical;min-height:70px}
+  .pf-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .pf-chip{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(244,249,255,0.7);padding:8px 12px;border-radius:20px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .pf-chip.active{background:rgba(183,255,74,0.15);border-color:#b7ff4a;color:#b7ff4a}
+  .pf-lfg-row{display:flex;align-items:center;gap:12px;padding:8px 0}
+  .pf-lfg-text{flex:1;font-size:14px}
+  .pf-lfg-text small{display:block;color:rgba(244,249,255,0.55);font-size:12px;margin-top:2px}
+  /* Toggle switch */
+  .sw{position:relative;display:inline-block;width:46px;height:24px;vertical-align:middle;flex-shrink:0}
+  .sw input{opacity:0;width:0;height:0}
+  .sw-slider{position:absolute;cursor:pointer;inset:0;background:rgba(255,255,255,0.2);border-radius:24px;transition:.2s}
+  .sw-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+  .sw input:checked + .sw-slider{background:rgba(183,255,74,0.55)}
+  .sw input:checked + .sw-slider::before{transform:translateX(22px);background:#0a1929}
+  .pf-save-btn{background:#b7ff4a;color:#0a1929;padding:14px;border-radius:11px;border:0;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;cursor:pointer;width:100%}
+  .pf-save-btn:hover{background:#a3ec36}
+  .pf-save-msg{text-align:center;color:#b7ff4a;font-size:13px;min-height:16px;margin-top:8px}
+
+  /* Find a player */
+  .find-player{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  .fp-empty{background:rgba(15,37,64,0.6);border:1px dashed rgba(183,255,74,0.3);border-radius:14px;padding:32px 20px;text-align:center;color:rgba(244,249,255,0.7)}
+  .fp-empty h4{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:0.05em;color:#b7ff4a;margin-bottom:8px}
+  .fp-empty p{font-size:13px;line-height:1.5;margin-bottom:14px}
+  .fp-card{background:rgba(15,37,64,0.75);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 18px;display:flex;gap:14px;align-items:center}
+  .fp-card:hover{border-color:rgba(183,255,74,0.35)}
+  .fp-avatar{width:52px;height:52px;border-radius:50%;background:#b7ff4a;color:#0a1929;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;flex-shrink:0}
+  .fp-info{flex:1;min-width:0}
+  .fp-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:0.03em}
+  .fp-meta{font-size:12px;color:rgba(244,249,255,0.6);margin-top:2px;line-height:1.4}
+  .fp-lvl{display:inline-block;padding:2px 8px;background:rgba(183,255,74,0.12);color:#b7ff4a;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:0.06em;margin-right:6px}
+  .fp-contact{background:rgba(183,255,74,0.15);border:1px solid rgba(183,255,74,0.4);color:#b7ff4a;padding:8px 14px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0}
+  .fp-contact:hover{background:rgba(183,255,74,0.25)}
+  .fp-count{text-align:center;color:rgba(244,249,255,0.55);font-size:12px;padding:8px}
   .auth-link{display:block;text-align:center;color:rgba(244,249,255,0.6);font-size:13px;text-decoration:none;margin-top:8px}
   .auth-link:hover{color:#b7ff4a}
   .menu-icon-wrap{position:relative;width:48px;height:44px;display:block;overflow:visible}
@@ -594,6 +639,34 @@
     <button type="button" class="auth-logout" id="authLogout">ΑΠΟΣΥΝΔΕΣΗ</button>
   </div>
 </aside>
+
+<!-- ============ FULL PROFILE STEP-PANEL ============ -->
+<section class="step-panel" id="stepProfile" aria-hidden="true">
+  <header class="step-header">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="step-title-block">
+      <span class="step-crumb">ΠΡΟΦΙΛ</span>
+      <h2>Τα στοιχεία μου</h2>
+    </div>
+  </header>
+  <div class="profile-full" id="profileFull"></div>
+</section>
+
+<!-- ============ FIND A PLAYER STEP-PANEL ============ -->
+<section class="step-panel" id="stepFindPlayer" aria-hidden="true">
+  <header class="step-header">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="step-title-block">
+      <span class="step-crumb">MATCH-MAKING</span>
+      <h2>Βρες παίκτη</h2>
+    </div>
+  </header>
+  <div class="find-player" id="findPlayerBody"></div>
+</section>
 
 <div class="fly-ball" id="flyBall" aria-hidden="true"></div>
 
@@ -1113,7 +1186,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
   import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, getDocs, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyAnn6RtsAqfJxeWesN3WF1jVv_egCDb21k",
@@ -1211,6 +1284,24 @@
     const snap = await getDocs(q);
     return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
   }
+
+  // Sync a public snapshot of the user (only public fields) so other
+  // signed-in users can browse in Find a Player without exposing PII.
+  async function upsertPublicProfile(uid, publicData){
+    await setDoc(doc(db, 'public_profiles', uid), publicData, { merge: true });
+  }
+  async function removePublicProfile(uid){
+    try { await deleteDoc(doc(db, 'public_profiles', uid)); } catch(e){ /* may not exist */ }
+  }
+  async function listLookingForGame(minLv, maxLv){
+    const q = query(
+      collection(db, 'public_profiles'),
+      where('lookingForGame','==', true),
+      where('level','>=', minLv), where('level','<=', maxLv)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ uid:d.id, ...d.data() }));
+  }
   async function changePassword(currentPassword, newPassword){
     const user = auth.currentUser;
     if (!user || !user.email) throw new Error('Δεν είσαι συνδεδεμένος.');
@@ -1227,6 +1318,7 @@
     fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
     resetPassword, changePassword, getConfig, resendVerification, findBooking,
     notifyAdminWhatsApp,
+    upsertPublicProfile, removePublicProfile, listLookingForGame,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
   window.dispatchEvent(new Event('npFBReady'));
@@ -1243,6 +1335,8 @@
   const doorHotspot = document.getElementById('doorHotspot');
   const stepCourt2 = document.getElementById('stepCourt2');
   const stepCombos = document.getElementById('stepCombos');
+  const stepProfile = document.getElementById('stepProfile');
+  const stepFindPlayer = document.getElementById('stepFindPlayer');
   const stepCourtChoose = document.getElementById('stepCourtChoose');
   const stepCalendar = document.getElementById('stepCalendar');
   const stepSessions = document.getElementById('stepSessions');
@@ -1414,10 +1508,26 @@
           <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5;margin-bottom:10px">Στείλαμε email στο <strong>${esc(u.email)}</strong>. Πάτα τον σύνδεσμο μέσα του για να το επιβεβαιώσεις.</p>
           <button type="button" class="pf-cta outline" id="resendVerifyBtn" style="font-size:12px">📧 ΞΑΝΑΣΤΕΙΛΕ EMAIL</button>
         </div>` : ''}
+        <button type="button" class="pf-cta" id="fullProfileBtn">👤 ΠΛΗΡΕΣ ΠΡΟΦΙΛ · ΕΠΕΞΕΡΓΑΣΙΑ</button>
         <button type="button" class="pf-cta outline" id="changePwBtn">🔒 ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ</button>
         ${profileMissing ? `<button type="button" class="pf-cta outline" id="completeProfileBtn">ΣΥΜΠΛΗΡΩΣΕ ΤΟ ΠΡΟΦΙΛ</button>` : ''}
         ${isAdmin ? `<a href="admin.html" class="auth-admin-link" id="adminLink">🔐 ADMIN PANEL</a>` : ''}
       `;
+
+      const fpBtn = document.getElementById('fullProfileBtn');
+      if (fpBtn){
+        fpBtn.addEventListener('click', () => {
+          authPanel.classList.remove('open');
+          setTimeout(() => { renderFullProfile(); slideTo(null, stepProfile); }, 200);
+        });
+      }
+      const cpBtn = document.getElementById('completeProfileBtn');
+      if (cpBtn){
+        cpBtn.addEventListener('click', () => {
+          authPanel.classList.remove('open');
+          setTimeout(() => { renderFullProfile(); slideTo(null, stepProfile); }, 200);
+        });
+      }
 
       // Resend verification
       const rv = document.getElementById('resendVerifyBtn');
@@ -1625,6 +1735,245 @@
   // Rerender profile when the auth panel opens (in case bookings changed elsewhere)
   playerBtn.addEventListener('click', () => { setTimeout(renderAuth, 0); });
 
+  /* ============ FULL PROFILE EDITOR ============ */
+  const DAYS_EL = ['Δευτ','Τρι','Τετ','Πεμ','Παρ','Σαβ','Κυρ'];
+  const TIME_PERIODS = [
+    { key:'morning',   label:'☀️ Πρωί (07:30-13:30)'   },
+    { key:'noon',      label:'🍽️ Μεσημέρι (13:30-15:00)'},
+    { key:'afternoon', label:'🌤️ Απόγευμα (15:00-19:30)'},
+    { key:'evening',   label:'🌙 Βράδυ (19:30-22:30)'   },
+    { key:'late',      label:'🌌 Νύχτα (22:30-01:30)'   },
+  ];
+
+  function renderFullProfile(){
+    const u = currentUser();
+    if (!u){ authPanel.classList.add('open'); return; }
+    const availDays  = new Set(u.availability?.days || []);
+    const availTimes = new Set(u.availability?.times || []);
+    const lfg = !!u.lookingForGame;
+    const lvIdx = Math.max(0, Math.min(4, (u.level || 1) - 1));
+
+    const untilFree = 10 - ((u.bookingsCount || 0) % 10);
+    const rewardBits = [];
+    if (u.welcomeCoupon) rewardBits.push('🎁 −30% καλωσόρισμα στην πρώτη κράτηση');
+    if ((u.bookingsCount||0) > 0 && untilFree < 10) rewardBits.push('🎾 ' + untilFree + ' κρατήσεις για δωρεάν γήπεδο');
+    if ((u.freeCourts||0) > 0) rewardBits.push('🏆 ' + u.freeCourts + ' × δωρεάν γήπεδο διαθέσιμο');
+
+    document.getElementById('profileFull').innerHTML = `
+      <div class="pf-section">
+        <h3><span class="ico">🪪</span>ΠΡΟΣΩΠΙΚΑ</h3>
+        <div class="pf-grid">
+          <div class="pf-field"><label>ΟΝΟΜΑ</label><input id="p_name" value="${esc(u.name||'')}"></div>
+          <div class="pf-field"><label>ΕΠΙΘΕΤΟ</label><input id="p_surname" value="${esc(u.surname||'')}"></div>
+          <div class="pf-field"><label>ΤΗΛΕΦΩΝΟ</label><input id="p_phone" type="tel" value="${esc(u.phone||'')}"></div>
+          <div class="pf-field"><label>EMAIL</label><input value="${esc(u.email||'')}" disabled style="opacity:0.6"></div>
+          <div class="pf-field"><label>ΓΕΝΝΗΣΗ</label><input id="p_birthday" type="date" value="${esc(u.birthday||'')}"></div>
+          <div class="pf-field"><label>ΦΥΛΟ</label><select id="p_gender">
+            <option value="">—</option>
+            <option value="M" ${u.gender==='M'?'selected':''}>Άνδρας</option>
+            <option value="F" ${u.gender==='F'?'selected':''}>Γυναίκα</option>
+            <option value="X" ${u.gender==='X'?'selected':''}>Άλλο / Προτιμώ να μην πω</option>
+          </select></div>
+          <div class="pf-field" style="grid-column:1/-1"><label>ΠΟΛΗ</label><input id="p_city" value="${esc(u.city||'')}"></div>
+        </div>
+      </div>
+
+      <div class="pf-section">
+        <h3><span class="ico">🎾</span>ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ</h3>
+        <div class="pf-field">
+          <select id="p_level">
+            ${LEVELS.map((l,i) => `<option value="${i+1}" ${i===lvIdx?'selected':''}>${l.icon} ${esc(l.name)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="pf-section">
+        <h3><span class="ico">📅</span>ΔΙΑΘΕΣΙΜΟΤΗΤΑ</h3>
+        <div style="margin-bottom:14px">
+          <label style="font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:8px">ΗΜΕΡΕΣ</label>
+          <div class="pf-chips">${DAYS_EL.map((d,i) => `<button type="button" class="pf-chip ${availDays.has(i)?'active':''}" data-day="${i}">${esc(d)}</button>`).join('')}</div>
+        </div>
+        <div>
+          <label style="font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:8px">ΩΡΕΣ</label>
+          <div class="pf-chips">${TIME_PERIODS.map(t => `<button type="button" class="pf-chip ${availTimes.has(t.key)?'active':''}" data-period="${esc(t.key)}">${esc(t.label)}</button>`).join('')}</div>
+        </div>
+      </div>
+
+      <div class="pf-section">
+        <h3><span class="ico">👋</span>ΨΑΧΝΩ ΠΑΙΚΤΕΣ / ΟΜΑΔΑ</h3>
+        <div class="pf-lfg-row">
+          <label class="sw"><input type="checkbox" id="p_lfg" ${lfg?'checked':''}><span class="sw-slider"></span></label>
+          <div class="pf-lfg-text">
+            <strong>Εμφάνιση στο "Βρες παίκτη"</strong>
+            <small>Ενεργοποίησε για να σε βρίσκουν άλλοι παίκτες παρόμοιου επιπέδου. Θα φαίνεται το μικρό σου όνομα, το επίπεδο, η πόλη, και η διαθεσιμότητα.</small>
+          </div>
+        </div>
+        <div class="pf-field" style="margin-top:10px">
+          <label>ΛΙΓΑ ΛΟΓΙΑ ΓΙΑ ΣΕΝΑ (προαιρετικό)</label>
+          <textarea id="p_bio" maxlength="280" placeholder="π.χ. Παίζω 3 χρόνια, ψάχνω παρέα για Σαββατοκύριακα.">${esc(u.bio||'')}</textarea>
+        </div>
+        <div class="pf-field" style="margin-top:10px">
+          <label>ΠΩΣ ΝΑ ΣΕ ΒΡΟΥΝ</label>
+          <select id="p_contact">
+            <option value="whatsapp" ${(u.contactMethod||'whatsapp')==='whatsapp'?'selected':''}>WhatsApp (μέσω τηλεφώνου)</option>
+            <option value="phone"    ${u.contactMethod==='phone'?'selected':''}>Κλήση (μέσω τηλεφώνου)</option>
+            <option value="hidden"   ${u.contactMethod==='hidden'?'selected':''}>Κρυφό — μόνο εμφάνιση</option>
+          </select>
+        </div>
+      </div>
+
+      ${rewardBits.length ? `<div class="pf-section" style="border-color:rgba(183,255,74,0.3)">
+        <h3><span class="ico">🎁</span>ΠΡΟΣΦΟΡΕΣ ΣΟΥ</h3>
+        ${rewardBits.map(r => `<div style="padding:6px 0;font-size:14px">${r}</div>`).join('')}
+      </div>` : ''}
+
+      <button type="button" class="pf-save-btn" id="saveProfileBtn">ΑΠΟΘΗΚΕΥΣΗ</button>
+      <div class="pf-save-msg" id="saveProfileMsg"></div>
+    `;
+
+    // Chip toggles
+    document.querySelectorAll('#profileFull .pf-chip').forEach(c => {
+      c.addEventListener('click', () => c.classList.toggle('active'));
+    });
+
+    // Save
+    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('saveProfileMsg');
+      msg.textContent = 'Αποθήκευση...';
+      msg.style.color = 'rgba(244,249,255,0.6)';
+      const days  = [...document.querySelectorAll('#profileFull [data-day]')].filter(c => c.classList.contains('active')).map(c => +c.dataset.day);
+      const times = [...document.querySelectorAll('#profileFull [data-period]')].filter(c => c.classList.contains('active')).map(c => c.dataset.period);
+      const patch = {
+        name:    document.getElementById('p_name').value.trim(),
+        surname: document.getElementById('p_surname').value.trim(),
+        phone:   document.getElementById('p_phone').value.trim(),
+        birthday:document.getElementById('p_birthday').value,
+        gender:  document.getElementById('p_gender').value,
+        city:    document.getElementById('p_city').value.trim(),
+        level:   +document.getElementById('p_level').value,
+        bio:     document.getElementById('p_bio').value.trim().slice(0,280),
+        contactMethod: document.getElementById('p_contact').value,
+        lookingForGame: document.getElementById('p_lfg').checked,
+        availability: { days, times },
+      };
+      try {
+        await window.npFB.updateProfile(u.uid, patch);
+        Object.assign(currentProfile, patch);
+        // Sync public snapshot
+        if (patch.lookingForGame){
+          await window.npFB.upsertPublicProfile(u.uid, {
+            firstName: patch.name || 'Παίκτης',
+            level: patch.level,
+            city: patch.city || '',
+            bio: patch.bio || '',
+            availability: patch.availability,
+            contactMethod: patch.contactMethod,
+            phone: patch.phone || '',
+            lookingForGame: true,
+            updatedAt: new Date().toISOString(),
+          });
+        } else {
+          await window.npFB.removePublicProfile(u.uid);
+        }
+        msg.style.color = '#b7ff4a';
+        msg.textContent = '✅ Αποθηκεύτηκε.';
+        setTimeout(() => { msg.textContent = ''; }, 3000);
+        renderAuth();
+      } catch(err){
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'Αποτυχία: ' + err.message;
+      }
+    });
+  }
+
+  /* ============ FIND A PLAYER ============ */
+  const GENDER_ICON = { M:'♂', F:'♀', X:'⚥' };
+  async function renderFindPlayer(){
+    const u = currentUser();
+    const body = document.getElementById('findPlayerBody');
+    if (!u){
+      body.innerHTML = `<div class="fp-empty">
+        <h4>Χρειάζεσαι λογαριασμό</h4>
+        <p>Κάνε σύνδεση ή εγγραφή για να δεις άλλους παίκτες.</p>
+        <button type="button" class="pf-save-btn" onclick="document.getElementById('playerBtn').click();">ΣΥΝΔΕΣΗ / ΕΓΓΡΑΦΗ</button>
+      </div>`;
+      return;
+    }
+    if (!u.city || !u.birthday || !u.gender){
+      body.innerHTML = `<div class="fp-empty">
+        <h4>Συμπλήρωσε πρώτα το προφίλ σου</h4>
+        <p>Για να μπεις στο Match-making, χρειαζόμαστε πόλη, γέννηση και φύλο — ώστε να σε προτείνουμε στους σωστούς παίκτες.</p>
+        <button type="button" class="pf-save-btn" id="goToProfile">ΑΝΟΙΞΕ ΤΟ ΠΡΟΦΙΛ</button>
+      </div>`;
+      document.getElementById('goToProfile').addEventListener('click', () => {
+        stepFindPlayer.classList.remove('open');
+        setTimeout(() => { renderFullProfile(); slideTo(null, stepProfile); }, 200);
+      });
+      return;
+    }
+    if (!u.lookingForGame){
+      body.innerHTML = `<div class="fp-empty">
+        <h4>Ενεργοποίησε το "Ψάχνω παίκτες"</h4>
+        <p>Πρέπει πρώτα να δηλώσεις εσύ ότι ψάχνεις παρέα για παιχνίδι. Θα εμφανίζεσαι και εσύ στους άλλους.</p>
+        <button type="button" class="pf-save-btn" id="goToProfile2">ΕΝΕΡΓΟΠΟΙΗΣΗ ΣΤΟ ΠΡΟΦΙΛ</button>
+      </div>`;
+      document.getElementById('goToProfile2').addEventListener('click', () => {
+        stepFindPlayer.classList.remove('open');
+        setTimeout(() => { renderFullProfile(); slideTo(null, stepProfile); }, 200);
+      });
+      return;
+    }
+    body.innerHTML = '<div class="fp-count">Αναζήτηση...</div>';
+    await waitFB();
+    const minLv = Math.max(1, u.level - 1);
+    const maxLv = Math.min(5, u.level + 1);
+    try {
+      const all = await window.npFB.listLookingForGame(minLv, maxLv);
+      // Exclude self
+      const others = all.filter(p => p.uid !== u.uid);
+      if (!others.length){
+        body.innerHTML = `<div class="fp-empty">
+          <h4>Κανένας άλλος προς το παρόν</h4>
+          <p>Δεν υπάρχουν άλλοι παίκτες που ψάχνουν παρέα σε επίπεδο ±1 από το δικό σου. Έλα ξανά σε λίγες μέρες!</p>
+        </div>`;
+        return;
+      }
+      body.innerHTML = `<div class="fp-count">${others.length} παίκτ${others.length===1?'ης':'ες'} · επίπεδο ${minLv}–${maxLv}</div>` +
+        others.map(p => {
+          const lvIdx = Math.max(0, Math.min(4, (p.level||1) - 1));
+          const lv = LEVELS[lvIdx];
+          const initial = (p.firstName||'?')[0]?.toUpperCase() || '?';
+          const daysStr = (p.availability?.days || []).map(i => DAYS_EL[i]).join(', ') || '—';
+          const meta = [
+            p.city ? '📍 ' + esc(p.city) : '',
+            daysStr !== '—' ? '📅 ' + esc(daysStr) : '',
+          ].filter(Boolean).join(' · ');
+          let contactBtn = '';
+          if (p.contactMethod === 'whatsapp' && p.phone){
+            contactBtn = `<a class="fp-contact" target="_blank" rel="noopener" href="https://wa.me/${esc(p.phone.replace(/[^0-9]/g,''))}?text=${encodeURIComponent('Γεια σου! Είδα το προφίλ σου στο North Padel και ψάχνω παρέα για παιχνίδι.')}">WhatsApp</a>`;
+          } else if (p.contactMethod === 'phone' && p.phone){
+            contactBtn = `<a class="fp-contact" href="tel:${esc(p.phone)}">📞 ΚΛΗΣΗ</a>`;
+          } else {
+            contactBtn = `<span class="fp-contact" style="cursor:default;opacity:0.6">Κρυφό</span>`;
+          }
+          return `<div class="fp-card">
+            <div class="fp-avatar">${esc(initial)}</div>
+            <div class="fp-info">
+              <div class="fp-name"><span class="fp-lvl">${lv.icon} ${esc(lv.name)}</span>${esc(p.firstName||'Παίκτης')}</div>
+              <div class="fp-meta">${meta}</div>
+              ${p.bio ? `<div class="fp-meta" style="margin-top:4px;color:rgba(244,249,255,0.8)">"${esc(p.bio)}"</div>` : ''}
+            </div>
+            ${contactBtn}
+          </div>`;
+        }).join('');
+    } catch(e){
+      body.innerHTML = `<div class="fp-empty"><h4>Σφάλμα</h4><p>Δεν φορτώθηκαν οι παίκτες: ${esc(e.message)}</p></div>`;
+    }
+  }
+  // expose so onclick inline can call
+  window.renderFindPlayer = renderFindPlayer;
+  window.renderFullProfile = renderFullProfile;
+
   /* ============ SESSIONS ON/OFF from Firestore config ============ */
   let DISABLED_SESSIONS = new Set();
   async function loadDisabledSessions(){
@@ -1722,6 +2071,11 @@
       if (target === 'combos'){
         closeMenu();
         setTimeout(() => slideTo(null, stepCombos), 300);
+        return;
+      }
+      if (target === 'find-player'){
+        closeMenu();
+        setTimeout(() => { renderFindPlayer(); slideTo(null, stepFindPlayer); }, 300);
         return;
       }
       const modalMap = {

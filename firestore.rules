@@ -83,5 +83,14 @@ service cloud.firestore {
       allow read:  if true;
       allow write: if isAdmin();
     }
+
+    // /public_profiles/{uid} — Match-making snapshot.
+    //   Owner writes/deletes. Any signed-in user reads (so Find a Player
+    //   works). Only fields the user opted to share are stored here.
+    match /public_profiles/{uid} {
+      allow read:   if isSignedIn();
+      allow create, update: if isOwner(uid);
+      allow delete: if isOwner(uid) || isAdmin();
+    }
   }
 }
