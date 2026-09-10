@@ -53,7 +53,7 @@ service cloud.firestore {
       allow read: if isAdmin()
                      || (isSignedIn() && resource.data.userId == request.auth.uid);
 
-      allow create: if isVerified()
+      allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.status == 'ok'
         && request.resource.data.total is int
@@ -68,6 +68,18 @@ service cloud.firestore {
         && request.resource.data.time is string
         && request.resource.data.court is string
         && request.resource.data.court in ['Γήπεδο 1', 'Γήπεδο 2']
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() > 0
+        // Registered-user path: verified email required.
+        // Guest path: must set guest==true and be anonymous auth.
+        && (
+          (isVerified() && request.resource.data.guest == false)
+          ||
+          (request.auth.token.firebase.sign_in_provider == 'anonymous'
+           && request.resource.data.guest == true)
+        )
         ;
 
       // Owner may cancel their own booking if it's still >48h before start.
