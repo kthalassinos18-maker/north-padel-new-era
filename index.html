@@ -537,18 +537,18 @@
         <li data-i18n="c_beers4">🍺 4 μπύρες</li>
       </ul>
       <div class="combo-price">65€</div>
-      <button type="button" class="combo-cta" data-combo="2">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
+      <button type="button" class="combo-cta" data-combo="2" data-i18n="combo_cta">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
     </article>
     <article class="combo-card">
       <div class="combo-badge">3</div>
       <h3 class="combo-title" data-i18n="combo3_title">Γήπεδο + Μπέργκερ + Μπύρες</h3>
       <ul class="combo-list">
-        <li>🎾 Γήπεδο padel 4 ατόμων</li>
+        <li data-i18n="c_court">🎾 Γήπεδο padel 4 ατόμων</li>
         <li data-i18n="c_burger">🍔 4 μπέργκερ</li>
-        <li>🍺 4 μπύρες</li>
+        <li data-i18n="c_beers">🍺 4 μπύρες</li>
       </ul>
       <div class="combo-price">75€</div>
-      <button type="button" class="combo-cta" data-combo="3">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
+      <button type="button" class="combo-cta" data-combo="3" data-i18n="combo_cta">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
     </article>
   </div>
   <div class="combo-freebie">
@@ -590,7 +590,7 @@
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
-      <span class="step-crumb">ΓΗΠΕΔΟ 2</span>
+      <span class="step-crumb" data-i18n="cc_c2">ΓΗΠΕΔΟ 2</span>
       <h2 data-i18n="court2_soon">ΠΡΟΣΕΧΩΣ</h2>
     </div>
   </header>
@@ -617,7 +617,7 @@
       <input type="password" id="li_pass" required>
       <button type="button" class="pw-toggle" data-toggle="li_pass" aria-label="Εμφάνιση κωδικού">👁</button>
     </div>
-    <button type="submit" class="submit-btn">ΣΥΝΔΕΣΗ</button>
+    <button type="submit" class="submit-btn" data-i18n="auth_login_btn">ΣΥΝΔΕΣΗ</button>
     <button type="button" class="auth-link" id="forgotPwBtn" style="background:transparent;border:0;cursor:pointer;font-family:inherit" data-i18n="auth_forgot">Ξέχασες τον κωδικό;</button>
     <p class="auth-error" id="loginError" style="color:#ff6b6b;font-size:13px;text-align:center;min-height:16px"></p>
   </form>
@@ -627,12 +627,12 @@
       <div class="form-field"><label data-i18n="auth_surname">ΕΠΙΘΕΤΟ</label><input type="text" id="si_surname" required></div>
     </div>
     <div class="form-field"><label data-i18n="auth_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="si_phone" required></div>
-    <div class="form-field"><label>EMAIL</label><input type="email" id="si_email" required></div>
-    <div class="form-field pw-wrap"><label>ΚΩΔΙΚΟΣ (τουλάχιστον 6 χαρακτήρες)</label>
+    <div class="form-field"><label data-i18n="auth_email">EMAIL</label><input type="email" id="si_email" required></div>
+    <div class="form-field pw-wrap"><label data-i18n="auth_pass_hint">ΚΩΔΙΚΟΣ (τουλάχιστον 6 χαρακτήρες)</label>
       <input type="password" id="si_pass" required minlength="6">
       <button type="button" class="pw-toggle" data-toggle="si_pass" aria-label="Εμφάνιση κωδικού">👁</button>
     </div>
-    <div class="form-field pw-wrap"><label>ΕΠΙΒΕΒΑΙΩΣΗ ΚΩΔΙΚΟΥ</label>
+    <div class="form-field pw-wrap"><label data-i18n="auth_pass_confirm">ΕΠΙΒΕΒΑΙΩΣΗ ΚΩΔΙΚΟΥ</label>
       <input type="password" id="si_pass2" required minlength="6">
       <button type="button" class="pw-toggle" data-toggle="si_pass2" aria-label="Εμφάνιση κωδικού">👁</button>
     </div>
@@ -646,18 +646,18 @@
         <option value="5">🏆 Champion — Ανταγωνιστικό επίπεδο</option>
       </select>
     </div>
-    <p class="auth-note" style="color:#b7ff4a">🎁 Καλωσόρισμα: -30% στην πρώτη σου κράτηση!</p>
+    <p class="auth-note" style="color:#b7ff4a" data-i18n="auth_welcome_note">🎁 Καλωσόρισμα: -30% στην πρώτη σου κράτηση!</p>
 
     <label class="consent-row">
       <input type="checkbox" id="si_consent_essential" required>
-      <span>Αποδέχομαι τη χρήση των στοιχείων μου (όνομα, email, τηλέφωνο) για τη διαχείριση του λογαριασμού και των κρατήσεών μου. <span style="color:#ff6b6b">*</span></span>
+      <span data-i18n-html="auth_consent_essential">Αποδέχομαι τη χρήση των στοιχείων μου (όνομα, email, τηλέφωνο) για τη διαχείριση του λογαριασμού και των κρατήσεών μου. <span style="color:#ff6b6b">*</span></span>
     </label>
     <label class="consent-row">
       <input type="checkbox" id="si_consent_marketing">
-      <span>Θέλω να λαμβάνω ενημερώσεις για τουρνουά, προσφορές και events του North Padel μέσω email / SMS. <em style="color:rgba(244,249,255,0.5)">(προαιρετικό — μπορώ να το ανακαλέσω ανά πάσα στιγμή)</em></span>
+      <span data-i18n-html="auth_consent_marketing">Θέλω να λαμβάνω ενημερώσεις για τουρνουά, προσφορές και events του North Padel μέσω email / SMS. <em style="color:rgba(244,249,255,0.5)">(προαιρετικό — μπορώ να το ανακαλέσω ανά πάσα στιγμή)</em></span>
     </label>
 
-    <button type="submit" class="submit-btn">ΕΓΓΡΑΦΗ</button>
+    <button type="submit" class="submit-btn" data-i18n="auth_signup_btn">ΕΓΓΡΑΦΗ</button>
     <p class="auth-error" id="signupError" style="color:#ff6b6b;font-size:13px;text-align:center;min-height:16px"></p>
   </form>
 
@@ -665,7 +665,7 @@
   <div class="auth-profile" id="authProfile" style="display:none">
     <div class="profile-hero" id="profileHero"></div>
     <div class="profile-body" id="profileBody"></div>
-    <button type="button" class="auth-logout" id="authLogout">ΑΠΟΣΥΝΔΕΣΗ</button>
+    <button type="button" class="auth-logout" id="authLogout" data-i18n="auth_logout">ΑΠΟΣΥΝΔΕΣΗ</button>
   </div>
 </aside>
 
@@ -676,8 +676,8 @@
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
-      <span class="step-crumb">ΠΡΟΦΙΛ</span>
-      <h2>Τα στοιχεία μου</h2>
+      <span class="step-crumb" data-i18n="profile_crumb">ΠΡΟΦΙΛ</span>
+      <h2 data-i18n="profile_title">Τα στοιχεία μου</h2>
     </div>
   </header>
   <div class="profile-full" id="profileFull"></div>
@@ -690,8 +690,8 @@
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
-      <span class="step-crumb">MATCH-MAKING</span>
-      <h2>Βρες παίκτη</h2>
+      <span class="step-crumb" data-i18n="findplayer_crumb">MATCH-MAKING</span>
+      <h2 data-i18n="findplayer_title">Βρες παίκτη</h2>
     </div>
   </header>
   <div class="find-player" id="findPlayerBody"></div>
@@ -830,7 +830,7 @@
     </div>
   </header>
   <form class="booking-form" id="bookingForm">
-    <div class="guest-note" id="guestNote" style="display:none">
+    <div class="guest-note" id="guestNote" style="display:none" data-i18n-html="guest_note">
       💡 <b>Κάνεις κράτηση ως guest.</b> Δεν χρειάζεται εγγραφή!<br>
       <span style="color:rgba(244,249,255,0.6)">Αν κάνεις <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">σύνδεση/εγγραφή</button>, παίρνεις −30% στην πρώτη κράτηση + δωρεάν γήπεδο ανά 10 κρατήσεις.</span>
     </div>
@@ -865,7 +865,7 @@
       </div>
       <div class="total-amount" id="totalAmount">€44</div>
     </div>
-    <p class="cancel-inline">📋 <b>Πολιτική ακύρωσης:</b> Δωρεάν <b>&gt;48h</b> πριν από το προφίλ σου · <b>24-48h</b> μόνο τηλεφωνικά (693 439 1978) · <b>&lt;24h ή no-show</b> οφείλεις την τιμή του γηπέδου (44€ για 4άδα, 30€ για 2άδα).</p>
+    <p class="cancel-inline" data-i18n-html="cancel_inline">📋 <b>Πολιτική ακύρωσης:</b> Δωρεάν <b>&gt;48h</b> πριν από το προφίλ σου · <b>24-48h</b> μόνο τηλεφωνικά (693 439 1978 / 695 178 4471) · <b>&lt;24h ή no-show</b> οφείλεις την τιμή του γηπέδου (44€ για 4άδα, 30€ για 2άδα).</p>
     <button type="submit" class="submit-btn" data-i18n="form_submit">ΕΠΙΒΕΒΑΙΩΣΗ ΚΡΑΤΗΣΗΣ</button>
   </form>
 </section>
@@ -990,11 +990,11 @@
     <div class="features">
       <h3 data-i18n="about_ft">ΤΙ ΘΑ ΒΡΕΙΣ ΕΔΩ</h3>
       <ul>
-        <li><span class="em">🎾</span> Επαγγελματικές ρακέτες &amp; μπάλες Babolat</li>
-        <li><span class="em">☕</span> Δωρεάν νερό &amp; καφέ με τη χρήση του γηπέδου (08:00–14:00)</li>
-        <li><span class="em">🍕</span> Combo πακέτα με φαγητό &amp; ποτό</li>
-        <li><span class="em">🎉</span> Παιδικά πάρτυ &amp; ομαδικά events</li>
-        <li><span class="em">🌟</span> Ασφαλές &amp; φιλικό περιβάλλον</li>
+        <li data-i18n-html="about_f1"><span class="em">🎾</span> Επαγγελματικές ρακέτες &amp; μπάλες Babolat</li>
+        <li data-i18n-html="about_f2"><span class="em">☕</span> Δωρεάν νερό &amp; καφέ με τη χρήση του γηπέδου (08:00–14:00)</li>
+        <li data-i18n-html="about_f3"><span class="em">🍕</span> Combo πακέτα με φαγητό &amp; ποτό</li>
+        <li data-i18n-html="about_f4"><span class="em">🎉</span> Παιδικά πάρτυ &amp; ομαδικά events</li>
+        <li data-i18n-html="about_f5"><span class="em">🌟</span> Ασφαλές &amp; φιλικό περιβάλλον</li>
       </ul>
     </div>
     <div class="quote"><p data-i18n="about_q">«Ένα γήπεδο. Καλή παρέα. Τέλεια εμπειρία.»</p></div>
@@ -1100,41 +1100,41 @@
     <div class="features">
       <h3 data-i18n="padel_ct">ΤΟ ΓΗΠΕΔΟ</h3>
       <ul>
-        <li><span class="em">📏</span> Διαστάσεις 20m × 10m — κατά 25% μικρότερο από του τένις</li>
-        <li><span class="em">🪟</span> Περιφραγμένο με γυάλινους τοίχους και συρματόπλεγμα</li>
-        <li><span class="em">🌱</span> Τεχνητός χλοοτάπητας</li>
-        <li><span class="em">🎯</span> Δίχτυ στη μέση, όπως στο τένις</li>
+        <li data-i18n-html="padel_c1"><span class="em">📏</span> Διαστάσεις 20m × 10m — κατά 25% μικρότερο από του τένις</li>
+        <li data-i18n-html="padel_c2"><span class="em">🪟</span> Περιφραγμένο με γυάλινους τοίχους και συρματόπλεγμα</li>
+        <li data-i18n-html="padel_c3"><span class="em">🌱</span> Τεχνητός χλοοτάπητας</li>
+        <li data-i18n-html="padel_c4"><span class="em">🎯</span> Δίχτυ στη μέση, όπως στο τένις</li>
       </ul>
     </div>
 
     <div class="features">
       <h3 data-i18n="padel_rt">ΒΑΣΙΚΟΙ ΚΑΝΟΝΕΣ</h3>
       <ul>
-        <li><span class="em">👥</span> Πάντα <strong>2 εναντίον 2</strong> — παίζεται μόνο σε ομάδες</li>
-        <li><span class="em">🤾</span> Το σερβίς γίνεται <strong>κάτω από τη μέση</strong> (underhand)</li>
-        <li><span class="em">⬇️</span> Το μπαλάκι πρέπει να αναπηδήσει στο έδαφος πριν χτυπηθεί</li>
-        <li><span class="em">🧱</span> Οι μπάλες μπορούν να αναπηδήσουν στους τοίχους (όπως στο σκουός)</li>
-        <li><span class="em">🏆</span> Νικά η ομάδα που θα κερδίσει <strong>2 sets</strong> (ή 3 σε τουρνουά)</li>
+        <li data-i18n-html="padel_r1"><span class="em">👥</span> Πάντα <strong>2 εναντίον 2</strong> — παίζεται μόνο σε ομάδες</li>
+        <li data-i18n-html="padel_r2"><span class="em">🤾</span> Το σερβίς γίνεται <strong>κάτω από τη μέση</strong> (underhand)</li>
+        <li data-i18n-html="padel_r3"><span class="em">⬇️</span> Το μπαλάκι πρέπει να αναπηδήσει στο έδαφος πριν χτυπηθεί</li>
+        <li data-i18n-html="padel_r4"><span class="em">🧱</span> Οι μπάλες μπορούν να αναπηδήσουν στους τοίχους (όπως στο σκουός)</li>
+        <li data-i18n-html="padel_r5"><span class="em">🏆</span> Νικά η ομάδα που θα κερδίσει <strong>2 sets</strong> (ή 3 σε τουρνουά)</li>
       </ul>
     </div>
 
     <div class="features">
       <h3 data-i18n="padel_st">ΒΑΘΜΟΛΟΓΙΑ</h3>
       <ul>
-        <li><span class="em">🔢</span> Ίδια με το τένις: <strong>15, 30, 40, game</strong></li>
-        <li><span class="em">🎾</span> 6 games = 1 set</li>
-        <li><span class="em">⚖️</span> Στο 40-40 (deuce) χρειάζεσαι 2 συνεχόμενους πόντους για να κερδίσεις</li>
+        <li data-i18n-html="padel_sc1"><span class="em">🔢</span> Ίδια με το τένις: <strong>15, 30, 40, game</strong></li>
+        <li data-i18n-html="padel_sc2"><span class="em">🎾</span> 6 games = 1 set</li>
+        <li data-i18n-html="padel_sc3"><span class="em">⚖️</span> Στο 40-40 (deuce) χρειάζεσαι 2 συνεχόμενους πόντους για να κερδίσεις</li>
       </ul>
     </div>
 
     <div class="features">
       <h3 data-i18n="padel_wt">ΓΙΑΤΙ ΣΕ ΚΕΡΔΙΖΕΙ</h3>
       <ul>
-        <li><span class="em">🚀</span> Παίζεις καλά από την πρώτη μέρα — απλοί κανόνες</li>
-        <li><span class="em">👫</span> Πάντα με παρέα — άθλημα by design κοινωνικό</li>
-        <li><span class="em">💪</span> Λιγότερη επιβάρυνση από το τένις</li>
-        <li><span class="em">🧠</span> Θέλει στρατηγική, ταχύτητα και συνεργασία</li>
-        <li><span class="em">😄</span> Είναι απλά διασκεδαστικό — από την πρώτη μπαλιά</li>
+        <li data-i18n-html="padel_wy1"><span class="em">🚀</span> Παίζεις καλά από την πρώτη μέρα — απλοί κανόνες</li>
+        <li data-i18n-html="padel_wy2"><span class="em">👫</span> Πάντα με παρέα — άθλημα by design κοινωνικό</li>
+        <li data-i18n-html="padel_wy3"><span class="em">💪</span> Λιγότερη επιβάρυνση από το τένις</li>
+        <li data-i18n-html="padel_wy4"><span class="em">🧠</span> Θέλει στρατηγική, ταχύτητα και συνεργασία</li>
+        <li data-i18n-html="padel_wy5"><span class="em">😄</span> Είναι απλά διασκεδαστικό — από την πρώτη μπαλιά</li>
       </ul>
     </div>
 
@@ -1145,11 +1145,11 @@
     <h4 data-i18n="padel_ct2">ΕΤΟΙΜΟΣ ΝΑ ΠΑΙΞΕΙΣ;</h4>
     <p data-i18n="padel_cd">Κλείσε γήπεδο τώρα και ξεκίνα την εμπειρία!</p>
     <div class="btn-row">
-      <button type="button" class="btn-link btn-call" onclick="closeInfoModal('modalPadel');setTimeout(()=>{renderCalendar();slideTo(null,stepCalendar);},300)">🎾 ΚΑΝΕ ΚΡΑΤΗΣΗ</button>
+      <button type="button" class="btn-link btn-call" onclick="closeInfoModal('modalPadel');setTimeout(()=>{renderCalendar();slideTo(null,stepCalendar);},300)" data-i18n="padel_cb">🎾 ΚΑΝΕ ΚΡΑΤΗΣΗ</button>
     </div>
   </div>
 
-  <p class="im-footer">📍 Νέα Καλλικράτεια, Χαλκιδική</p>
+  <p class="im-footer" data-i18n="foot_np">📍 Νέα Καλλικράτεια, Χαλκιδική</p>
 </div>
 
 <!-- ============ PERSONAL COACH / PADEL INFO MODAL ============ -->
@@ -1170,20 +1170,20 @@
     <div class="features">
       <h3 data-i18n="coach_why">ΓΙΑΤΙ ΝΑ ΞΕΚΙΝΗΣΕΙΣ</h3>
       <ul>
-        <li><span class="em">🚀</span> Εύκολο ξεκίνημα — απλοί κανόνες, γρήγορη προσαρμογή</li>
-        <li><span class="em">👥</span> Πάντα 4 άτομα — κοινωνικό άθλημα by design</li>
-        <li><span class="em">💪</span> Χαμηλή σωματική επιβάρυνση — φιλικό στις αρθρώσεις</li>
-        <li><span class="em">🧠</span> Στρατηγική και τεχνική — δεν βαριέσαι ποτέ</li>
-        <li><span class="em">📈</span> Γρήγορη πρόοδος από τις πρώτες φορές</li>
+        <li data-i18n-html="coach_w1"><span class="em">🚀</span> Εύκολο ξεκίνημα — απλοί κανόνες, γρήγορη προσαρμογή</li>
+        <li data-i18n-html="coach_w2"><span class="em">👥</span> Πάντα 4 άτομα — κοινωνικό άθλημα by design</li>
+        <li data-i18n-html="coach_w3"><span class="em">💪</span> Χαμηλή σωματική επιβάρυνση — φιλικό στις αρθρώσεις</li>
+        <li data-i18n-html="coach_w4"><span class="em">🧠</span> Στρατηγική και τεχνική — δεν βαριέσαι ποτέ</li>
+        <li data-i18n-html="coach_w5"><span class="em">📈</span> Γρήγορη πρόοδος από τις πρώτες φορές</li>
       </ul>
     </div>
 
     <div class="features">
       <h3 data-i18n="coach_lvl">ΤΟ ΕΠΙΠΕΔΟ ΣΟΥ</h3>
       <ul>
-        <li><span class="em">🌱</span> <strong>Αρχάριος</strong> — Ξεκινάς τώρα; Το άθλημα σε κερδίζει από την πρώτη μπαλιά</li>
-        <li><span class="em">⚡</span> <strong>Ενδιάμεσος</strong> — Έχεις πιάσει τα βασικά και θες παιχνίδι με ποιότητα</li>
-        <li><span class="em">🏆</span> <strong>Προχωρημένος</strong> — Ψάχνεις παρέα για ανταγωνιστικό επίπεδο</li>
+        <li data-i18n-html="coach_l1"><span class="em">🌱</span> <strong>Αρχάριος</strong> — Ξεκινάς τώρα; Το άθλημα σε κερδίζει από την πρώτη μπαλιά</li>
+        <li data-i18n-html="coach_l2"><span class="em">⚡</span> <strong>Ενδιάμεσος</strong> — Έχεις πιάσει τα βασικά και θες παιχνίδι με ποιότητα</li>
+        <li data-i18n-html="coach_l3"><span class="em">🏆</span> <strong>Προχωρημένος</strong> — Ψάχνεις παρέα για ανταγωνιστικό επίπεδο</li>
       </ul>
     </div>
 
@@ -1200,7 +1200,7 @@
     </div>
   </div>
 
-  <p class="im-footer">📍 Νέα Καλλικράτεια, Χαλκιδική</p>
+  <p class="im-footer" data-i18n="foot_np">📍 Νέα Καλλικράτεια, Χαλκιδική</p>
 </div>
 
 <!-- ============ LANGUAGE SWITCHER ============ -->
@@ -1908,7 +1908,7 @@
           <div class="cp-title">ℹ️ ΠΟΛΙΤΙΚΗ ΑΚΥΡΩΣΗΣ</div>
           <ul class="cp-list">
             <li><span class="cp-ok">✅</span> <b>Πάνω από 48 ώρες πριν:</b> Δωρεάν ακύρωση από εδώ.</li>
-            <li><span class="cp-warn">⚠️</span> <b>24–48 ώρες πριν:</b> Απαιτείται τηλέφωνο — <a href="tel:+306934391978" style="color:#b7ff4a">693 439 1978</a>.</li>
+            <li><span class="cp-warn">⚠️</span> <b>24–48 ώρες πριν:</b> Απαιτείται τηλέφωνο — <a href="tel:+306934391978" style="color:#b7ff4a">693 439 1978</a> ή <a href="tel:+306951784471" style="color:#b7ff4a">695 178 4471</a>.</li>
             <li><span class="cp-bad">❌</span> <b>Κάτω από 24 ώρες (ή no-show):</b> Οφείλεις την τιμή του γηπέδου — <b>44€ για 4άδα</b>, <b>30€ για 2άδα</b>. Επικοινώνησε μαζί μας.</li>
           </ul>
         </div>
@@ -2089,7 +2089,7 @@
       } else if (hoursTo >= 48){
         action = `<button class="mb-cancel" data-cancel="${esc(b.id)}">ΑΚΥΡΩΣΗ</button>`;
       } else if (hoursTo >= 24){
-        action = '<span class="mb-pill warn" title="Πάρε τηλέφωνο 693 439 1978">📞 Τηλεφωνικά</span>';
+        action = '<span class="mb-pill warn" title="Πάρε τηλέφωνο 693 439 1978 ή 695 178 4471">📞 Τηλεφωνικά</span>';
       } else {
         action = '<span class="mb-pill bad" title="Οφείλεις το ελάχιστο γήπεδο 30€">❌ &lt;24h</span>';
       }
@@ -2623,7 +2623,7 @@
         '💶 Σύνολο: ' + total + '€' + (discountKind ? ' (' + (discountKind==='freeCourt' ? 'δωρεάν γήπεδο' : '−30% καλωσόρισμα') + ')' : '');
       window.npFB.notifyAdminWhatsApp(waText);
 
-      alert('✅ Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + dateISO + ' · ' + selectedSession + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: €' + total + (isGuest ? '\n\n(Guest κράτηση — για ακύρωση/αλλαγή τηλεφώνησε στο 693 439 1978)' : ''));
+      alert('✅ Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + dateISO + ' · ' + selectedSession + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: €' + total + (isGuest ? '\n\n(Guest κράτηση — για ακύρωση/αλλαγή τηλεφώνησε στο 693 439 1978 ή 695 178 4471)' : ''));
       if (u) renderAuth();
     } catch(err){
       alert('Αποτυχία καταχώρησης: ' + err.message);
@@ -2866,24 +2866,24 @@ T.en['about_lead'] = 'In Nea Kallikratia we\'ve created a space for you to enjoy
 T.de['about_lead'] = 'In Nea Kallikratia haben wir einen Ort geschaffen, um Padel so zu genießen, wie es sein sollte.';
 T.en['about_p1'] = 'We\'re a <strong>family business</strong> passionate about the sport. We started with a modern outdoor glass-back court and are already preparing the second, to host more groups and more moments.';
 T.de['about_p1'] = 'Wir sind ein <strong>Familienunternehmen</strong> mit Leidenschaft für den Sport. Wir begannen mit einem modernen Outdoor-Glass-Back-Platz und bereiten bereits den zweiten vor, um mehr Gruppen und mehr Momente zu ermöglichen.';
-T.en['about_s1'] = 'COURT NOW';
-T.de['about_s1'] = 'PLATZ JETZT';
+T.en['about_s1'] = 'COURT OPEN';
+T.de['about_s1'] = 'PLATZ OFFEN';
 T.en['about_s2'] = 'COMING SOON';
 T.de['about_s2'] = 'DEMNÄCHST';
 T.en['about_p2'] = 'North Padel is not just a court — it is the place where the sport meets good company, food and fun.';
 T.de['about_p2'] = 'North Padel ist nicht nur ein Platz — es ist der Ort, an dem der Sport auf gute Gesellschaft, Essen und Spaß trifft.';
 T.en['about_ft'] = 'WHAT YOU\'LL FIND HERE';
 T.de['about_ft'] = 'WAS SIE HIER FINDEN';
-T.en['about_f1'] = 'Professional Babolat rackets & balls';
-T.de['about_f1'] = 'Professionelle Babolat-Schläger & Bälle';
-T.en['about_f2'] = 'Free water & coffee when using the court (08:00–14:00)';
-T.de['about_f2'] = 'Gratis Wasser & Kaffee bei Platznutzung (08:00–14:00)';
-T.en['about_f3'] = 'Combo packages with food & drinks';
-T.de['about_f3'] = 'Combo-Pakete mit Essen & Getränken';
-T.en['about_f4'] = 'Kids\' parties & group events';
-T.de['about_f4'] = 'Kinderpartys & Gruppenveranstaltungen';
-T.en['about_f5'] = 'Safe & friendly environment';
-T.de['about_f5'] = 'Sichere & freundliche Umgebung';
+T.en['about_f1'] = '<span class="em">🎾</span> Professional Babolat rackets & balls';
+T.de['about_f1'] = '<span class="em">🎾</span> Professionelle Babolat-Schläger & Bälle';
+T.en['about_f2'] = '<span class="em">☕</span> Free water & coffee when you play (08:00–14:00)';
+T.de['about_f2'] = '<span class="em">☕</span> Gratis Wasser & Kaffee, wenn du spielst (08:00–14:00)';
+T.en['about_f3'] = '<span class="em">🍕</span> Combo packages with food & drinks';
+T.de['about_f3'] = '<span class="em">🍕</span> Combo-Pakete mit Essen & Getränken';
+T.en['about_f4'] = '<span class="em">🎉</span> Kids\' parties & group events';
+T.de['about_f4'] = '<span class="em">🎉</span> Kindergeburtstage & Gruppen-Events';
+T.en['about_f5'] = '<span class="em">🌟</span> Safe & welcoming atmosphere';
+T.de['about_f5'] = '<span class="em">🌟</span> Sichere & einladende Atmosphäre';
 T.en['about_q'] = '«One court. Good company. Perfect experience.»';
 T.de['about_q'] = '«Ein Platz. Gute Gesellschaft. Perfektes Erlebnis.»';
 T.en['about_foot'] = 'We look forward to seeing you!';
@@ -2906,8 +2906,8 @@ T.en['co_h1_1'] = 'We\'re';
 T.de['co_h1_1'] = 'Wir sind';
 T.en['co_h1_l'] = 'here';
 T.de['co_h1_l'] = 'da';
-T.en['co_sub'] = 'Book a court, ask about learning the sport or event organization — we are here for you.';
-T.de['co_sub'] = 'Buchen Sie einen Platz, fragen Sie nach dem Sportlernen oder Event-Organisation — wir sind für Sie da.';
+T.en['co_sub'] = 'Book a court, ask about lessons, or plan an event — we\'re here for you.';
+T.de['co_sub'] = 'Buche einen Platz, frag nach Kursen oder plan ein Event — wir sind für dich da.';
 T.en['call_btn'] = 'CALL';
 T.de['call_btn'] = 'ANRUFEN';
 T.en['coach_h2'] = 'Personal Coach';
@@ -2918,30 +2918,30 @@ T.en['coach_h1_l'] = 'padel';
 T.de['coach_h1_l'] = 'Padel';
 T.en['coach_loc'] = 'THE SPORT · THE COMPANY · THE EXPERIENCE';
 T.de['coach_loc'] = 'DER SPORT · DIE GESELLSCHAFT · DAS ERLEBNIS';
-T.en['coach_lead'] = 'Padel is the fastest growing racket sport in the world — simple, addictive, for all ages.';
-T.de['coach_lead'] = 'Padel ist die am schnellsten wachsende Schlägersportart der Welt — einfach, süchtig machend, für alle Altersgruppen.';
+T.en['coach_lead'] = 'Padel is the fastest-growing racket sport in the world — easy to pick up, hard to put down, for every age.';
+T.de['coach_lead'] = 'Padel ist die am schnellsten wachsende Schlägersportart der Welt — leicht zu lernen, richtig fesselnd, für jedes Alter.';
 T.en['coach_p1'] = 'Want to get to know the sport up close, ask about technique, equipment or rules? We are here for every question you have.';
 T.de['coach_p1'] = 'Möchten Sie den Sport aus der Nähe kennenlernen, nach Technik, Ausrüstung oder Regeln fragen? Wir sind für jede Ihrer Fragen da.';
 T.en['coach_why'] = 'WHY START';
 T.de['coach_why'] = 'WARUM ANFANGEN';
-T.en['coach_w1'] = 'Easy start — simple rules, quick adaptation';
-T.de['coach_w1'] = 'Einfacher Einstieg — einfache Regeln, schnelle Anpassung';
-T.en['coach_w2'] = 'Always 4 people — social sport by design';
-T.de['coach_w2'] = 'Immer 4 Personen — sozialer Sport by design';
-T.en['coach_w3'] = 'Low physical strain — joint-friendly';
-T.de['coach_w3'] = 'Geringe körperliche Belastung — gelenkschonend';
-T.en['coach_w4'] = 'Strategy and technique — you\'re never bored';
-T.de['coach_w4'] = 'Strategie und Technik — es wird nie langweilig';
-T.en['coach_w5'] = 'Fast progress from the first times';
-T.de['coach_w5'] = 'Schnelle Fortschritte von den ersten Malen an';
+T.en['coach_w1'] = '<span class="em">🚀</span> Easy to start — simple rules, quick to pick up';
+T.de['coach_w1'] = '<span class="em">🚀</span> Leichter Einstieg — simple Regeln, schnell verinnerlicht';
+T.en['coach_w2'] = '<span class="em">👥</span> Always 4 players — a social sport by design';
+T.de['coach_w2'] = '<span class="em">👥</span> Immer zu viert — ein geselliger Sport von Natur aus';
+T.en['coach_w3'] = '<span class="em">💪</span> Easy on the body — friendly to your joints';
+T.de['coach_w3'] = '<span class="em">💪</span> Sanft zum Körper — gelenkschonend';
+T.en['coach_w4'] = '<span class="em">🧠</span> Strategy and technique — you never get bored';
+T.de['coach_w4'] = '<span class="em">🧠</span> Strategie und Technik — es wird nie langweilig';
+T.en['coach_w5'] = '<span class="em">📈</span> Fast progress from your first sessions';
+T.de['coach_w5'] = '<span class="em">📈</span> Schnelle Fortschritte schon in den ersten Sessions';
 T.en['coach_lvl'] = 'YOUR LEVEL';
 T.de['coach_lvl'] = 'IHR NIVEAU';
-T.en['coach_l1'] = '<strong>Beginner</strong> — Just starting? The sport wins you over from the first ball';
-T.de['coach_l1'] = '<strong>Anfänger</strong> — Gerade erst angefangen? Der Sport begeistert Sie ab dem ersten Ball';
-T.en['coach_l2'] = '<strong>Intermediate</strong> — You\'ve got the basics and want quality play';
-T.de['coach_l2'] = '<strong>Fortgeschritten</strong> — Sie beherrschen die Grundlagen und wollen qualitativ hochwertiges Spiel';
-T.en['coach_l3'] = '<strong>Advanced</strong> — Looking for company at a competitive level';
-T.de['coach_l3'] = '<strong>Fortgeschritten</strong> — Sie suchen Gesellschaft auf Wettkampfniveau';
+T.en['coach_l1'] = '<span class="em">🌱</span> <strong>Beginner</strong> — Just starting out? The sport wins you over from the first ball';
+T.de['coach_l1'] = '<span class="em">🌱</span> <strong>Anfänger</strong> — Gerade erst angefangen? Der Sport begeistert dich ab dem ersten Ball';
+T.en['coach_l2'] = '<span class="em">⚡</span> <strong>Intermediate</strong> — You\'ve got the basics and want proper matches';
+T.de['coach_l2'] = '<span class="em">⚡</span> <strong>Mittelstufe</strong> — Du beherrschst die Grundlagen und willst richtige Matches';
+T.en['coach_l3'] = '<span class="em">🏆</span> <strong>Advanced</strong> — Looking for partners at a competitive level';
+T.de['coach_l3'] = '<span class="em">🏆</span> <strong>Profi</strong> — Du suchst Mitspieler auf Wettkampf-Niveau';
 T.en['coach_q'] = '«Ask us anything about the sport — we will help you start right.»';
 T.de['coach_q'] = '«Fragen Sie uns alles über den Sport — wir helfen Ihnen, richtig zu starten.»';
 T.en['coach_ct'] = 'WANT TO LEARN MORE?';
@@ -2957,7 +2957,7 @@ T.de['padel_h1_l'] = 'wachsende';
 T.en['padel_h1_2'] = 'sport';
 T.de['padel_h1_2'] = 'Sportart';
 T.en['padel_loc'] = 'FAST · SOCIAL · ADDICTIVE';
-T.de['padel_loc'] = 'SCHNELL · SOZIAL · SUCHT MACHEND';
+T.de['padel_loc'] = 'SCHNELL · GESELLIG · FESSELND';
 T.en['padel_lead'] = 'A racket sport played on a court enclosed by glass walls and mesh. Combines elements of tennis and squash — quick learning, endless fun.';
 T.de['padel_lead'] = 'Eine Schlägersportart, die auf einem Platz mit Glaswänden und Maschendraht gespielt wird. Kombiniert Elemente aus Tennis und Squash — schnelles Lernen, endloser Spaß.';
 T.en['padel_p1'] = 'The word <strong>"padel"</strong> in Spanish means <em>paddle</em> — from the shape of the racket. Born in Mexico in 1969 and developed in Spain. Today it counts <strong>over 25 million players</strong> in 90 countries.';
@@ -2968,46 +2968,46 @@ T.en['padel_s2'] = 'COUNTRIES';
 T.de['padel_s2'] = 'LÄNDER';
 T.en['padel_ct'] = 'THE COURT';
 T.de['padel_ct'] = 'DER PLATZ';
-T.en['padel_c1'] = 'Dimensions 20m × 10m — 25% smaller than tennis';
-T.de['padel_c1'] = 'Abmessungen 20m × 10m — 25% kleiner als Tennis';
-T.en['padel_c2'] = 'Enclosed with glass walls and mesh';
-T.de['padel_c2'] = 'Umschlossen mit Glaswänden und Maschendraht';
-T.en['padel_c3'] = 'Artificial turf';
-T.de['padel_c3'] = 'Kunstrasen';
-T.en['padel_c4'] = 'Net in the middle, like tennis';
-T.de['padel_c4'] = 'Netz in der Mitte, wie beim Tennis';
+T.en['padel_c1'] = '<span class="em">📏</span> Dimensions 20m × 10m — 25% smaller than a tennis court';
+T.de['padel_c1'] = '<span class="em">📏</span> Maße 20m × 10m — 25% kleiner als ein Tennisplatz';
+T.en['padel_c2'] = '<span class="em">🪟</span> Enclosed by glass walls and wire mesh';
+T.de['padel_c2'] = '<span class="em">🪟</span> Umschlossen von Glaswänden und Maschendraht';
+T.en['padel_c3'] = '<span class="em">🌱</span> Artificial turf surface';
+T.de['padel_c3'] = '<span class="em">🌱</span> Kunstrasen-Belag';
+T.en['padel_c4'] = '<span class="em">🎯</span> Net in the middle, just like tennis';
+T.de['padel_c4'] = '<span class="em">🎯</span> Netz in der Mitte, wie beim Tennis';
 T.en['padel_rt'] = 'BASIC RULES';
 T.de['padel_rt'] = 'GRUNDREGELN';
-T.en['padel_r1'] = 'Always <strong>2 vs 2</strong> — played only in teams';
-T.de['padel_r1'] = 'Immer <strong>2 gegen 2</strong> — nur in Teams gespielt';
-T.en['padel_r2'] = 'The serve is <strong>underhand</strong>';
-T.de['padel_r2'] = 'Der Aufschlag erfolgt <strong>von unten</strong> (underhand)';
-T.en['padel_r3'] = 'The ball must bounce on the ground before being hit';
-T.de['padel_r3'] = 'Der Ball muss auf dem Boden aufprallen, bevor er geschlagen wird';
-T.en['padel_r4'] = 'Balls can bounce off the walls (like in squash)';
-T.de['padel_r4'] = 'Bälle können von den Wänden abprallen (wie beim Squash)';
-T.en['padel_r5'] = 'The team that wins <strong>2 sets</strong> wins (or 3 in tournaments)';
-T.de['padel_r5'] = 'Es gewinnt das Team, das <strong>2 Sätze</strong> gewinnt (oder 3 bei Turnieren)';
+T.en['padel_r1'] = '<span class="em">👥</span> Always <strong>2 vs 2</strong> — played only in pairs';
+T.de['padel_r1'] = '<span class="em">👥</span> Immer <strong>2 gegen 2</strong> — nur im Doppel';
+T.en['padel_r2'] = '<span class="em">🤾</span> The serve is <strong>underhand</strong>';
+T.de['padel_r2'] = '<span class="em">🤾</span> Der Aufschlag erfolgt <strong>von unten</strong> (underhand)';
+T.en['padel_r3'] = '<span class="em">⬇️</span> The ball must bounce on the ground before you hit it';
+T.de['padel_r3'] = '<span class="em">⬇️</span> Der Ball muss zuerst auf dem Boden aufspringen, bevor er geschlagen wird';
+T.en['padel_r4'] = '<span class="em">🧱</span> Balls can bounce off the walls (like in squash)';
+T.de['padel_r4'] = '<span class="em">🧱</span> Bälle dürfen von den Wänden abprallen (wie beim Squash)';
+T.en['padel_r5'] = '<span class="em">🏆</span> First team to <strong>2 sets</strong> wins (or 3 in tournaments)';
+T.de['padel_r5'] = '<span class="em">🏆</span> Wer zuerst <strong>2 Sätze</strong> holt, gewinnt (oder 3 bei Turnieren)';
 T.en['padel_st'] = 'SCORING';
 T.de['padel_st'] = 'PUNKTZAHL';
-T.en['padel_sc1'] = 'Same as tennis: <strong>15, 30, 40, game</strong>';
-T.de['padel_sc1'] = 'Wie beim Tennis: <strong>15, 30, 40, Spiel</strong>';
-T.en['padel_sc2'] = '6 games = 1 set';
-T.de['padel_sc2'] = '6 Spiele = 1 Satz';
-T.en['padel_sc3'] = 'At 40-40 (deuce) you need 2 consecutive points to win';
-T.de['padel_sc3'] = 'Bei 40-40 (Einstand) benötigen Sie 2 aufeinanderfolgende Punkte zum Sieg';
+T.en['padel_sc1'] = '<span class="em">🔢</span> Same as tennis: <strong>15, 30, 40, game</strong>';
+T.de['padel_sc1'] = '<span class="em">🔢</span> Wie beim Tennis: <strong>15, 30, 40, Spiel</strong>';
+T.en['padel_sc2'] = '<span class="em">🎾</span> 6 games = 1 set';
+T.de['padel_sc2'] = '<span class="em">🎾</span> 6 Spiele = 1 Satz';
+T.en['padel_sc3'] = '<span class="em">⚖️</span> At 40-40 (deuce) you need 2 points in a row to win the game';
+T.de['padel_sc3'] = '<span class="em">⚖️</span> Bei 40-40 (Einstand) brauchst du 2 Punkte in Folge, um das Spiel zu gewinnen';
 T.en['padel_wt'] = 'WHY YOU WILL LOVE IT';
 T.de['padel_wt'] = 'WARUM ES SIE BEGEISTERT';
-T.en['padel_wy1'] = 'You play well from day one — simple rules';
-T.de['padel_wy1'] = 'Sie spielen ab dem ersten Tag gut — einfache Regeln';
-T.en['padel_wy2'] = 'Always with company — a social sport by design';
-T.de['padel_wy2'] = 'Immer in Gesellschaft — ein sozialer Sport by design';
-T.en['padel_wy3'] = 'Less strain than tennis';
-T.de['padel_wy3'] = 'Weniger Belastung als Tennis';
-T.en['padel_wy4'] = 'Requires strategy, speed and teamwork';
-T.de['padel_wy4'] = 'Erfordert Strategie, Geschwindigkeit und Teamarbeit';
-T.en['padel_wy5'] = 'It is simply fun — from the first ball';
-T.de['padel_wy5'] = 'Es macht einfach Spaß — vom ersten Ball an';
+T.en['padel_wy1'] = '<span class="em">🚀</span> You play well from day one — the rules are simple';
+T.de['padel_wy1'] = '<span class="em">🚀</span> Du spielst schon am ersten Tag gut — die Regeln sind simpel';
+T.en['padel_wy2'] = '<span class="em">👫</span> Always with friends — a social sport by design';
+T.de['padel_wy2'] = '<span class="em">👫</span> Immer zu viert — ein geselliger Sport von Natur aus';
+T.en['padel_wy3'] = '<span class="em">💪</span> Easier on the body than tennis';
+T.de['padel_wy3'] = '<span class="em">💪</span> Weniger Belastung als beim Tennis';
+T.en['padel_wy4'] = '<span class="em">🧠</span> Rewards strategy, speed and teamwork';
+T.de['padel_wy4'] = '<span class="em">🧠</span> Es zählen Strategie, Tempo und Teamwork';
+T.en['padel_wy5'] = '<span class="em">😄</span> It is simply fun — from the very first ball';
+T.de['padel_wy5'] = '<span class="em">😄</span> Es macht einfach Spaß — ab dem ersten Ballwechsel';
 T.en['padel_q'] = '«Zidane, Messi, Nadal, Tsitsipas, Beckham, Macron — they all love padel.»';
 T.de['padel_q'] = '«Zidane, Messi, Nadal, Tsitsipas, Beckham, Macron — sie alle lieben Padel.»';
 T.en['padel_ct2'] = 'READY TO PLAY?';
