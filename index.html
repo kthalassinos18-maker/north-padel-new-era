@@ -139,8 +139,8 @@
   .cta-hint{font-size:11px;letter-spacing:0.35em;color:#b7ff4a;text-transform:uppercase;font-weight:600;opacity:0.85}
   @keyframes pulse{0%,100%{box-shadow:0 8px 28px rgba(183,255,74,0.35),0 0 0 0 rgba(183,255,74,0.5)}50%{box-shadow:0 8px 28px rgba(183,255,74,0.5),0 0 0 16px rgba(183,255,74,0)}}
   @keyframes shake{10%,90%{transform:translate3d(-2px,0,0) rotate(-2deg)}20%,80%{transform:translate3d(3px,0,0) rotate(2deg)}30%,50%,70%{transform:translate3d(-5px,0,0) rotate(-3deg)}40%,60%{transform:translate3d(5px,0,0) rotate(3deg)}}
-  .step-panel{position:fixed;inset:0;z-index:120;background:#0a1929;overflow-y:auto;padding:64px 20px 40px;transform:translateX(100%);transition:transform .5s cubic-bezier(.65,.05,.36,1);visibility:hidden}
-  .step-panel.open{transform:translateX(0);visibility:visible}
+  .step-panel{position:fixed;inset:0;z-index:120;background:#0a1929;overflow-y:auto;padding:64px 20px 40px;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1),visibility 0s linear .55s,opacity .55s ease;opacity:0;visibility:hidden}
+  .step-panel.open{transform:translateX(0);opacity:1;visibility:visible;transition:transform .55s cubic-bezier(.4,0,.2,1),visibility 0s,opacity .35s ease}
   .step-panel.exit-left{transform:translateX(-100%)}
   .step-header{display:flex;align-items:center;gap:14px;margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto}
   .step-back{width:44px;height:44px;border-radius:50%;background:rgba(183,255,74,0.12);border:1px solid rgba(183,255,74,0.3);color:#b7ff4a;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -244,6 +244,9 @@
   .im-hdr .k{color:#b7ff4a;font-size:9px;font-weight:900;letter-spacing:0.24em;display:block;margin-bottom:2px}
   .im-hdr h2{font-family:'Oswald',sans-serif;font-size:20px;letter-spacing:0.03em;font-weight:600}
   .im-close{background:rgba(255,255,255,0.08);border:0;color:#fff;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer;flex-shrink:0}
+  .im-back{background:rgba(183,255,74,0.12);border:1px solid rgba(183,255,74,0.35);color:#b7ff4a;width:38px;height:38px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;margin-right:4px}
+  .im-back:hover{background:rgba(183,255,74,0.2)}
+  .im-actions{display:flex;gap:6px;align-items:center}
   .im-footer{padding:30px 18px 40px;text-align:center;color:rgba(255,255,255,0.4);font-size:11px}
 
   /* --- KIDS PARTIES --- */
@@ -721,7 +724,7 @@
 <div class="info-modal" id="modalParties" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2 data-i18n="parties_h2">Παιδικά Πάρτυ 🎉</h2></div>
-    <button class="im-close" data-close-modal="modalParties" type="button">×</button>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalParties" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalParties" type="button">×</button></div>
   </div>
   <div class="kp-hero">
     <span class="balloon">🎈🎉🎂</span>
@@ -764,7 +767,7 @@
 <div class="info-modal" id="modalEquip" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2 data-i18n="eq_h2">Εξοπλισμός</h2></div>
-    <button class="im-close" data-close-modal="modalEquip" type="button">×</button>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalEquip" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalEquip" type="button">×</button></div>
   </div>
   <div class="eq-hero">
     <h1><span data-i18n="eq_h1_1">Παίξε με τα</span> <span class="lime" data-i18n="eq_h1_l">καλύτερα</span></h1>
@@ -819,7 +822,7 @@
 <div class="info-modal" id="modalAbout" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2 data-i18n="about_h2">Σχετικά με εμάς</h2></div>
-    <button class="im-close" data-close-modal="modalAbout" type="button">×</button>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalAbout" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalAbout" type="button">×</button></div>
   </div>
   <div class="ab-hero">
     <span class="em">🎾</span>
@@ -853,7 +856,7 @@
 <div class="info-modal" id="modalGallery" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2>Gallery</h2></div>
-    <button class="im-close" data-close-modal="modalGallery" type="button">×</button>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalGallery" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalGallery" type="button">×</button></div>
   </div>
   <div class="g-hero">
     <span class="em">📸</span>
@@ -884,7 +887,7 @@
 <div class="info-modal" id="modalContact" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2 data-i18n="co_h2">Επικοινωνία</h2></div>
-    <button class="im-close" data-close-modal="modalContact" type="button">×</button>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalContact" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalContact" type="button">×</button></div>
   </div>
   <div class="co-hero">
     <h1><span data-i18n="co_h1_1">Είμαστε</span> <span class="lime" data-i18n="co_h1_l">εδώ</span></h1>
@@ -927,7 +930,7 @@
 <div class="info-modal" id="modalPadel" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k" data-i18n="kicker_info">INFO</span><h2 data-i18n="padel_h2">Padel — Τι είναι;</h2></div>
-    <button class="im-close" data-close-modal="modalPadel" type="button">×</button>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalPadel" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalPadel" type="button">×</button></div>
   </div>
   <div class="ab-hero">
     <span class="em">🎾</span>
@@ -1003,7 +1006,7 @@
 <div class="info-modal" id="modalCoaching" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2>Personal Coach</h2></div>
-    <button class="im-close" data-close-modal="modalCoaching" type="button">×</button>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalCoaching" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalCoaching" type="button">×</button></div>
   </div>
   <div class="ab-hero">
     <span class="em">🎾</span>
@@ -1363,6 +1366,16 @@
   }
   document.querySelectorAll('[data-close-modal]').forEach(btn => {
     btn.addEventListener('click', () => closeInfoModal(btn.dataset.closeModal));
+  });
+  document.querySelectorAll('[data-back-to-menu]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (navigator.vibrate) navigator.vibrate(20);
+      closeInfoModal(btn.dataset.backToMenu);
+      setTimeout(() => {
+        menuOverlay.classList.add('open');
+        menuOverlay.setAttribute('aria-hidden','false');
+      }, 200);
+    });
   });
 
   window.openLightbox = function(){ document.getElementById('lightbox').classList.add('open') };
