@@ -54,6 +54,11 @@
   .consent-row{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.5;color:rgba(244,249,255,0.75);padding:6px 0;cursor:pointer}
   .consent-row input[type="checkbox"]{margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:#b7ff4a;cursor:pointer}
   .consent-row span{flex:1}
+  .pw-wrap{position:relative}
+  .pw-wrap input{padding-right:44px}
+  .pw-toggle{position:absolute;right:8px;bottom:6px;background:transparent;border:0;color:rgba(244,249,255,0.6);font-size:18px;width:32px;height:32px;cursor:pointer;padding:0;border-radius:6px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .pw-toggle:hover{color:#b7ff4a;background:rgba(183,255,74,0.08)}
+  .pw-toggle.on{color:#b7ff4a}
   .auth-profile{display:none;flex-direction:column;gap:16px}
   .profile-hero{background:linear-gradient(135deg,rgba(183,255,74,0.15) 0%,rgba(183,255,74,0.02) 100%);border:1px solid rgba(183,255,74,0.3);border-radius:16px;padding:22px 20px;text-align:center}
   .profile-hero .pf-avatar{width:64px;height:64px;border-radius:50%;background:#b7ff4a;color:#0a1929;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;margin:0 auto 10px}
@@ -534,9 +539,12 @@
   </div>
   <form class="auth-form" id="loginForm">
     <div class="form-field"><label data-i18n="auth_email">EMAIL</label><input type="email" id="li_email" required></div>
-    <div class="form-field"><label data-i18n="auth_pass">ΚΩΔΙΚΟΣ</label><input type="password" id="li_pass" required></div>
+    <div class="form-field pw-wrap"><label data-i18n="auth_pass">ΚΩΔΙΚΟΣ</label>
+      <input type="password" id="li_pass" required>
+      <button type="button" class="pw-toggle" data-toggle="li_pass" aria-label="Εμφάνιση κωδικού">👁</button>
+    </div>
     <button type="submit" class="submit-btn">ΣΥΝΔΕΣΗ</button>
-    <button type="button" class="auth-link" style="background:transparent;border:0;cursor:pointer;font-family:inherit" data-i18n="auth_forgot">Ξέχασες τον κωδικό;</button>
+    <button type="button" class="auth-link" id="forgotPwBtn" style="background:transparent;border:0;cursor:pointer;font-family:inherit" data-i18n="auth_forgot">Ξέχασες τον κωδικό;</button>
     <p class="auth-error" id="loginError" style="color:#ff6b6b;font-size:13px;text-align:center;min-height:16px"></p>
   </form>
   <form class="auth-form" id="signupForm" style="display:none">
@@ -546,7 +554,14 @@
     </div>
     <div class="form-field"><label data-i18n="auth_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="si_phone" required></div>
     <div class="form-field"><label>EMAIL</label><input type="email" id="si_email" required></div>
-    <div class="form-field"><label>ΚΩΔΙΚΟΣ</label><input type="password" id="si_pass" required minlength="6"></div>
+    <div class="form-field pw-wrap"><label>ΚΩΔΙΚΟΣ (τουλάχιστον 6 χαρακτήρες)</label>
+      <input type="password" id="si_pass" required minlength="6">
+      <button type="button" class="pw-toggle" data-toggle="si_pass" aria-label="Εμφάνιση κωδικού">👁</button>
+    </div>
+    <div class="form-field pw-wrap"><label>ΕΠΙΒΕΒΑΙΩΣΗ ΚΩΔΙΚΟΥ</label>
+      <input type="password" id="si_pass2" required minlength="6">
+      <button type="button" class="pw-toggle" data-toggle="si_pass2" aria-label="Εμφάνιση κωδικού">👁</button>
+    </div>
     <div class="form-field">
       <label data-i18n="auth_level">ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ</label>
       <select id="si_level" required style="padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px">
@@ -1082,7 +1097,7 @@
 <!-- ============ FIREBASE (Auth + Firestore) ============ -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, getDocs, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1131,13 +1146,21 @@
     return snap.docs.map(d => ({ id:d.id, ...d.data() }));
   }
   async function resetPassword(email){ return sendPasswordResetEmail(auth, email); }
+  async function changePassword(currentPassword, newPassword){
+    const user = auth.currentUser;
+    if (!user || !user.email) throw new Error('Δεν είσαι συνδεδεμένος.');
+    const cred = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, cred);
+    await updatePassword(user, newPassword);
+  }
 
   window.npFB = {
     auth, db, ADMIN_EMAILS,
     signUpUser, signInUser,
     signOutUser: () => signOut(auth),
     onAuth: (cb) => onAuthStateChanged(auth, cb),
-    fetchProfile, updateProfile, createBookingDoc, listUserBookings, resetPassword,
+    fetchProfile, updateProfile, createBookingDoc, listUserBookings,
+    resetPassword, changePassword,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
   window.dispatchEvent(new Event('npFBReady'));
@@ -1316,9 +1339,35 @@
           <div class="pf-card-title">ΤΕΛΕΥΤΑΙΕΣ ΚΡΑΤΗΣΕΙΣ <span style="color:rgba(244,249,255,0.4)">${+(u.bookingsCount||0)} συνολικά</span></div>
           ${bookingRows}
         </div>
+        <button type="button" class="pf-cta outline" id="changePwBtn">🔒 ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ</button>
         ${profileMissing ? `<button type="button" class="pf-cta outline" id="completeProfileBtn">ΣΥΜΠΛΗΡΩΣΕ ΤΟ ΠΡΟΦΙΛ</button>` : ''}
         ${isAdmin ? `<a href="admin.html" class="auth-admin-link" id="adminLink">🔐 ADMIN PANEL</a>` : ''}
       `;
+
+      // Change-password flow
+      const chgPw = document.getElementById('changePwBtn');
+      if (chgPw){
+        chgPw.addEventListener('click', async () => {
+          const cur  = prompt('Ο τρέχων κωδικός σου:');
+          if (!cur) return;
+          const np1 = prompt('Νέος κωδικός (τουλάχιστον 6 χαρακτήρες):');
+          if (!np1 || np1.length < 6){ alert('Ο νέος κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.'); return; }
+          const np2 = prompt('Επιβεβαίωση νέου κωδικού:');
+          if (np1 !== np2){ alert('Οι κωδικοί δεν ταιριάζουν.'); return; }
+          try {
+            await window.npFB.changePassword(cur, np1);
+            alert('✅ Ο κωδικός άλλαξε επιτυχώς.');
+          } catch(ex){
+            const map = {
+              'auth/invalid-credential':'Λάθος τρέχων κωδικός.',
+              'auth/wrong-password':'Λάθος τρέχων κωδικός.',
+              'auth/weak-password':'Ο νέος κωδικός είναι πολύ αδύναμος.',
+              'auth/requires-recent-login':'Χρειάζεται πρόσφατη σύνδεση. Κάνε logout και ξανα-login.',
+            };
+            alert(map[ex.code] || ('Σφάλμα: ' + ex.message));
+          }
+        });
+      }
 
       // Wire up level change (persists to Firestore)
       const changeBtn = document.getElementById('changeLevelBtn');
@@ -1368,6 +1417,44 @@
     }
   });
 
+  // Password visibility toggles (both forms)
+  document.querySelectorAll('.pw-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const inp = document.getElementById(btn.dataset.toggle);
+      if (!inp) return;
+      const showing = inp.type === 'text';
+      inp.type = showing ? 'password' : 'text';
+      btn.classList.toggle('on', !showing);
+      btn.textContent = showing ? '👁' : '🙈';
+      btn.setAttribute('aria-label', showing ? 'Εμφάνιση κωδικού' : 'Απόκρυψη κωδικού');
+    });
+  });
+
+  // Forgot password → send reset email
+  document.getElementById('forgotPwBtn').addEventListener('click', async () => {
+    const email = document.getElementById('li_email').value.trim().toLowerCase();
+    const err = document.getElementById('loginError');
+    if (!email){
+      err.textContent = 'Γράψε πρώτα το email σου παραπάνω και μετά πάτα εδώ.';
+      return;
+    }
+    err.style.color = '#b7ff4a';
+    err.textContent = 'Αποστολή email...';
+    try {
+      await waitFB();
+      await window.npFB.resetPassword(email);
+      err.textContent = '✉️ Έφυγε email με σύνδεσμο επαναφοράς. Έλεγξε και τα spam.';
+    } catch(ex){
+      err.style.color = '#ff6b6b';
+      const map = {
+        'auth/user-not-found':'Δεν υπάρχει λογαριασμός με αυτό το email.',
+        'auth/invalid-email':'Μη έγκυρο email.',
+      };
+      err.textContent = map[ex.code] || ('Σφάλμα: ' + ex.message);
+    }
+    setTimeout(() => { err.style.color = '#ff6b6b'; }, 4000);
+  });
+
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const err = document.getElementById('signupError');
@@ -1376,13 +1463,19 @@
       err.textContent = 'Πρέπει να αποδεχτείς τη χρήση των στοιχείων για τη διαχείριση του λογαριασμού.';
       return;
     }
+    const pass1 = document.getElementById('si_pass').value;
+    const pass2 = document.getElementById('si_pass2').value;
+    if (pass1 !== pass2){
+      err.textContent = 'Οι δύο κωδικοί δεν ταιριάζουν.';
+      return;
+    }
     const email = document.getElementById('si_email').value.trim().toLowerCase();
     const payload = {
       name:    document.getElementById('si_name').value.trim(),
       surname: document.getElementById('si_surname').value.trim(),
       phone:   document.getElementById('si_phone').value.trim(),
       email,
-      password:document.getElementById('si_pass').value,
+      password: pass1,
       level:   +document.getElementById('si_level').value,
       consent: {
         essential:  true,
