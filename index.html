@@ -2564,26 +2564,10 @@
 
     await waitFB();
 
-    // Re-check the session isn't disabled since page load
-    try {
-      const scfg = await window.npFB.getConfig('sessions');
-      if (scfg && Array.isArray(scfg.disabled) && scfg.disabled.includes(selectedSession)){
-        alert('Αυτή η ώρα έγινε μη-διαθέσιμη. Επίλεξε άλλη.');
-        return;
-      }
-    } catch(e){ console.warn('session recheck failed', e); }
-
-    // Simple double-booking guard: query existing bookings for the same slot
-    try {
-      const existing = await window.npFB.findBooking(dateISO, selectedSession, court);
-      if (existing){
-        alert('Αυτή η ώρα κρατήθηκε από άλλον χρήστη μόλις τώρα. Επίλεξε άλλη.');
-        return;
-      }
-    } catch(e){ console.warn('conflict check failed', e); }
-
-    // Recompute total from live prices + user rewards — do NOT trust the DOM
-    const prices = await window.npFB.getConfig('prices').catch(()=>null) || { p4:44, p2:30, racket:2, balls:8 };
+    // Recompute total from LIVE_PRICES cache (already fetched at boot).
+    // The atomic slot doc create is the real double-booking guard;
+    // session-disabled check runs in parallel below.
+    const prices = LIVE_PRICES;
     const base = players === 4 ? prices.p4 : prices.p2;
     const gross = base + rackets * (prices.racket||0) + (premiumBalls ? (prices.balls||0) : 0);
     let total = gross;
@@ -2633,7 +2617,8 @@
     try {
       await window.npFB.createBookingWithSlot(record);
 
-      // Update loyalty counters (only for signed-in users, not guests)
+      // Update loyalty counters (fire-and-forget so the user sees the
+      // confirmation immediately; the write completes in the background)
       if (u){
         const patch = { bookingsCount: (u.bookingsCount||0) + 1 };
         if (discountKind === 'freeCourt') patch.freeCourts = Math.max(0, (u.freeCourts||0) - 1);
@@ -2641,11 +2626,9 @@
         if (((u.bookingsCount||0) + 1) % 10 === 0){
           patch.freeCourts = (patch.freeCourts != null ? patch.freeCourts : (u.freeCourts||0)) + 1;
         }
-        try {
-          await window.npFB.updateProfile(u.uid, patch);
-          Object.assign(currentProfile, patch);
-          currentProfile.bookings = [...(currentProfile.bookings||[]), record];
-        } catch(err){ console.warn('profile update failed', err); }
+        Object.assign(currentProfile, patch);
+        currentProfile.bookings = [...(currentProfile.bookings||[]), record];
+        window.npFB.updateProfile(u.uid, patch).catch(err => console.warn('profile update failed', err));
       }
 
       // Fire-and-forget WhatsApp notification to the admin (owner phone)
