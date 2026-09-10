@@ -1,46 +1,84 @@
 // North Padel — Firestore Security Rules
-// Copy-paste this into Firebase Console:
-// Firestore Database → Rules → Publish
+// Paste in Firebase Console: Firestore Database → Rules → Publish
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helpers
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
-    }
+    function isSignedIn()  { return request.auth != null; }
+    function isVerified()  { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isOwner(uid)  { return isSignedIn() && request.auth.uid == uid; }
     function isAdmin() {
-      // Add more admin emails here if needed
       return isSignedIn() && request.auth.token.email in [
         'k.thalassinos18@gmail.com'
       ];
     }
 
-    // /users/{uid} — profile per registered user
+    // /users/{uid}
+    //   Read: owner or admin.
+    //   Create: only owner, only sane initial values (loyalty locked to defaults).
+    //   Update: owner may only touch profile fields; admin may touch anything.
+    //   Delete: admin only.
     match /users/{uid} {
-      allow read:   if isOwner(uid) || isAdmin();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isAdmin();
+
+      allow create: if isOwner(uid)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.welcomeCoupon == true
+        && request.resource.data.freeCourts == 0
+        && request.resource.data.bookingsCount == 0
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1 && request.resource.data.level <= 5;
+
+      // Owner may only update a whitelist of profile fields. Loyalty and
+      // identity fields are admin-only.
+      allow update: if isAdmin() || (
+        isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name','surname','phone','level','consent','birthday','gender','city','availability'])
+        && (!('level' in request.resource.data.diff(resource.data).affectedKeys())
+            || (request.resource.data.level is int
+                && request.resource.data.level >= 1
+                && request.resource.data.level <= 5))
+      );
+
       allow delete: if isAdmin();
     }
 
-    // /bookings/{id} — any signed-in user can create their own booking
+    // /bookings/{id}
+    //   Read: admin, or owner of the booking.
+    //   Create: verified signed-in user, own userId, sane numbers.
+    //   Update/delete: admin only.
     match /bookings/{id} {
-      allow read:   if isAdmin() ||
-                       (isSignedIn() && resource.data.userId == request.auth.uid);
-      // On create, force userId to match the caller so nobody can plant
-      // bookings under someone else's account.
-      allow create: if isSignedIn() &&
-                       (request.resource.data.userId == request.auth.uid ||
-                        request.resource.data.userId == null);
-      allow update, delete: if isAdmin();
+      allow read: if isAdmin()
+                     || (isSignedIn() && resource.data.userId == request.auth.uid);
+
+      allow create: if isVerified()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'ok'
+        && request.resource.data.total is int
+        && request.resource.data.total >= 0
+        && request.resource.data.total <= 500
+        && request.resource.data.players is int
+        && request.resource.data.players in [2, 4]
+        && request.resource.data.rackets is int
+        && request.resource.data.rackets >= 0
+        && request.resource.data.rackets <= 4
+        && request.resource.data.date is string
+        && request.resource.data.time is string
+        && request.resource.data.court is string
+        && request.resource.data.court in ['Γήπεδο 1', 'Γήπεδο 2']
+        // Admin-manual bookings from admin.html don't hit this branch;
+        // they use the admin branch below.
+        ;
+
+      // Admin may also write anything (used by admin's Add booking form and deletes).
+      allow write:  if isAdmin();
     }
 
-    // /config/{doc} — prices, hours. Public read, admin-only write.
+    // /config/{doc} — prices, sessions, etc.
+    //   Public read (so the site can render prices/sessions to visitors).
+    //   Admin-only write.
     match /config/{doc} {
       allow read:  if true;
       allow write: if isAdmin();
