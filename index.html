@@ -1134,8 +1134,26 @@
     const snap = await getDoc(doc(db, 'users', uid));
     return snap.exists() ? { uid, ...snap.data() } : null;
   }
+  // Upsert: creates the doc if it doesn't exist, merges otherwise.
   async function updateProfile(uid, patch){
-    await updateDoc(doc(db, 'users', uid), patch);
+    await setDoc(doc(db, 'users', uid), patch, { merge: true });
+  }
+  // Ensure the profile document exists (called after login for old accounts
+  // whose signup didn't create it).
+  async function ensureProfile(user){
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()){
+      await setDoc(ref, {
+        email: user.email,
+        name: '', surname: '', phone: '',
+        level: 1,
+        welcomeCoupon: true,
+        freeCourts: 0,
+        bookingsCount: 0,
+        createdAt: serverTimestamp(),
+      });
+    }
   }
   async function createBookingDoc(data){
     return await addDoc(collection(db, 'bookings'), { ...data, createdAt: serverTimestamp() });
@@ -1159,7 +1177,7 @@
     signUpUser, signInUser,
     signOutUser: () => signOut(auth),
     onAuth: (cb) => onAuthStateChanged(auth, cb),
-    fetchProfile, updateProfile, createBookingDoc, listUserBookings,
+    fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
     resetPassword, changePassword,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
@@ -1512,6 +1530,8 @@
     window.npFB.onAuth(async (fbUser) => {
       if (fbUser){
         try {
+          // Auto-create the profile doc if it's missing (legacy accounts)
+          try { await window.npFB.ensureProfile(fbUser); } catch(e){ console.warn('ensureProfile', e); }
           const prof = await window.npFB.fetchProfile(fbUser.uid);
           if (prof){
             // Fetch user's bookings for the profile view
