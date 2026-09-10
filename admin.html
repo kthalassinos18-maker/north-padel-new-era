@@ -307,6 +307,13 @@ function showSection(name){
 }
 document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => showSection(n.dataset.section)));
 
+/* ============ XSS-SAFE HELPER ============ */
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 /* ============ STORAGE ============ */
 function getStore(key, fallback){
   try { const raw = localStorage.getItem('np_admin_'+key); return raw ? JSON.parse(raw) : fallback; } catch(e){ return fallback; }
@@ -321,22 +328,22 @@ function seedIfEmpty(){
     const today = new Date().toISOString().slice(0,10);
     const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
     setStore('bookings', [
-      { id:1, date:today, time:'19:30', court:'Γήπεδο 1', name:'Γιάννης Παπαδόπουλος', phone:'6971234567', players:4, total:44, status:'ok' },
-      { id:2, date:today, time:'21:00', court:'Γήπεδο 1', name:'Μαρία Κ.', phone:'6987654321', players:2, total:30, status:'ok' },
-      { id:3, date:tomorrow, time:'18:00', court:'Γήπεδο 1', name:'Νίκος Δ.', phone:'6944556677', players:4, total:52, status:'pend' },
+      { id:1, date:today, time:'19:30', court:'Γήπεδο 1', name:'Demo Booking A', phone:'6900000000', players:4, total:44, status:'ok' },
+      { id:2, date:today, time:'21:00', court:'Γήπεδο 1', name:'Demo Booking B', phone:'6900000000', players:2, total:30, status:'ok' },
+      { id:3, date:tomorrow, time:'18:00', court:'Γήπεδο 1', name:'Demo Booking C', phone:'6900000000', players:4, total:52, status:'pend' },
     ]);
   }
   if (!localStorage.getItem('np_admin_pending')){
     setStore('pending', [
-      { id:11, name:'Πέτρος Αναγνώστου', email:'petros@example.com', phone:'6971112222', created:'2026-09-08' },
-      { id:12, name:'Ελένη Παπαδοπούλου', email:'eleni@example.com', phone:'6983334444', created:'2026-09-09' },
+      { id:11, name:'Demo User A', email:'demo-a@example.com', phone:'6900000001', created:'2026-09-08' },
+      { id:12, name:'Demo User B', email:'demo-b@example.com', phone:'6900000002', created:'2026-09-09' },
     ]);
   }
   if (!localStorage.getItem('np_admin_members')){
     setStore('members', [
-      { id:101, name:'Κώστας Θαλασσινός', email:'k.thalassinos18@gmail.com', phone:'6951784471', bookings:12, joined:'2026-07-15' },
-      { id:102, name:'Ανδρέας Ν.', email:'andreas@example.com', phone:'6934391978', bookings:8, joined:'2026-07-20' },
-      { id:103, name:'Δημήτρης Λ.', email:'dimitris@example.com', phone:'6900112233', bookings:5, joined:'2026-08-01' },
+      { id:101, name:'Demo Member 1', email:'member1@example.com', phone:'6900000101', bookings:12, joined:'2026-07-15' },
+      { id:102, name:'Demo Member 2', email:'member2@example.com', phone:'6900000102', bookings:8, joined:'2026-07-20' },
+      { id:103, name:'Demo Member 3', email:'member3@example.com', phone:'6900000103', bookings:5, joined:'2026-08-01' },
     ]);
   }
   if (!localStorage.getItem('np_admin_hours')){
@@ -380,7 +387,7 @@ function renderDashboard(){
 
   const upcoming = [...bookings].sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time)).slice(0,5);
   document.getElementById('tblUpcoming').innerHTML = upcoming.map(b => `
-    <tr><td>${fmtDate(b.date)}</td><td>${b.time}</td><td>${b.court}</td><td>${b.name}</td><td>${b.players}άδα</td><td>${b.total}€</td><td>${pillFor(b.status)}</td></tr>
+    <tr><td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td><td>${esc(b.name)}</td><td>${+b.players}άδα</td><td>${+b.total}€</td><td>${pillFor(b.status)}</td></tr>
   `).join('') || '<tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
 }
 
@@ -388,10 +395,10 @@ function renderBookings(){
   const bookings = getStore('bookings', []);
   document.getElementById('tblBookings').innerHTML = bookings.map(b => `
     <tr>
-      <td>${fmtDate(b.date)}</td><td>${b.time}</td><td>${b.court}</td>
-      <td>${b.name}</td><td>${b.phone}</td><td>${b.players}άδα</td><td>${b.total}€</td>
+      <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
+      <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td><td>${+b.total}€</td>
       <td>${pillFor(b.status)}</td>
-      <td style="text-align:right"><button class="btn danger" data-del-bk="${b.id}">Διαγραφή</button></td>
+      <td style="text-align:right"><button class="btn danger" data-del-bk="${+b.id}">Διαγραφή</button></td>
     </tr>
   `).join('') || '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
   document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', () => {
@@ -407,17 +414,17 @@ function renderMembers(){
   document.getElementById('pendingCount').textContent = pending.length + ' νέες';
   document.getElementById('tblPending').innerHTML = pending.map(m => `
     <tr>
-      <td>${m.name}</td><td>${m.email}</td><td>${m.phone}</td><td>${m.created}</td>
+      <td>${esc(m.name)}</td><td>${esc(m.email)}</td><td>${esc(m.phone)}</td><td>${esc(m.created)}</td>
       <td style="text-align:right">
-        <button class="btn" data-approve="${m.id}">Έγκριση</button>
-        <button class="btn danger" data-reject="${m.id}">Απόρριψη</button>
+        <button class="btn" data-approve="${+m.id}">Έγκριση</button>
+        <button class="btn danger" data-reject="${+m.id}">Απόρριψη</button>
       </td>
     </tr>
   `).join('') || '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία εκκρεμότητα.</td></tr>';
   document.getElementById('tblMembers').innerHTML = members.map(m => `
     <tr>
-      <td>${m.name}</td><td>${m.email}</td><td>${m.phone}</td><td>${m.bookings}</td><td>${m.joined}</td>
-      <td style="text-align:right"><button class="btn danger" data-del-mem="${m.id}">Διαγραφή</button></td>
+      <td>${esc(m.name)}</td><td>${esc(m.email)}</td><td>${esc(m.phone)}</td><td>${+m.bookings}</td><td>${esc(m.joined)}</td>
+      <td style="text-align:right"><button class="btn danger" data-del-mem="${+m.id}">Διαγραφή</button></td>
     </tr>
   `).join('') || '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος.</td></tr>';
 
@@ -447,10 +454,10 @@ function renderHours(){
   const hours = getStore('hours', []);
   document.getElementById('tblHours').innerHTML = hours.map((h,i) => `
     <tr>
-      <td>${h.day}</td>
-      <td><input type="time" data-h="${i}" data-f="open" value="${h.open}" ${h.closed?'disabled':''}></td>
-      <td><input type="time" data-h="${i}" data-f="close" value="${h.close}" ${h.closed?'disabled':''}></td>
-      <td><input type="checkbox" data-h="${i}" data-f="closed" ${h.closed?'checked':''}></td>
+      <td>${esc(h.day)}</td>
+      <td><input type="time" data-h="${+i}" data-f="open" value="${esc(h.open)}" ${h.closed?'disabled':''}></td>
+      <td><input type="time" data-h="${+i}" data-f="close" value="${esc(h.close)}" ${h.closed?'disabled':''}></td>
+      <td><input type="checkbox" data-h="${+i}" data-f="closed" ${h.closed?'checked':''}></td>
     </tr>
   `).join('');
 }

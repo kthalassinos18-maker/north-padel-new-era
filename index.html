@@ -1182,14 +1182,17 @@
   /* ============ USER ACCOUNTS (localStorage — προσωρινό μέχρι το Firebase) ============ */
   const ADMIN_EMAILS = ['k.thalassinos18@gmail.com'];
   const LEVELS = [
-    { min:0,   max:9,   name:'Beginner',  icon:'🔰' },
-    { min:10,  max:24,  name:'Amateur',   icon:'🥉' },
-    { min:25,  max:49,  name:'Regular',   icon:'🥈' },
-    { min:50,  max:99,  name:'Pro',       icon:'🥇' },
-    { min:100, max:9e9, name:'Champion',  icon:'🏆' },
+    { name:'Beginner',  icon:'🔰' },
+    { name:'Amateur',   icon:'🥉' },
+    { name:'Regular',   icon:'🥈' },
+    { name:'Pro',       icon:'🥇' },
+    { name:'Champion',  icon:'🏆' },
   ];
-  function levelFor(points){
-    return LEVELS.findIndex(l => points >= l.min && points <= l.max);
+  // XSS-safe: escape any string dropped into innerHTML
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
   function getUsers(){
     try { return JSON.parse(localStorage.getItem('np_users') || '[]'); } catch(e){ return []; }
@@ -1220,35 +1223,29 @@
       signupF.style.display = 'none';
       tabs.style.display = 'none';
       profile.style.display = 'flex';
-      const lvIdx = Math.max(0, u.level ? u.level - 1 : levelFor(u.points||0));
+      const lvIdx = Math.max(0, Math.min(4, (u.level || 1) - 1));
       const lv = LEVELS[lvIdx];
-      const next = LEVELS[Math.min(4, lvIdx+1)];
-      const pts = u.points || 0;
-      const spanPts = lvIdx < 4 ? (next.min - lv.min) : 1;
-      const prog = lvIdx < 4 ? Math.min(100, Math.round(((pts - lv.min) / spanPts) * 100)) : 100;
-      const nextTxt = lvIdx < 4 ? `${next.min - pts} βαθμοί για ${next.icon} ${next.name}` : 'Max level!';
       const isAdmin = ADMIN_EMAILS.includes(u.email);
       const initials = ((u.name||'')[0]||'') + ((u.surname||'')[0]||'');
       document.getElementById('profileHero').innerHTML = `
-        <div class="pf-avatar">${initials.toUpperCase()||'👤'}</div>
-        <div class="pf-name">${u.name||''} ${u.surname||''}</div>
-        <div class="pf-email">${u.email}</div>
-        <div class="pf-badge">${lv.icon} ${lv.name} · ${pts} βαθμοί</div>
-        <div class="pf-progress"><div class="pf-progress-fill" style="width:${prog}%"></div></div>
-        <div class="pf-progress-text">${nextTxt}</div>`;
+        <div class="pf-avatar">${esc(initials.toUpperCase())||'👤'}</div>
+        <div class="pf-name">${esc(u.name||'')} ${esc(u.surname||'')}</div>
+        <div class="pf-email">${esc(u.email)}</div>
+        <div class="pf-badge">${lv.icon} ${esc(lv.name)}</div>
+        <button type="button" class="pf-cta outline" id="changeLevelBtn" style="margin-top:12px;font-size:11px;padding:8px">✎ ΑΛΛΑΓΗ ΕΠΙΠΕΔΟΥ</button>`;
 
       const bookings = (u.bookings||[]).slice(-3).reverse();
       const bookingRows = bookings.length
-        ? bookings.map(b => `<div class="pf-book-row"><span class="pf-book-d">${b.date} · ${b.time}</span><span class="pf-book-p">${b.total}€</span></div>`).join('')
+        ? bookings.map(b => `<div class="pf-book-row"><span class="pf-book-d">${esc(b.date)} · ${esc(b.time)}</span><span class="pf-book-p">${+b.total}€</span></div>`).join('')
         : '<div style="color:rgba(244,249,255,0.4);font-size:13px;padding:8px 0">Δεν έχεις κρατήσεις ακόμα.</div>';
 
       const rewards = [];
       if (u.welcomeCoupon) rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🎁</div><div><div class="pf-reward-t">Καλωσόρισμα −30%</div><div class="pf-reward-s">Εφαρμόζεται αυτόματα στην πρώτη κράτηση</div></div></div>`);
       const untilFree = 10 - ((u.bookings||[]).length % 10);
       if ((u.bookings||[]).length > 0 && untilFree < 10)
-        rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🎾</div><div><div class="pf-reward-t">${untilFree} κρατήσεις για δωρεάν γήπεδο</div><div class="pf-reward-s">Ανά 10 κρατήσεις παίρνεις 1 δωρεάν</div></div></div>`);
+        rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🎾</div><div><div class="pf-reward-t">${+untilFree} κρατήσεις για δωρεάν γήπεδο</div><div class="pf-reward-s">Ανά 10 κρατήσεις παίρνεις 1 δωρεάν</div></div></div>`);
       if (u.freeCourts > 0)
-        rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🏆</div><div><div class="pf-reward-t">${u.freeCourts} × δωρεάν γήπεδο</div><div class="pf-reward-s">Εφαρμόζεται αυτόματα στην επόμενη κράτηση</div></div></div>`);
+        rewards.push(`<div class="pf-reward"><div class="pf-reward-ico">🏆</div><div><div class="pf-reward-t">${+u.freeCourts} × δωρεάν γήπεδο</div><div class="pf-reward-s">Εφαρμόζεται αυτόματα στην επόμενη κράτηση</div></div></div>`);
       if (!rewards.length) rewards.push(`<div style="color:rgba(244,249,255,0.4);font-size:13px">Δεν υπάρχουν διαθέσιμες προσφορές.</div>`);
 
       const profileMissing = !u.birthday || !u.gender || !u.city;
@@ -1258,17 +1255,29 @@
           ${rewards.join('')}
         </div>
         <div class="pf-card">
-          <div class="pf-card-title">ΤΕΛΕΥΤΑΙΕΣ ΚΡΑΤΗΣΕΙΣ <span style="color:rgba(244,249,255,0.4)">${(u.bookings||[]).length} συνολικά</span></div>
+          <div class="pf-card-title">ΤΕΛΕΥΤΑΙΕΣ ΚΡΑΤΗΣΕΙΣ <span style="color:rgba(244,249,255,0.4)">${+(u.bookings||[]).length} συνολικά</span></div>
           ${bookingRows}
         </div>
         ${profileMissing ? `<button type="button" class="pf-cta outline" id="completeProfileBtn">ΣΥΜΠΛΗΡΩΣΕ ΤΟ ΠΡΟΦΙΛ</button>` : ''}
         ${isAdmin ? `<a href="admin.html" class="auth-admin-link" id="adminLink">🔐 ADMIN PANEL</a>` : ''}
       `;
 
-      // Auto-authenticate admin panel via sessionStorage
-      if (isAdmin){
-        sessionStorage.setItem('adminAuth','1');
+      // Wire up level change
+      const changeBtn = document.getElementById('changeLevelBtn');
+      if (changeBtn){
+        changeBtn.addEventListener('click', () => {
+          const opts = LEVELS.map((l,i)=>`${i+1}. ${l.icon} ${l.name}`).join('\n');
+          const ans = prompt('Επίλεξε νέο επίπεδο (1-5):\n\n'+opts+'\n\nΤρέχον: '+(lvIdx+1), String(lvIdx+1));
+          const n = parseInt(ans,10);
+          if (n >= 1 && n <= 5){
+            const users = getUsers();
+            const idx = users.findIndex(x => x.email === u.email);
+            if (idx >= 0){ users[idx].level = n; saveUsers(users); renderAuth(); }
+          }
+        });
       }
+      // NOTE: admin panel access requires its own auth on admin.html
+      // (do NOT set sessionStorage.adminAuth here — see security review)
     } else {
       profile.style.display = 'none';
       tabs.style.display = 'flex';
@@ -1291,10 +1300,8 @@
     }
     setCurrentUser(email);
     renderAuth();
-    // If admin, offer to jump to admin panel immediately
-    if (ADMIN_EMAILS.includes(email)){
-      sessionStorage.setItem('adminAuth','1');
-    }
+    // NOTE: admin panel requires its own password entry on admin.html.
+    // Do NOT auto-authenticate here — a client-side email match is not a security check.
   });
 
   document.getElementById('signupForm').addEventListener('submit', (e) => {
@@ -1677,8 +1684,7 @@
       }
       users[idx].bookings = users[idx].bookings || [];
       users[idx].bookings.push(rec);
-      users[idx].points = (users[idx].points||0) + 1;
-      // Award free court every 10 bookings
+      // Award free court every 10 bookings (levels are self-selected, no points)
       if (users[idx].bookings.length > 0 && users[idx].bookings.length % 10 === 0){
         users[idx].freeCourts = (users[idx].freeCourts||0) + 1;
       }
@@ -1698,7 +1704,7 @@
       localStorage.setItem('np_admin_bookings', JSON.stringify(list));
     } catch(err){}
 
-    alert('Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + bookingCrumb + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: ' + totalStr + (u ? '\n+1 βαθμός στο προφίλ σου!' : ''));
+    alert('Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + bookingCrumb + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: ' + totalStr);
     if (u) renderAuth();
   });
 
