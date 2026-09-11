@@ -199,7 +199,11 @@
       </div>
 
       <div class="panel">
-        <h3>ΟΛΕΣ ΟΙ ΚΡΑΤΗΣΕΙΣ</h3>
+        <h3>ΟΛΕΣ ΟΙ ΚΡΑΤΗΣΕΙΣ <span class="actions">
+          <label style="font-size:11px;letter-spacing:0.15em;color:rgba(244,249,255,0.55);margin-right:6px">ΗΜΕΡΑ:</label>
+          <input type="date" id="bkFilterDate" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:12px">
+          <button type="button" class="btn" id="bkFilterClear">Όλες</button>
+        </span></h3>
         <table class="tbl">
           <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Κατάσταση</th><th></th></tr></thead>
           <tbody id="tblBookings"></tbody>
@@ -220,7 +224,7 @@
       <div class="panel">
         <h3>ΕΝΕΡΓΑ ΜΕΛΗ</h3>
         <table class="tbl">
-          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Επίπεδο</th><th>Κρατήσεις</th><th>Marketing</th><th>Εγγραφή</th><th style="text-align:right">Ενέργειες</th></tr></thead>
+          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Επίπεδο</th><th>Κρατήσεις</th><th>Marketing</th><th>Εγγραφή</th><th>Δώρα</th><th style="text-align:right">Ενέργειες</th></tr></thead>
           <tbody id="tblMembers"></tbody>
         </table>
       </div>
@@ -518,8 +522,12 @@ function renderDashboard(){
   `).join('') || '<tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
 }
 
+let BOOKINGS_FILTER_DATE = '';
 function renderBookings(){
-  const bookings = CACHE.bookings;
+  let bookings = CACHE.bookings;
+  if (BOOKINGS_FILTER_DATE){
+    bookings = bookings.filter(b => b.date === BOOKINGS_FILTER_DATE);
+  }
   document.getElementById('tblBookings').innerHTML = bookings.map(b => `
     <tr>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
@@ -567,14 +575,50 @@ function renderMembers(){
       <td>${+m.bookingsCount||0}</td>
       <td>${marketing}</td>
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
-      <td style="text-align:right"><button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button></td>
+      <td>🎁 <b>${+m.freeCourts||0}</b> · 🎫 ${m.welcomeCoupon?'−10%':'—'}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn" data-gift-mem="${esc(m.uid)}" data-name="${esc((m.name||'')+' '+(m.surname||''))}" data-fc="${+m.freeCourts||0}" data-wc="${m.welcomeCoupon?'1':'0'}" style="margin-right:4px">🎁 Δώρο</button>
+        <button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button>
+      </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="8" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος ακόμα.</td></tr>';
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Κανένα μέλος ακόμα.</td></tr>';
 
   document.querySelectorAll('[data-del-mem]').forEach(btn => btn.addEventListener('click', async () => {
     if (!confirm('Διαγραφή μέλους από τη βάση; (Ο λογαριασμός στο Firebase Auth ΔΕΝ διαγράφεται αυτόματα.)')) return;
     try {
       await window.npFB.deleteUser(btn.dataset.delMem);
+      await refreshAll();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  document.querySelectorAll('[data-gift-mem]').forEach(btn => btn.addEventListener('click', async () => {
+    const uid = btn.dataset.giftMem;
+    const name = btn.dataset.name;
+    const curFc = +btn.dataset.fc;
+    const curWc = btn.dataset.wc === '1';
+    const choice = prompt(
+      'Δώρο για ' + name + ':\n\n' +
+      '1 = +1 δωρεάν γήπεδο\n' +
+      '2 = +2 δωρεάν γήπεδα\n' +
+      '3 = Ενεργοποίηση κουπονιού −10% (welcome)\n' +
+      '4 = Αφαίρεση 1 δωρεάν γηπέδου\n' +
+      '5 = Reset δωρεάν γηπέδων σε 0\n\n' +
+      'Τρέχοντα: 🎁 ' + curFc + ' δωρεάν γήπεδα · 🎫 κουπόνι ' + (curWc ? 'ΕΝΕΡΓΟ' : 'ανενεργό') + '\n\n' +
+      'Επίλεξε αριθμό (1-5):', '1'
+    );
+    if (!choice) return;
+    const patch = {};
+    const n = choice.trim();
+    if (n === '1') patch.freeCourts = curFc + 1;
+    else if (n === '2') patch.freeCourts = curFc + 2;
+    else if (n === '3') patch.welcomeCoupon = true;
+    else if (n === '4') patch.freeCourts = Math.max(0, curFc - 1);
+    else if (n === '5') patch.freeCourts = 0;
+    else { alert('Άκυρη επιλογή.'); return; }
+    try {
+      // updateProfile in admin isn't in npFB; use updateBooking pattern via setDoc merge
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+      await setDoc(doc(window.npFB.db, 'users', uid), patch, { merge: true });
+      alert('✅ Το δώρο εφαρμόστηκε.');
       await refreshAll();
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
@@ -806,6 +850,15 @@ async function refreshAll(){
 }
 document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
 document.getElementById('closureDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('bkFilterDate').addEventListener('change', (e) => {
+  BOOKINGS_FILTER_DATE = e.target.value;
+  renderBookings();
+});
+document.getElementById('bkFilterClear').addEventListener('click', () => {
+  BOOKINGS_FILTER_DATE = '';
+  document.getElementById('bkFilterDate').value = '';
+  renderBookings();
+});
 window.showSection = showSection;
 </script>
 

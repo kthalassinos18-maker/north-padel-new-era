@@ -158,6 +158,32 @@
   .cancel-inline b{color:#ffc14a}
   .guest-note{background:rgba(183,255,74,0.06);border:1px solid rgba(183,255,74,0.25);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:rgba(244,249,255,0.85);margin-bottom:14px}
   .guest-note b{color:#b7ff4a}
+
+  /* Guest-vs-Signup choice modal */
+  .choice-modal{position:fixed;inset:0;z-index:400;background:rgba(6,18,32,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+  .choice-modal.open{display:flex}
+  .choice-card{width:100%;max-width:460px;background:#0f2540;border:1px solid rgba(183,255,74,0.2);border-radius:20px;padding:28px 22px 22px;position:relative;margin:auto}
+  .choice-close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+  .choice-title{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;letter-spacing:0.03em;text-align:center;margin-bottom:22px}
+  .choice-box{background:rgba(10,25,41,0.55);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 18px}
+  .choice-box.choice-primary{border-color:rgba(183,255,74,0.5);background:linear-gradient(135deg,rgba(183,255,74,0.08) 0%,rgba(10,25,41,0.55) 100%)}
+  .choice-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .choice-badge{display:inline-block;padding:3px 10px;background:#b7ff4a;color:#0a1929;border-radius:6px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em}
+  .choice-badge.guest{background:rgba(255,255,255,0.15);color:rgba(244,249,255,0.85)}
+  .choice-head h3{font-family:'Oswald',sans-serif;font-size:17px;font-weight:600;letter-spacing:0.02em}
+  .choice-perks{list-style:none;padding:0;margin:0 0 14px;font-size:13px;line-height:1.7;color:rgba(244,249,255,0.85)}
+  .choice-perks li{padding:2px 0}
+  .choice-perks b{color:#b7ff4a}
+  .choice-note{font-size:12px;line-height:1.5;color:rgba(244,249,255,0.6);margin:6px 0 14px}
+  .choice-btn{width:100%;padding:13px;border-radius:11px;border:0;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.12em;cursor:pointer}
+  .choice-btn.primary{background:#b7ff4a;color:#0a1929}
+  .choice-btn.primary:hover{background:#a3ec36}
+  .choice-btn.outline{background:transparent;color:#f4f9ff;border:1px solid rgba(255,255,255,0.2)}
+  .choice-btn.outline:hover{background:rgba(255,255,255,0.06)}
+  .choice-or{text-align:center;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.2em;color:rgba(244,249,255,0.4);margin:14px 0;position:relative}
+  .choice-or::before,.choice-or::after{content:"";position:absolute;top:50%;width:calc(50% - 24px);height:1px;background:rgba(255,255,255,0.1)}
+  .choice-or::before{left:0}
+  .choice-or::after{right:0}
   .auth-link{display:block;text-align:center;color:rgba(244,249,255,0.6);font-size:13px;text-decoration:none;margin-top:8px}
   .auth-link:hover{color:#b7ff4a}
   .menu-icon-wrap{position:relative;width:48px;height:44px;display:block;overflow:visible}
@@ -668,6 +694,39 @@
     <button type="button" class="auth-logout" id="authLogout" data-i18n="auth_logout">ΑΠΟΣΥΝΔΕΣΗ</button>
   </div>
 </aside>
+
+<!-- ============ GUEST-OR-SIGNUP CHOICE MODAL ============ -->
+<div class="choice-modal" id="choiceModal" aria-hidden="true">
+  <div class="choice-card">
+    <button class="choice-close" id="choiceClose" type="button" aria-label="Κλείσιμο">×</button>
+    <h2 class="choice-title">Πώς θέλεις να κλείσεις;</h2>
+
+    <div class="choice-box choice-primary">
+      <div class="choice-head">
+        <span class="choice-badge">ΜΕΛΟΣ</span>
+        <h3>Σύνδεση / Εγγραφή</h3>
+      </div>
+      <ul class="choice-perks">
+        <li>🎁 <b>−10%</b> στην πρώτη σου κράτηση</li>
+        <li>🏆 <b>1 δωρεάν γήπεδο</b> ανά 10 κρατήσεις</li>
+        <li>📅 Ιστορικό κρατήσεων + ακύρωση από το προφίλ</li>
+        <li>🤝 Συμμετοχή στο "Βρες παίκτη"</li>
+      </ul>
+      <button type="button" class="choice-btn primary" id="choiceSignup">ΕΓΓΡΑΦΗ / ΣΥΝΔΕΣΗ</button>
+    </div>
+
+    <div class="choice-or"><span>ή</span></div>
+
+    <div class="choice-box">
+      <div class="choice-head">
+        <span class="choice-badge guest">GUEST</span>
+        <h3>Συνέχεια χωρίς εγγραφή</h3>
+      </div>
+      <p class="choice-note">Θα σου ζητήσουμε μόνο όνομα &amp; τηλέφωνο για την κράτηση. Δεν παίρνεις εκπτώσεις.</p>
+      <button type="button" class="choice-btn outline" id="choiceGuest">ΣΥΝΕΧΕΙΑ ΩΣ GUEST</button>
+    </div>
+  </div>
+</div>
 
 <!-- ============ FULL PROFILE STEP-PANEL ============ -->
 <section class="step-panel" id="stepProfile" aria-hidden="true">
@@ -1476,15 +1535,47 @@
     }
   }
 
-  // CTA button → calendar
-  ctaBtn.addEventListener('click', () => {
-    if (navigator.vibrate) navigator.vibrate([40,30,60]);
+  // CTA button → if not logged in, ask signup-vs-guest; else straight to calendar
+  const choiceModal = document.getElementById('choiceModal');
+  function goToCalendar(){
     ctaBtn.classList.add('shaking');
     setTimeout(() => {
       ctaBtn.classList.remove('shaking');
       renderCalendar();
       slideTo(null, stepCalendar);
-    }, 500);
+    }, 400);
+  }
+  function openChoiceModal(){
+    choiceModal.classList.add('open');
+    choiceModal.setAttribute('aria-hidden','false');
+  }
+  function closeChoiceModal(){
+    choiceModal.classList.remove('open');
+    choiceModal.setAttribute('aria-hidden','true');
+  }
+  ctaBtn.addEventListener('click', () => {
+    if (navigator.vibrate) navigator.vibrate([40,30,60]);
+    // Skip the choice if the user is already signed in
+    if (currentUser()) { goToCalendar(); return; }
+    openChoiceModal();
+  });
+  document.getElementById('choiceClose').addEventListener('click', closeChoiceModal);
+  document.getElementById('choiceGuest').addEventListener('click', () => {
+    closeChoiceModal();
+    goToCalendar();
+  });
+  document.getElementById('choiceSignup').addEventListener('click', () => {
+    closeChoiceModal();
+    // Open auth panel on Signup tab
+    authPanel.classList.add('open');
+    authPanel.setAttribute('aria-hidden','false');
+    setTimeout(() => {
+      const signupTab = document.querySelector('.auth-tab[data-tab="signup"]');
+      if (signupTab) signupTab.click();
+    }, 100);
+  });
+  choiceModal.addEventListener('click', (e) => {
+    if (e.target === choiceModal) closeChoiceModal();
   });
 
   // Door hotspot → slide to court 2 (like other steps)
