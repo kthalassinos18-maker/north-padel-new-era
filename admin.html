@@ -575,9 +575,9 @@ function renderMembers(){
       <td>${+m.bookingsCount||0}</td>
       <td>${marketing}</td>
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
-      <td>🎁 <b>${+m.freeCourts||0}</b> · 🎫 ${m.welcomeCoupon?'−10%':'—'}</td>
+      <td>🎫 ${m.welcomeCoupon?'−10% ενεργό':'—'}</td>
       <td style="text-align:right;white-space:nowrap">
-        <button class="btn" data-gift-mem="${esc(m.uid)}" data-name="${esc((m.name||'')+' '+(m.surname||''))}" data-fc="${+m.freeCourts||0}" data-wc="${m.welcomeCoupon?'1':'0'}" style="margin-right:4px">🎁 Δώρο</button>
+        <button class="btn" data-gift-mem="${esc(m.uid)}" data-name="${esc((m.name||'')+' '+(m.surname||''))}" data-wc="${m.welcomeCoupon?'1':'0'}" style="margin-right:4px">🎁 Δώρο</button>
         <button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button>
       </td>
     </tr>`;
@@ -593,32 +593,24 @@ function renderMembers(){
   document.querySelectorAll('[data-gift-mem]').forEach(btn => btn.addEventListener('click', async () => {
     const uid = btn.dataset.giftMem;
     const name = btn.dataset.name;
-    const curFc = +btn.dataset.fc;
     const curWc = btn.dataset.wc === '1';
     const choice = prompt(
       'Δώρο για ' + name + ':\n\n' +
-      '1 = +1 δωρεάν γήπεδο\n' +
-      '2 = +2 δωρεάν γήπεδα\n' +
-      '3 = Ενεργοποίηση κουπονιού −10% (welcome)\n' +
-      '4 = Αφαίρεση 1 δωρεάν γηπέδου\n' +
-      '5 = Reset δωρεάν γηπέδων σε 0\n\n' +
-      'Τρέχοντα: 🎁 ' + curFc + ' δωρεάν γήπεδα · 🎫 κουπόνι ' + (curWc ? 'ΕΝΕΡΓΟ' : 'ανενεργό') + '\n\n' +
-      'Επίλεξε αριθμό (1-5):', '1'
+      '1 = Ενεργοποίηση κουπονιού −10% (welcome ξανά)\n' +
+      '2 = Απενεργοποίηση κουπονιού −10%\n\n' +
+      'Τρέχον: 🎫 κουπόνι ' + (curWc ? 'ΕΝΕΡΓΟ' : 'ανενεργό') + '\n\n' +
+      'Επίλεξε αριθμό (1-2):', '1'
     );
     if (!choice) return;
     const patch = {};
     const n = choice.trim();
-    if (n === '1') patch.freeCourts = curFc + 1;
-    else if (n === '2') patch.freeCourts = curFc + 2;
-    else if (n === '3') patch.welcomeCoupon = true;
-    else if (n === '4') patch.freeCourts = Math.max(0, curFc - 1);
-    else if (n === '5') patch.freeCourts = 0;
+    if (n === '1') patch.welcomeCoupon = true;
+    else if (n === '2') patch.welcomeCoupon = false;
     else { alert('Άκυρη επιλογή.'); return; }
     try {
-      // updateProfile in admin isn't in npFB; use updateBooking pattern via setDoc merge
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
       await setDoc(doc(window.npFB.db, 'users', uid), patch, { merge: true });
-      alert('✅ Το δώρο εφαρμόστηκε.');
+      alert('✅ Έγινε.');
       await refreshAll();
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
