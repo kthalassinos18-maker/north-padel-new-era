@@ -845,7 +845,7 @@
       <p class="hint" id="playersHint" style="display:none" data-i18n="form_2p_note">Η 2άδα είναι διαθέσιμη μόνο μέχρι το session 19:30–21:00.</p>
     </div>
     <div class="form-field">
-      <label>ΡΑΚΕΤΕΣ <span class="label-hint" data-i18n="form_rackets_h">(+€2 η καθεμία)</span></label>
+      <label>ΡΑΚΕΤΕΣ <span class="label-hint" id="racketHint" data-i18n="form_rackets_h">(+€2 η καθεμία)</span></label>
       <div class="stepper">
         <button type="button" class="step-btn" data-op="dec">−</button>
         <span class="step-val" id="fRackets">0</span>
@@ -2537,12 +2537,14 @@
 
   function updateTotal(){
     const base = players === 4 ? LIVE_PRICES.p4 : LIVE_PRICES.p2;
-    const racketCost = rackets * (LIVE_PRICES.racket||0);
+    // For 2-player bookings the rackets are included in the base price.
+    // Only 4-player pays extra per racket.
+    const racketCost = players === 4 ? rackets * (LIVE_PRICES.racket||0) : 0;
     const ballCost = premiumBalls ? (LIVE_PRICES.balls||0) : 0;
     let total = base + racketCost + ballCost;
-    const parts = [players === 4 ? '4άδα · €' + base : '2άδα · €' + base];
-    if (rackets > 0) parts.push(rackets + ' ρακέτ' + (rackets===1?'α':'ες') + ' · €' + racketCost);
-    if (premiumBalls) parts.push('premium μπάλες · €8');
+    const parts = [players === 4 ? '4άδα · €' + base : '2άδα · €' + base + ' (ρακέτες μέσα)'];
+    if (rackets > 0 && racketCost > 0) parts.push(rackets + ' ρακέτ' + (rackets===1?'α':'ες') + ' · €' + racketCost);
+    if (premiumBalls) parts.push('premium μπάλες · €' + (LIVE_PRICES.balls||0));
 
     // Rewards preview (auto-apply best available)
     const u = currentUser();
@@ -2559,6 +2561,8 @@
     }
     document.getElementById('totalBreakdown').textContent = parts.join(' + ') + discountLine;
     document.getElementById('totalAmount').textContent = '€' + total;
+    const rh = document.getElementById('racketHint');
+    if (rh) rh.textContent = players === 2 ? '(περιλαμβάνονται δωρεάν)' : '(+€' + (LIVE_PRICES.racket||2) + ' η καθεμία)';
     document.querySelectorAll('.step-btn').forEach(b => {
       if (b.dataset.op === 'inc') b.disabled = rackets >= players;
       if (b.dataset.op === 'dec') b.disabled = rackets <= 0;
@@ -2630,7 +2634,9 @@
     // session-disabled check runs in parallel below.
     const prices = LIVE_PRICES;
     const base = players === 4 ? prices.p4 : prices.p2;
-    const gross = base + rackets * (prices.racket||0) + (premiumBalls ? (prices.balls||0) : 0);
+    // Rackets are included in the 2-player price. Only 4-player pays extra per racket.
+    const racketCost = players === 4 ? rackets * (prices.racket||0) : 0;
+    const gross = base + racketCost + (premiumBalls ? (prices.balls||0) : 0);
     let total = gross;
     let discountKind = null;
     if (u){

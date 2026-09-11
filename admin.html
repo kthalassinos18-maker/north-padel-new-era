@@ -190,7 +190,7 @@
         <h3>ΝΕΑ ΚΡΑΤΗΣΗ (ΧΕΙΡΟΚΙΝΗΤΗ) <span class="actions"><button class="btn solid" id="addBookingBtn">+ ΠΡΟΣΘΗΚΗ</button></span></h3>
         <div class="form-grid">
           <div class="field"><label>ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="bkDate"></div>
-          <div class="field"><label>ΩΡΑ</label><input type="time" id="bkTime" value="19:30"></div>
+          <div class="field"><label>ΩΡΑ (24h)</label><input type="text" inputmode="numeric" pattern="[0-9]{1,2}:[0-9]{2}" maxlength="5" id="bkTime" value="19:30" placeholder="HH:MM"></div>
           <div class="field"><label>ΓΗΠΕΔΟ</label><select id="bkCourt"><option>Γήπεδο 1</option><option>Γήπεδο 2</option></select></div>
           <div class="field"><label>ΠΑΙΚΤΕΣ</label><select id="bkPlayers"><option value="4">4άδα · 44€</option><option value="2">2άδα · 30€</option></select></div>
           <div class="field"><label>ΟΝΟΜΑ ΠΑΙΚΤΗ</label><input type="text" id="bkName" placeholder="π.χ. Γιάννης Παπαδόπουλος"></div>
@@ -593,8 +593,8 @@ function renderSchedule(){
   const slots = CACHE.schedule[EDIT_SEASON] || [];
   document.getElementById('tblSchedule').innerHTML = slots.map((s, i) => `
     <tr>
-      <td><input type="time" data-i="${i}" data-f="start" value="${esc(s.start)}"></td>
-      <td><input type="time" data-i="${i}" data-f="end"   value="${esc(s.end)}"></td>
+      <td><input type="text" inputmode="numeric" pattern="[0-9]{1,2}:[0-9]{2}" maxlength="5" data-i="${i}" data-f="start" value="${esc(s.start)}" placeholder="HH:MM" style="width:80px;font-family:'Oswald',sans-serif"></td>
+      <td><input type="text" inputmode="numeric" pattern="[0-9]{1,2}:[0-9]{2}" maxlength="5" data-i="${i}" data-f="end"   value="${esc(s.end)}"   placeholder="HH:MM" style="width:80px;font-family:'Oswald',sans-serif"></td>
       <td>
         <select data-i="${i}" data-f="period">
           ${PERIODS.map(p => `<option value="${p}" ${p===s.period?'selected':''}>${p}</option>`).join('')}
