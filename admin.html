@@ -273,6 +273,30 @@
           <tbody id="tblSchedule"></tbody>
         </table>
       </div>
+
+      <div class="panel">
+        <h3>ΗΜΕΡΟΛΟΓΙΟ · ΚΛΕΙΣΙΜΟ ΣΥΓΚΕΚΡΙΜΕΝΗΣ ΜΕΡΑΣ/ΩΡΑΣ</h3>
+        <p style="color:rgba(244,249,255,0.55);font-size:13px;margin-bottom:14px">Κλείσε συγκεκριμένα sessions σε συγκεκριμένη ημερομηνία (π.χ. private event, τουρνουά, βλάβη). Θα εξαφανιστούν από το site μόνο για εκείνη τη μέρα.</p>
+
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="field"><label>ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="closureDate"></div>
+          <div class="field"><label>&nbsp;</label><button type="button" class="btn solid" id="loadClosuresBtn">ΦΟΡΤΩΣΗ SESSIONS</button></div>
+        </div>
+
+        <div id="closureSessionsWrap" style="display:none">
+          <p style="color:rgba(244,249,255,0.7);font-size:12px;margin-bottom:8px">Απενεργοποίησε ό,τι θέλεις κλειστό για αυτή την ημερομηνία και πάτα Αποθήκευση.</p>
+          <table class="tbl">
+            <thead><tr><th>Session</th><th>Περίοδος</th><th style="text-align:center">Κατάσταση</th></tr></thead>
+            <tbody id="tblClosures"></tbody>
+          </table>
+          <div style="text-align:right;margin-top:14px">
+            <button type="button" class="btn solid" id="saveClosuresBtn">ΑΠΟΘΗΚΕΥΣΗ ΚΛΕΙΣΙΜΑΤΩΝ</button>
+            <button type="button" class="btn" id="clearClosuresBtn" style="margin-left:6px">Καθαρισμός (όλα ανοιχτά)</button>
+          </div>
+        </div>
+
+        <div id="upcomingClosures" style="margin-top:22px"></div>
+      </div>
     </section>
   </main>
 </div>
@@ -311,6 +335,7 @@
       return snap.docs.map(d => ({ uid:d.id, ...d.data() }));
     },
     deleteBooking: (id) => deleteDoc(doc(db, 'bookings', id)),
+    updateBooking: (id, patch) => updateDoc(doc(db, 'bookings', id), patch),
     deleteUser:    (uid) => deleteDoc(doc(db, 'users', uid)),
     getConfig: async (name) => {
       const snap = await getDoc(doc(db, 'config', name));
@@ -498,7 +523,8 @@ function renderBookings(){
   document.getElementById('tblBookings').innerHTML = bookings.map(b => `
     <tr>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
-      <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td><td>${+b.total}€</td>
+      <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td>
+      <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
       <td>${pillFor(b.status)}</td>
       <td style="text-align:right"><button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button></td>
     </tr>
@@ -507,6 +533,17 @@ function renderBookings(){
     if (!confirm('Διαγραφή κράτησης;')) return;
     try {
       await window.npFB.deleteBooking(btn.dataset.delBk);
+      await refreshAll();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  document.querySelectorAll('[data-edit-price]').forEach(btn => btn.addEventListener('click', async () => {
+    const cur = +btn.dataset.cur;
+    const ans = prompt('Νέα τιμή σε € (π.χ. 0 για δωρεάν, 44 για κανονική):', String(cur));
+    if (ans === null) return;
+    const n = parseInt(ans, 10);
+    if (isNaN(n) || n < 0 || n > 500){ alert('Δώσε ακέραιο από 0 έως 500.'); return; }
+    try {
+      await window.npFB.updateBooking(btn.dataset.editPrice, { total: n });
       await refreshAll();
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
@@ -661,12 +698,114 @@ document.getElementById('addSlotBtn').addEventListener('click', () => {
   renderSchedule();
 });
 
+/* ============ PER-DATE CLOSURES ============ */
+let closuresCache = {}; // { "2026-09-15": ["19:30-21:00", ...] }
+
+function activeSlotsForClosures(){
+  // Build slot list from the currently active season
+  const season = CACHE.schedule.activeSeason || 'summer';
+  const list = (CACHE.schedule[season] || []).filter(s => s.enabled !== false);
+  return list.map(s => ({
+    time: `${s.start}-${s.end}`,
+    label: `${s.start} – ${s.end === '24:00' ? '00:00' : s.end}`,
+    period: s.period,
+  }));
+}
+
+async function loadClosuresCache(){
+  try {
+    const cfg = await window.npFB.getConfig('closures');
+    closuresCache = (cfg && cfg.byDate) || {};
+  } catch(e){ closuresCache = {}; }
+}
+
+function renderClosureSlots(){
+  const date = document.getElementById('closureDate').value;
+  const wrap = document.getElementById('closureSessionsWrap');
+  const tbody = document.getElementById('tblClosures');
+  if (!date){ wrap.style.display = 'none'; return; }
+  const disabled = new Set(closuresCache[date] || []);
+  const slots = activeSlotsForClosures();
+  wrap.style.display = slots.length ? 'block' : 'none';
+  tbody.innerHTML = slots.map(s => {
+    const closed = disabled.has(s.time);
+    return `<tr>
+      <td style="font-family:'Oswald',sans-serif;font-size:15px">${esc(s.label)}</td>
+      <td><span class="pill ${closed?'canc':'ok'}">${esc(s.period)}</span></td>
+      <td style="text-align:center">
+        <label class="sw"><input type="checkbox" data-cls="${esc(s.time)}" ${closed?'':'checked'}><span class="sw-slider"></span></label>
+        <span class="sw-txt" style="margin-left:10px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.12em;color:${closed?'#ff6b6b':'#b7ff4a'}">${closed?'ΚΛΕΙΣΤΟ':'ΕΝΕΡΓΟ'}</span>
+      </td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('input[data-cls]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const txt = inp.closest('td').querySelector('.sw-txt');
+      txt.textContent = inp.checked ? 'ΕΝΕΡΓΟ' : 'ΚΛΕΙΣΤΟ';
+      txt.style.color = inp.checked ? '#b7ff4a' : '#ff6b6b';
+    });
+  });
+}
+
+function renderUpcomingClosures(){
+  const box = document.getElementById('upcomingClosures');
+  const today = new Date().toISOString().slice(0,10);
+  const dates = Object.keys(closuresCache).filter(d => d >= today && (closuresCache[d]||[]).length).sort();
+  if (!dates.length){ box.innerHTML = ''; return; }
+  box.innerHTML = `<h4 style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.2em;color:rgba(244,249,255,0.55);margin-bottom:10px">ΠΡΟΓΡΑΜΜΑΤΙΣΜΕΝΑ ΚΛΕΙΣΙΜΑΤΑ</h4>` +
+    dates.map(d => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+      <span style="font-family:'Oswald',sans-serif;font-size:14px">${esc(fmtDate(d))}</span>
+      <span style="flex:1;font-size:12px;color:rgba(244,249,255,0.6)">${esc(closuresCache[d].join(' · '))}</span>
+      <button class="btn danger" data-open-date="${esc(d)}" style="padding:6px 12px;font-size:11px">Επεξεργασία</button>
+    </div>`).join('');
+  box.querySelectorAll('[data-open-date]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.getElementById('closureDate').value = b.dataset.openDate;
+      renderClosureSlots();
+    });
+  });
+}
+
+document.getElementById('loadClosuresBtn').addEventListener('click', renderClosureSlots);
+document.getElementById('closureDate').addEventListener('change', renderClosureSlots);
+
+document.getElementById('saveClosuresBtn').addEventListener('click', async () => {
+  const date = document.getElementById('closureDate').value;
+  if (!date){ alert('Επίλεξε ημερομηνία πρώτα.'); return; }
+  const disabled = [];
+  document.querySelectorAll('#tblClosures input[data-cls]').forEach(inp => {
+    if (!inp.checked) disabled.push(inp.dataset.cls);
+  });
+  if (disabled.length) closuresCache[date] = disabled;
+  else delete closuresCache[date];
+  try {
+    await window.npFB.setConfig('closures', { byDate: closuresCache });
+    alert('✅ Αποθηκεύτηκαν τα κλεισίματα για ' + date);
+    renderUpcomingClosures();
+  } catch(e){ alert('Αποτυχία: '+e.message); }
+});
+
+document.getElementById('clearClosuresBtn').addEventListener('click', async () => {
+  const date = document.getElementById('closureDate').value;
+  if (!date){ alert('Επίλεξε ημερομηνία πρώτα.'); return; }
+  if (!confirm('Καθαρισμός όλων των κλεισιμάτων για ' + date + ';')) return;
+  delete closuresCache[date];
+  try {
+    await window.npFB.setConfig('closures', { byDate: closuresCache });
+    renderClosureSlots();
+    renderUpcomingClosures();
+  } catch(e){ alert('Αποτυχία: '+e.message); }
+});
+
 /* ============ INIT ============ */
 async function refreshAll(){
   await loadAll();
+  await loadClosuresCache();
   renderDashboard(); renderBookings(); renderMembers(); renderSessions(); renderPrices();
+  renderUpcomingClosures();
 }
 document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('closureDate').value = new Date().toISOString().slice(0,10);
 window.showSection = showSection;
 </script>
 
