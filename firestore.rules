@@ -35,11 +35,22 @@ service cloud.firestore {
       allow update: if isAdmin() || (
         isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name','surname','phone','level','consent','birthday','gender','city','availability'])
+             .hasOnly(['name','surname','phone','level','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount'])
         && (!('level' in request.resource.data.diff(resource.data).affectedKeys())
             || (request.resource.data.level is int
                 && request.resource.data.level >= 1
                 && request.resource.data.level <= 5))
+        // freeCourts / couponPct / welcomeCoupon: owner may only decrease
+        // (burn a gift after use). Admin still bypasses via the top branch.
+        && (!('freeCourts' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.freeCourts <= resource.data.freeCourts)
+        && (!('couponPct' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.couponPct == 0)
+        && (!('welcomeCoupon' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.welcomeCoupon == false)
+        // bookingsCount: owner may only bump by exactly 1
+        && (!('bookingsCount' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.bookingsCount == resource.data.bookingsCount + 1)
       );
 
       allow delete: if isAdmin();

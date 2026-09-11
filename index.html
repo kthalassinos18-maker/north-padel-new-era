@@ -2627,13 +2627,22 @@
     if (rackets > 0 && racketCost > 0) parts.push(rackets + ' ρακέτ' + (rackets===1?'α':'ες') + ' · €' + racketCost);
     if (premiumBalls) parts.push('premium μπάλες · €' + (LIVE_PRICES.balls||0));
 
-    // Rewards preview: only welcome coupon (−10% on the very first booking)
+    // Rewards preview: pick the best applicable
     const u = currentUser();
     let discountLine = '';
-    if (u && u.welcomeCoupon && (u.bookingsCount||0) === 0){
-      const disc = Math.round(total * 0.10);
-      total = total - disc;
-      discountLine = ' − 🎁 καλωσόρισμα (−' + disc + '€)';
+    if (u){
+      if ((u.freeCourts||0) > 0){
+        total = 0;
+        discountLine = ' − 🎾 δωρεάν γήπεδο (δώρο)';
+      } else if ((u.couponPct||0) > 0){
+        const disc = Math.round(total * (u.couponPct/100));
+        total = total - disc;
+        discountLine = ' − 🎫 −' + u.couponPct + '% (−' + disc + '€)';
+      } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
+        const disc = Math.round(total * 0.10);
+        total = total - disc;
+        discountLine = ' − 🎁 καλωσόρισμα (−' + disc + '€)';
+      }
     }
     document.getElementById('totalBreakdown').textContent = parts.join(' + ') + discountLine;
     document.getElementById('totalAmount').textContent = '€' + total;
@@ -2715,9 +2724,16 @@
     const gross = base + racketCost + (premiumBalls ? (prices.balls||0) : 0);
     let total = gross;
     let discountKind = null;
-    if (u && u.welcomeCoupon && (u.bookingsCount||0) === 0){
-      total = Math.max(0, gross - Math.round(gross * 0.10));
-      discountKind = 'welcome';
+    if (u){
+      if ((u.freeCourts||0) > 0){
+        total = 0; discountKind = 'freeCourt';
+      } else if ((u.couponPct||0) > 0){
+        total = Math.max(0, gross - Math.round(gross * (u.couponPct/100)));
+        discountKind = 'coupon';
+      } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
+        total = Math.max(0, gross - Math.round(gross * 0.10));
+        discountKind = 'welcome';
+      }
     }
 
     // For guest bookings, sign in anonymously so we get an auth token
@@ -2756,10 +2772,12 @@
     try {
       await window.npFB.createBookingWithSlot(record);
 
-      // Update bookings count + burn the welcome coupon (fire-and-forget)
+      // Update bookings count + burn any consumed coupon/gift (fire-and-forget)
       if (u){
         const patch = { bookingsCount: (u.bookingsCount||0) + 1 };
-        if (discountKind === 'welcome') patch.welcomeCoupon = false;
+        if (discountKind === 'freeCourt') patch.freeCourts = Math.max(0, (u.freeCourts||0) - 1);
+        if (discountKind === 'coupon')    patch.couponPct = 0;
+        if (discountKind === 'welcome')   patch.welcomeCoupon = false;
         Object.assign(currentProfile, patch);
         currentProfile.bookings = [...(currentProfile.bookings||[]), record];
         window.npFB.updateProfile(u.uid, patch).catch(err => console.warn('profile update failed', err));
@@ -3260,7 +3278,7 @@ T.de['level_opt_5'] = '🏆 Champion — Wettkampf-Niveau';
 
 /* ============ Booking form — guest note + cancel policy ============ */
 T.en['guest_note'] = '💡 <b>You\'re booking as a guest.</b> No sign-up needed!<br><span style="color:rgba(244,249,255,0.6)">If you <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">log in / sign up</button>, you get -10% on your first booking.</span>';
-T.de['guest_note'] = '💡 <b>Du buchst als Gast.</b> Keine Registrierung nötig!<br><span style="color:rgba(244,249,255,0.6)">Wenn du dich <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">anmeldest / registrierst</button>, bekommst du -10% auf deine erste Buchung + einen Gratis-Platz pro 10 Buchungen.</span>';
+T.de['guest_note'] = '💡 <b>Du buchst als Gast.</b> Keine Registrierung nötig!<br><span style="color:rgba(244,249,255,0.6)">Wenn du dich <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">anmeldest / registrierst</button>, bekommst du -10% auf deine erste Buchung.</span>';
 T.en['cancel_inline'] = '📋 <b>Cancellation policy:</b> Free <b>&gt;48h</b> before, from your profile · <b>24-48h</b> by phone only (693 439 1978 / 695 178 4471) · <b>&lt;24h or no-show</b> you owe the court price (€44 for 4 players, €30 for 2).';
 T.de['cancel_inline'] = '📋 <b>Stornierungsrichtlinie:</b> Kostenlos <b>&gt;48h</b> vorher, im Profil · <b>24-48h</b> nur telefonisch (693 439 1978 / 695 178 4471) · <b>&lt;24h oder no-show</b> zahlst du den Platzpreis (€44 für 4 Spieler, €30 für 2).';
 

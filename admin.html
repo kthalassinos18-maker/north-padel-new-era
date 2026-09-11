@@ -575,9 +575,23 @@ function renderMembers(){
       <td>${+m.bookingsCount||0}</td>
       <td>${marketing}</td>
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
-      <td>🎫 ${m.welcomeCoupon?'−10% ενεργό':'—'}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <span title="Δωρεάν γήπεδα" style="min-width:20px">🎾</span>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="-1" style="padding:2px 8px;min-width:26px">−</button>
+            <b style="min-width:22px;text-align:center">${+m.freeCourts||0}</b>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="+1" style="padding:2px 8px;min-width:26px">+</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span title="Κουπόνι έκπτωσης %" style="min-width:20px">🎫</span>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="-5" style="padding:2px 8px;min-width:26px">−5</button>
+            <b style="min-width:36px;text-align:center">${+m.couponPct||0}%</b>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="+5" style="padding:2px 8px;min-width:26px">+5</button>
+          </div>
+        </div>
+      </td>
       <td style="text-align:right;white-space:nowrap">
-        <button class="btn" data-gift-mem="${esc(m.uid)}" data-name="${esc((m.name||'')+' '+(m.surname||''))}" data-wc="${m.welcomeCoupon?'1':'0'}" style="margin-right:4px">🎁 Δώρο</button>
         <button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button>
       </td>
     </tr>`;
@@ -590,28 +604,31 @@ function renderMembers(){
       await refreshAll();
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
-  document.querySelectorAll('[data-gift-mem]').forEach(btn => btn.addEventListener('click', async () => {
-    const uid = btn.dataset.giftMem;
-    const name = btn.dataset.name;
-    const curWc = btn.dataset.wc === '1';
-    const choice = prompt(
-      'Δώρο για ' + name + ':\n\n' +
-      '1 = Ενεργοποίηση κουπονιού −10% (welcome ξανά)\n' +
-      '2 = Απενεργοποίηση κουπονιού −10%\n\n' +
-      'Τρέχον: 🎫 κουπόνι ' + (curWc ? 'ΕΝΕΡΓΟ' : 'ανενεργό') + '\n\n' +
-      'Επίλεξε αριθμό (1-2):', '1'
-    );
-    if (!choice) return;
-    const patch = {};
-    const n = choice.trim();
-    if (n === '1') patch.welcomeCoupon = true;
-    else if (n === '2') patch.welcomeCoupon = false;
-    else { alert('Άκυρη επιλογή.'); return; }
+  document.querySelectorAll('.gift-step').forEach(btn => btn.addEventListener('click', async () => {
+    const uid = btn.dataset.uid;
+    const field = btn.dataset.field;
+    const cur = +btn.dataset.cur;
+    const delta = +btn.dataset.delta;
+    let next = cur + delta;
+    // Clamp values
+    if (field === 'freeCourts') next = Math.max(0, Math.min(20, next));
+    if (field === 'couponPct')  next = Math.max(0, Math.min(100, next));
+    if (next === cur) return;
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
-      await setDoc(doc(window.npFB.db, 'users', uid), patch, { merge: true });
-      alert('✅ Έγινε.');
-      await refreshAll();
+      await setDoc(doc(window.npFB.db, 'users', uid), { [field]: next }, { merge: true });
+      // Update the visible number without a full reload
+      const memberRow = btn.closest('tr');
+      const cell = btn.closest('td');
+      const num = cell.querySelector('b');
+      num.textContent = field === 'couponPct' ? (next + '%') : String(next);
+      // Update all sibling buttons' data-cur to the new value
+      cell.querySelectorAll('.gift-step').forEach(b => {
+        if (b.dataset.field === field) b.dataset.cur = String(next);
+      });
+      // Update our local cache so a later refresh doesn't overwrite
+      const u = CACHE.users.find(x => x.uid === uid);
+      if (u) u[field] = next;
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
 }
