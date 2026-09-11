@@ -699,30 +699,30 @@
 <div class="choice-modal" id="choiceModal" aria-hidden="true">
   <div class="choice-card">
     <button class="choice-close" id="choiceClose" type="button" aria-label="Κλείσιμο">×</button>
-    <h2 class="choice-title">Πώς θέλεις να κλείσεις;</h2>
+    <h2 class="choice-title" data-i18n="choice_title">Πώς θέλεις να κλείσεις;</h2>
 
     <div class="choice-box choice-primary">
       <div class="choice-head">
-        <span class="choice-badge">ΜΕΛΟΣ</span>
-        <h3>Σύνδεση / Εγγραφή</h3>
+        <span class="choice-badge" data-i18n="choice_badge_member">ΜΕΛΟΣ</span>
+        <h3 data-i18n="choice_member_h">Σύνδεση / Εγγραφή</h3>
       </div>
       <ul class="choice-perks">
-        <li>🎁 <b>−10%</b> στην πρώτη σου κράτηση</li>
-        <li>📅 Ιστορικό κρατήσεων + ακύρωση από το προφίλ</li>
-        <li>🤝 Συμμετοχή στο "Βρες παίκτη"</li>
+        <li data-i18n-html="choice_perk_1">🎁 <b>−10%</b> στην πρώτη σου κράτηση</li>
+        <li data-i18n="choice_perk_2">📅 Ιστορικό κρατήσεων + ακύρωση από το προφίλ</li>
+        <li data-i18n="choice_perk_3">🤝 Συμμετοχή στο "Βρες παίκτη"</li>
       </ul>
-      <button type="button" class="choice-btn primary" id="choiceSignup">ΕΓΓΡΑΦΗ / ΣΥΝΔΕΣΗ</button>
+      <button type="button" class="choice-btn primary" id="choiceSignup" data-i18n="choice_signup_btn">ΕΓΓΡΑΦΗ / ΣΥΝΔΕΣΗ</button>
     </div>
 
-    <div class="choice-or"><span>ή</span></div>
+    <div class="choice-or"><span data-i18n="choice_or">ή</span></div>
 
     <div class="choice-box">
       <div class="choice-head">
-        <span class="choice-badge guest">GUEST</span>
-        <h3>Συνέχεια χωρίς εγγραφή</h3>
+        <span class="choice-badge guest" data-i18n="choice_badge_guest">GUEST</span>
+        <h3 data-i18n="choice_guest_h">Συνέχεια χωρίς εγγραφή</h3>
       </div>
-      <p class="choice-note">Θα σου ζητήσουμε μόνο όνομα &amp; τηλέφωνο για την κράτηση. Δεν παίρνεις εκπτώσεις.</p>
-      <button type="button" class="choice-btn outline" id="choiceGuest">ΣΥΝΕΧΕΙΑ ΩΣ GUEST</button>
+      <p class="choice-note" data-i18n="choice_note">Θα σου ζητήσουμε μόνο όνομα &amp; τηλέφωνο για την κράτηση. Δεν παίρνεις εκπτώσεις.</p>
+      <button type="button" class="choice-btn outline" id="choiceGuest" data-i18n="choice_guest_btn">ΣΥΝΕΧΕΙΑ ΩΣ GUEST</button>
     </div>
   </div>
 </div>
@@ -820,7 +820,7 @@
       <button id="calNext" type="button" aria-label="Επόμενος μήνας">›</button>
     </div>
     <div class="cal-weekdays">
-      <span>Δ</span><span>Τ</span><span>Τ</span><span>Π</span><span>Π</span><span>Σ</span><span>Κ</span>
+      <span data-i18n="wd_mon">Δ</span><span data-i18n="wd_tue">Τ</span><span data-i18n="wd_wed">Τ</span><span data-i18n="wd_thu">Π</span><span data-i18n="wd_fri">Π</span><span data-i18n="wd_sat">Σ</span><span data-i18n="wd_sun">Κ</span>
     </div>
     <div class="cal-grid" id="calGrid"></div>
   </div>
@@ -1274,10 +1274,13 @@
   Νέα Καλλικράτεια
 </a>
 
+<!-- Invisible reCAPTCHA host for Firebase Phone Auth -->
+<div id="recaptcha-container" style="position:fixed;bottom:-9999px;left:-9999px"></div>
+
 <!-- ============ FIREBASE (Auth + Firestore) ============ -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, signInAnonymously, RecaptchaVerifier, PhoneAuthProvider, linkWithCredential } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs, deleteDoc, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1413,6 +1416,36 @@
     }
     await batch.commit();
   }
+  // Phone verification helpers. We link a phone credential to the user's
+  // existing email/password account so the account gets a verified phone
+  // number claim (request.auth.token.phone_number in Firestore rules).
+  let _npRecaptcha = null;
+  function getRecaptcha(containerId){
+    if (_npRecaptcha) return _npRecaptcha;
+    _npRecaptcha = new RecaptchaVerifier(auth, containerId, { size: 'invisible' });
+    return _npRecaptcha;
+  }
+  async function startPhoneVerification(phone, containerId){
+    // phone must be E.164, e.g. "+306934391978"
+    if (!phone.startsWith('+')){
+      // Assume Greek if user gave just 6xxxxxxxxx or 306xxxxxxxxx
+      const digits = phone.replace(/\D/g, '');
+      if (digits.startsWith('30')) phone = '+' + digits;
+      else phone = '+30' + digits;
+    }
+    const verifier = getRecaptcha(containerId);
+    const provider = new PhoneAuthProvider(auth);
+    const verificationId = await provider.verifyPhoneNumber(phone, verifier);
+    return { verificationId, phone };
+  }
+  async function confirmPhoneOTP(verificationId, code){
+    const cred = PhoneAuthProvider.credential(verificationId, code);
+    if (!auth.currentUser) throw new Error('Δεν είσαι συνδεδεμένος.');
+    await linkWithCredential(auth.currentUser, cred);
+    // Reload the user so the token gets the fresh phone_number claim
+    await auth.currentUser.reload();
+    await auth.currentUser.getIdToken(true);
+  }
   async function ensureGuestAuth(){
     if (auth.currentUser) return auth.currentUser;
     const cred = await signInAnonymously(auth);
@@ -1473,6 +1506,7 @@
     fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
     resetPassword, changePassword, getConfig, resendVerification, findBooking, listBookingsOnDate,
     notifyAdminWhatsApp, cancelBookingDoc, ensureGuestAuth,
+    startPhoneVerification, confirmPhoneOTP,
     createBookingWithSlot, listOccupiedTimes, isSlotFree,
     upsertPublicProfile, removePublicProfile, listLookingForGame,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
@@ -1690,6 +1724,16 @@
           <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5;margin-bottom:10px">Στείλαμε email στο <strong>${esc(u.email)}</strong>. Πάτα τον σύνδεσμο μέσα του για να το επιβεβαιώσεις.</p>
           <button type="button" class="pf-cta outline" id="resendVerifyBtn" style="font-size:12px">📧 ΞΑΝΑΣΤΕΙΛΕ EMAIL</button>
         </div>` : ''}
+        ${!u.phoneVerified ? `
+        <div class="pf-card" style="border-color:rgba(183,255,74,0.4);background:rgba(183,255,74,0.05)">
+          <div class="pf-card-title" style="color:#b7ff4a">🔒 ΞΕΚΛΕΙΔΩΣΕ −10% ΜΕ ΕΠΑΛΗΘΕΥΣΗ SMS</div>
+          <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5;margin-bottom:10px">Επαλήθευσε το κινητό σου με έναν κωδικό SMS για να ενεργοποιηθεί η έκπτωση −10% στην πρώτη σου κράτηση.</p>
+          <button type="button" class="pf-cta" id="verifyPhoneBtn" style="font-size:12px">📱 ΕΠΑΛΗΘΕΥΣΗ ΤΗΛΕΦΩΝΟΥ</button>
+        </div>` : `
+        <div class="pf-card" style="border-color:rgba(183,255,74,0.35)">
+          <div class="pf-card-title" style="color:#b7ff4a">✓ ΤΗΛΕΦΩΝΟ ΕΠΙΒΕΒΑΙΩΜΕΝΟ</div>
+          <p style="font-size:13px;color:rgba(244,249,255,0.75);line-height:1.5">📱 ${esc(u.verifiedPhone||'')} — μπορείς να χρησιμοποιήσεις την προσφορά −10%.</p>
+        </div>`}
         <button type="button" class="pf-cta" id="fullProfileBtn">👤 ΠΛΗΡΕΣ ΠΡΟΦΙΛ · ΕΠΕΞΕΡΓΑΣΙΑ</button>
         <button type="button" class="pf-cta outline" id="changePwBtn">🔒 ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ</button>
         ${profileMissing ? `<button type="button" class="pf-cta outline" id="completeProfileBtn">ΣΥΜΠΛΗΡΩΣΕ ΤΟ ΠΡΟΦΙΛ</button>` : ''}
@@ -1719,6 +1763,33 @@
             await window.npFB.resendVerification();
             alert('✅ Στάλθηκε νέο email επαλήθευσης στο ' + u.email);
           } catch(ex){ alert('Σφάλμα: ' + ex.message); }
+        });
+      }
+
+      // Verify phone via SMS OTP
+      const vp = document.getElementById('verifyPhoneBtn');
+      if (vp){
+        vp.addEventListener('click', async () => {
+          try {
+            const suggested = u.phone || '';
+            const phone = prompt('Δώσε το κινητό σου σε διεθνή μορφή:\n(π.χ. +306934391978)\n\nΘα λάβεις SMS με 6-ψήφιο κωδικό.', suggested.startsWith('+') ? suggested : ('+30' + suggested.replace(/\D/g,'')));
+            if (!phone) return;
+            vp.disabled = true; vp.textContent = 'Αποστολή SMS...';
+            const { verificationId } = await window.npFB.startPhoneVerification(phone, 'recaptcha-container');
+            const code = prompt('Γράψε τον 6-ψήφιο κωδικό που έλαβες με SMS:');
+            if (!code){ vp.disabled = false; vp.textContent = '📱 ΕΠΑΛΗΘΕΥΣΗ ΤΗΛΕΦΩΝΟΥ'; return; }
+            await window.npFB.confirmPhoneOTP(verificationId, code.trim());
+            alert('✅ Το τηλέφωνό σου επαληθεύτηκε! Η έκπτωση −10% ενεργοποιήθηκε.');
+            location.reload();
+          } catch(ex){
+            const msg = ex.code === 'auth/invalid-verification-code' ? 'Λάθος κωδικός.'
+                     : ex.code === 'auth/credential-already-in-use'   ? 'Αυτό το τηλέφωνο ανήκει ήδη σε άλλον λογαριασμό.'
+                     : ex.code === 'auth/quota-exceeded'              ? 'Έχουμε στείλει πολλά SMS σήμερα. Δοκίμασε αύριο.'
+                     : ex.code === 'auth/billing-not-enabled'         ? 'Το SMS χρειάζεται ενεργοποίηση Blaze plan στο Firebase.'
+                     : ('Σφάλμα: ' + (ex.message || ex.code));
+            alert(msg);
+            vp.disabled = false; vp.textContent = '📱 ΕΠΑΛΗΘΕΥΣΗ ΤΗΛΕΦΩΝΟΥ';
+          }
         });
       }
 
@@ -1898,13 +1969,14 @@
           // Auto-create the profile doc if it's missing (legacy accounts)
           try { await window.npFB.ensureProfile(fbUser); } catch(e){ console.warn('ensureProfile', e); }
           const prof = await window.npFB.fetchProfile(fbUser.uid);
+          const phoneVerified = !!fbUser.phoneNumber;
           if (prof){
             // Fetch user's bookings for the profile view
             let bookings = [];
             try { bookings = await window.npFB.listUserBookings(fbUser.uid); } catch(e){}
-            currentProfile = { ...prof, uid: fbUser.uid, email: fbUser.email, emailVerified: !!fbUser.emailVerified, bookings };
+            currentProfile = { ...prof, uid: fbUser.uid, email: fbUser.email, emailVerified: !!fbUser.emailVerified, phoneVerified, verifiedPhone: fbUser.phoneNumber || null, bookings };
           } else {
-            currentProfile = { uid: fbUser.uid, email: fbUser.email, emailVerified: !!fbUser.emailVerified, name: '', surname: '', level: 1, bookings: [] };
+            currentProfile = { uid: fbUser.uid, email: fbUser.email, emailVerified: !!fbUser.emailVerified, phoneVerified, verifiedPhone: fbUser.phoneNumber || null, name: '', surname: '', level: 1, bookings: [] };
           }
         } catch(e){
           console.warn('Profile fetch failed', e);
@@ -2628,6 +2700,7 @@
     if (premiumBalls) parts.push('premium μπάλες · €' + (LIVE_PRICES.balls||0));
 
     // Rewards preview: pick the best applicable
+    // Welcome discount requires phone verification (anti-abuse).
     const u = currentUser();
     let discountLine = '';
     if (u){
@@ -2638,7 +2711,7 @@
         const disc = Math.round(total * (u.couponPct/100));
         total = total - disc;
         discountLine = ' − 🎫 −' + u.couponPct + '% (−' + disc + '€)';
-      } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
+      } else if (u.welcomeCoupon && u.phoneVerified && (u.bookingsCount||0) === 0){
         const disc = Math.round(total * 0.10);
         total = total - disc;
         discountLine = ' − 🎁 καλωσόρισμα (−' + disc + '€)';
@@ -2730,7 +2803,7 @@
       } else if ((u.couponPct||0) > 0){
         total = Math.max(0, gross - Math.round(gross * (u.couponPct/100)));
         discountKind = 'coupon';
-      } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
+      } else if (u.welcomeCoupon && u.phoneVerified && (u.bookingsCount||0) === 0){
         total = Math.max(0, gross - Math.round(gross * 0.10));
         discountKind = 'welcome';
       }
@@ -2901,7 +2974,7 @@ T.de['auth_phone'] = 'TELEFON';
 T.en['auth_forgot'] = 'Forgot your password?';
 T.de['auth_forgot'] = 'Passwort vergessen?';
 T.en['auth_verify'] = 'You will receive a verification email.';
-T.de['auth_verify'] = 'Sie erhalten eine Bestätigungs-E-Mail.';
+T.de['auth_verify'] = 'Du erhältst eine Bestätigungs-E-Mail.';
 T.en['cal_title'] = 'CHOOSE A DAY';
 T.de['cal_title'] = 'TAG WÄHLEN';
 T.en['c1_crumb'] = 'COURT 1';
@@ -2909,7 +2982,7 @@ T.de['c1_crumb'] = 'PLATZ 1';
 T.en['sess_title'] = 'CHOOSE A TIME';
 T.de['sess_title'] = 'ZEIT WÄHLEN';
 T.en['sess_morning'] = '☀️ MORNING';
-T.de['sess_morning'] = '☀️ MORGEN';
+T.de['sess_morning'] = '☀️ VORMITTAG';
 T.en['sess_night'] = '🌙 EVENING';
 T.de['sess_night'] = '🌙 ABEND';
 T.en['sess_noon'] = '🍽️ NOON';
@@ -3014,8 +3087,8 @@ T.en['eq_med'] = 'INTERMEDIATE';
 T.de['eq_med'] = 'MITTELSTUFE';
 T.en['eq_veron_d'] = 'Professional racket for advanced players. Carbon flex, 3D spin, holes pattern.';
 T.de['eq_veron_d'] = 'Profi-Schläger für Fortgeschrittene. Carbon Flex, 3D Spin, Lochmuster.';
-T.en['eq_counter_d'] = 'Oversize sweetspot, hybrid frame, soft EVA, lightweight. Ideal for progression.';
-T.de['eq_counter_d'] = 'Oversize-Sweetspot, Hybridrahmen, Soft-EVA, leichtgewichtig. Ideal für den Aufstieg.';
+T.en['eq_counter_d'] = 'Oversize sweetspot, hybrid frame, soft EVA, lightweight. Ideal for improving your game.';
+T.de['eq_counter_d'] = 'Oversize-Sweetspot, Hybridrahmen, Soft-EVA, leichtgewichtig. Ideal, um sich zu verbessern.';
 T.en['eq_rental_d'] = 'Durable racket, ideal for beginners or for trying out.';
 T.de['eq_rental_d'] = 'Robuster Schläger, ideal für Anfänger oder zum Ausprobieren.';
 T.en['eq_b_title'] = 'BALLS';
@@ -3153,7 +3226,7 @@ T.de['padel_rt'] = 'GRUNDREGELN';
 T.en['padel_r1'] = '<span class="em">👥</span> Always <strong>2 vs 2</strong> — played only in pairs';
 T.de['padel_r1'] = '<span class="em">👥</span> Immer <strong>2 gegen 2</strong> — nur im Doppel';
 T.en['padel_r2'] = '<span class="em">🤾</span> The serve is <strong>underhand</strong>';
-T.de['padel_r2'] = '<span class="em">🤾</span> Der Aufschlag erfolgt <strong>von unten</strong> (underhand)';
+T.de['padel_r2'] = '<span class="em">🤾</span> Der Aufschlag erfolgt <strong>von unten</strong>';
 T.en['padel_r3'] = '<span class="em">⬇️</span> The ball must bounce on the ground before you hit it';
 T.de['padel_r3'] = '<span class="em">⬇️</span> Der Ball muss zuerst auf dem Boden aufspringen, bevor er geschlagen wird';
 T.en['padel_r4'] = '<span class="em">🧱</span> Balls can bounce off the walls (like in squash)';
@@ -3281,6 +3354,48 @@ T.en['guest_note'] = '💡 <b>You\'re booking as a guest.</b> No sign-up needed!
 T.de['guest_note'] = '💡 <b>Du buchst als Gast.</b> Keine Registrierung nötig!<br><span style="color:rgba(244,249,255,0.6)">Wenn du dich <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">anmeldest / registrierst</button>, bekommst du -10% auf deine erste Buchung.</span>';
 T.en['cancel_inline'] = '📋 <b>Cancellation policy:</b> Free <b>&gt;48h</b> before, from your profile · <b>24-48h</b> by phone only (693 439 1978 / 695 178 4471) · <b>&lt;24h or no-show</b> you owe the court price (€44 for 4 players, €30 for 2).';
 T.de['cancel_inline'] = '📋 <b>Stornierungsrichtlinie:</b> Kostenlos <b>&gt;48h</b> vorher, im Profil · <b>24-48h</b> nur telefonisch (693 439 1978 / 695 178 4471) · <b>&lt;24h oder no-show</b> zahlst du den Platzpreis (€44 für 4 Spieler, €30 für 2).';
+
+/* ============ Choice modal (member vs. guest) ============ */
+T.en['choice_title'] = 'How would you like to book?';
+T.de['choice_title'] = 'Wie möchtest du buchen?';
+T.en['choice_badge_member'] = 'MEMBER';
+T.de['choice_badge_member'] = 'MITGLIED';
+T.en['choice_badge_guest'] = 'GUEST';
+T.de['choice_badge_guest'] = 'GAST';
+T.en['choice_member_h'] = 'Log in / Sign up';
+T.de['choice_member_h'] = 'Anmelden / Registrieren';
+T.en['choice_perk_1'] = '🎁 <b>-10%</b> on your first booking';
+T.de['choice_perk_1'] = '🎁 <b>-10%</b> auf deine erste Buchung';
+T.en['choice_perk_2'] = '📅 Booking history + cancel from your profile';
+T.de['choice_perk_2'] = '📅 Buchungsverlauf + Stornierung aus deinem Profil';
+T.en['choice_perk_3'] = '🤝 Join "Find a Player"';
+T.de['choice_perk_3'] = '🤝 Teilnahme an "Spieler finden"';
+T.en['choice_signup_btn'] = 'SIGN UP / LOG IN';
+T.de['choice_signup_btn'] = 'REGISTRIEREN / ANMELDEN';
+T.en['choice_or'] = 'or';
+T.de['choice_or'] = 'oder';
+T.en['choice_guest_h'] = 'Continue without signing up';
+T.de['choice_guest_h'] = 'Ohne Registrierung weiter';
+T.en['choice_note'] = 'We\'ll only ask for your name & phone number for the booking. No discounts included.';
+T.de['choice_note'] = 'Wir fragen dich nur nach Name & Telefonnummer für die Buchung. Keine Rabatte.';
+T.en['choice_guest_btn'] = 'CONTINUE AS GUEST';
+T.de['choice_guest_btn'] = 'ALS GAST FORTFAHREN';
+
+/* ============ Calendar weekday letters ============ */
+T.en['wd_mon'] = 'M';
+T.de['wd_mon'] = 'M';
+T.en['wd_tue'] = 'T';
+T.de['wd_tue'] = 'D';
+T.en['wd_wed'] = 'W';
+T.de['wd_wed'] = 'M';
+T.en['wd_thu'] = 'T';
+T.de['wd_thu'] = 'D';
+T.en['wd_fri'] = 'F';
+T.de['wd_fri'] = 'F';
+T.en['wd_sat'] = 'S';
+T.de['wd_sat'] = 'S';
+T.en['wd_sun'] = 'S';
+T.de['wd_sun'] = 'S';
 
   const originalTexts = new Map();
   

@@ -35,7 +35,7 @@ service cloud.firestore {
       allow update: if isAdmin() || (
         isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name','surname','phone','level','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount'])
+             .hasOnly(['name','surname','phone','level','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount','phoneVerified'])
         && (!('level' in request.resource.data.diff(resource.data).affectedKeys())
             || (request.resource.data.level is int
                 && request.resource.data.level >= 1
@@ -51,6 +51,12 @@ service cloud.firestore {
         // bookingsCount: owner may only bump by exactly 1
         && (!('bookingsCount' in request.resource.data.diff(resource.data).affectedKeys())
             || request.resource.data.bookingsCount == resource.data.bookingsCount + 1)
+        // phoneVerified: owner may only flip to true, and only when their
+        // auth token carries a phone_number claim (i.e. Firebase Phone Auth
+        // has actually confirmed an SMS OTP for this account).
+        && (!('phoneVerified' in request.resource.data.diff(resource.data).affectedKeys())
+            || (request.resource.data.phoneVerified == true
+                && request.auth.token.phone_number != null))
       );
 
       allow delete: if isAdmin();
