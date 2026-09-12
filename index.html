@@ -1301,6 +1301,9 @@
     await setDoc(doc(db, 'users', cred.user.uid), {
       name, surname, phone, email,
       level: level || 1,
+      // welcomeCoupon defaults ON, but the discount only actually applies
+      // when the user has verified their email (see updateTotal / submit).
+      // Fake-email bots never receive the verification link → no discount.
       welcomeCoupon: true,
       freeCourts: 0,
       bookingsCount: 0,
@@ -1724,16 +1727,6 @@
           <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5;margin-bottom:10px">Στείλαμε email στο <strong>${esc(u.email)}</strong>. Πάτα τον σύνδεσμο μέσα του για να το επιβεβαιώσεις.</p>
           <button type="button" class="pf-cta outline" id="resendVerifyBtn" style="font-size:12px">📧 ΞΑΝΑΣΤΕΙΛΕ EMAIL</button>
         </div>` : ''}
-        ${!u.phoneVerified ? `
-        <div class="pf-card" style="border-color:rgba(183,255,74,0.4);background:rgba(183,255,74,0.05)">
-          <div class="pf-card-title" style="color:#b7ff4a">🔒 ΞΕΚΛΕΙΔΩΣΕ −10% ΜΕ ΕΠΑΛΗΘΕΥΣΗ SMS</div>
-          <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5;margin-bottom:10px">Επαλήθευσε το κινητό σου με έναν κωδικό SMS για να ενεργοποιηθεί η έκπτωση −10% στην πρώτη σου κράτηση.</p>
-          <button type="button" class="pf-cta" id="verifyPhoneBtn" style="font-size:12px">📱 ΕΠΑΛΗΘΕΥΣΗ ΤΗΛΕΦΩΝΟΥ</button>
-        </div>` : `
-        <div class="pf-card" style="border-color:rgba(183,255,74,0.35)">
-          <div class="pf-card-title" style="color:#b7ff4a">✓ ΤΗΛΕΦΩΝΟ ΕΠΙΒΕΒΑΙΩΜΕΝΟ</div>
-          <p style="font-size:13px;color:rgba(244,249,255,0.75);line-height:1.5">📱 ${esc(u.verifiedPhone||'')} — μπορείς να χρησιμοποιήσεις την προσφορά −10%.</p>
-        </div>`}
         <button type="button" class="pf-cta" id="fullProfileBtn">👤 ΠΛΗΡΕΣ ΠΡΟΦΙΛ · ΕΠΕΞΕΡΓΑΣΙΑ</button>
         <button type="button" class="pf-cta outline" id="changePwBtn">🔒 ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ</button>
         ${profileMissing ? `<button type="button" class="pf-cta outline" id="completeProfileBtn">ΣΥΜΠΛΗΡΩΣΕ ΤΟ ΠΡΟΦΙΛ</button>` : ''}
@@ -1766,32 +1759,6 @@
         });
       }
 
-      // Verify phone via SMS OTP
-      const vp = document.getElementById('verifyPhoneBtn');
-      if (vp){
-        vp.addEventListener('click', async () => {
-          try {
-            const suggested = u.phone || '';
-            const phone = prompt('Δώσε το κινητό σου σε διεθνή μορφή:\n(π.χ. +306934391978)\n\nΘα λάβεις SMS με 6-ψήφιο κωδικό.', suggested.startsWith('+') ? suggested : ('+30' + suggested.replace(/\D/g,'')));
-            if (!phone) return;
-            vp.disabled = true; vp.textContent = 'Αποστολή SMS...';
-            const { verificationId } = await window.npFB.startPhoneVerification(phone, 'recaptcha-container');
-            const code = prompt('Γράψε τον 6-ψήφιο κωδικό που έλαβες με SMS:');
-            if (!code){ vp.disabled = false; vp.textContent = '📱 ΕΠΑΛΗΘΕΥΣΗ ΤΗΛΕΦΩΝΟΥ'; return; }
-            await window.npFB.confirmPhoneOTP(verificationId, code.trim());
-            alert('✅ Το τηλέφωνό σου επαληθεύτηκε! Η έκπτωση −10% ενεργοποιήθηκε.');
-            location.reload();
-          } catch(ex){
-            const msg = ex.code === 'auth/invalid-verification-code' ? 'Λάθος κωδικός.'
-                     : ex.code === 'auth/credential-already-in-use'   ? 'Αυτό το τηλέφωνο ανήκει ήδη σε άλλον λογαριασμό.'
-                     : ex.code === 'auth/quota-exceeded'              ? 'Έχουμε στείλει πολλά SMS σήμερα. Δοκίμασε αύριο.'
-                     : ex.code === 'auth/billing-not-enabled'         ? 'Το SMS χρειάζεται ενεργοποίηση Blaze plan στο Firebase.'
-                     : ('Σφάλμα: ' + (ex.message || ex.code));
-            alert(msg);
-            vp.disabled = false; vp.textContent = '📱 ΕΠΑΛΗΘΕΥΣΗ ΤΗΛΕΦΩΝΟΥ';
-          }
-        });
-      }
 
       // Change-password flow
       const chgPw = document.getElementById('changePwBtn');
@@ -2711,7 +2678,7 @@
         const disc = Math.round(total * (u.couponPct/100));
         total = total - disc;
         discountLine = ' − 🎫 −' + u.couponPct + '% (−' + disc + '€)';
-      } else if (u.welcomeCoupon && u.phoneVerified && (u.bookingsCount||0) === 0){
+      } else if (u.welcomeCoupon && u.emailVerified && (u.bookingsCount||0) === 0){
         const disc = Math.round(total * 0.10);
         total = total - disc;
         discountLine = ' − 🎁 καλωσόρισμα (−' + disc + '€)';
@@ -2803,7 +2770,7 @@
       } else if ((u.couponPct||0) > 0){
         total = Math.max(0, gross - Math.round(gross * (u.couponPct/100)));
         discountKind = 'coupon';
-      } else if (u.welcomeCoupon && u.phoneVerified && (u.bookingsCount||0) === 0){
+      } else if (u.welcomeCoupon && u.emailVerified && (u.bookingsCount||0) === 0){
         total = Math.max(0, gross - Math.round(gross * 0.10));
         discountKind = 'welcome';
       }
