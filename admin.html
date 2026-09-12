@@ -587,22 +587,22 @@ function renderMembers(){
       <td>${marketing}</td>
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
       <td>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <div style="display:flex;align-items:center;gap:4px">
-            <span title="Καλωσόρισμα -10% (μία μόνο κράτηση)" style="min-width:20px">🎁</span>
-            <button class="btn gift-toggle ${m.welcomeCoupon?'solid':''}" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" data-cur="${m.welcomeCoupon?'1':'0'}" style="padding:3px 10px;font-size:11px">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</button>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="gift-row" style="display:flex;align-items:center;gap:8px">
+            <span title="Καλωσόρισμα -10% (μία μόνο κράτηση)" style="min-width:22px;font-size:16px">🎁</span>
+            <button class="btn gift-toggle ${m.welcomeCoupon?'solid':''}" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" data-cur="${m.welcomeCoupon?'1':'0'}" style="padding:6px 14px;font-size:12px;min-width:96px">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</button>
           </div>
-          <div style="display:flex;align-items:center;gap:4px">
-            <span title="Δωρεάν γήπεδα" style="min-width:20px">🎾</span>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="-1" style="padding:2px 8px;min-width:26px">−</button>
-            <b style="min-width:22px;text-align:center">${+m.freeCourts||0}</b>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="+1" style="padding:2px 8px;min-width:26px">+</button>
+          <div class="gift-row" style="display:flex;align-items:center;gap:8px">
+            <span title="Δωρεάν γήπεδα" style="min-width:22px;font-size:16px">🎾</span>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="-1" style="padding:6px 12px;font-size:14px;min-width:34px">−</button>
+            <b class="gift-val" style="min-width:32px;text-align:center;font-size:15px">${+m.freeCourts||0}</b>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="+1" style="padding:6px 12px;font-size:14px;min-width:34px">+</button>
           </div>
-          <div style="display:flex;align-items:center;gap:4px">
-            <span title="Κουπόνι έκπτωσης %" style="min-width:20px">🎫</span>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="-5" style="padding:2px 8px;min-width:26px">−5</button>
-            <b style="min-width:36px;text-align:center">${+m.couponPct||0}%</b>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="+5" style="padding:2px 8px;min-width:26px">+5</button>
+          <div class="gift-row" style="display:flex;align-items:center;gap:8px">
+            <span title="Κουπόνι έκπτωσης %" style="min-width:22px;font-size:16px">🎫</span>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="-5" style="padding:6px 10px;font-size:13px;min-width:38px">−5</button>
+            <b class="gift-val" style="min-width:48px;text-align:center;font-size:15px">${+m.couponPct||0}%</b>
+            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="+5" style="padding:6px 10px;font-size:13px;min-width:38px">+5</button>
           </div>
         </div>
       </td>
@@ -646,13 +646,12 @@ function renderMembers(){
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
       await setDoc(doc(window.npFB.db, 'users', uid), { [field]: next }, { merge: true });
-      // Update the visible number without a full reload
-      const memberRow = btn.closest('tr');
-      const cell = btn.closest('td');
-      const num = cell.querySelector('b');
-      num.textContent = field === 'couponPct' ? (next + '%') : String(next);
-      // Update all sibling buttons' data-cur to the new value
-      cell.querySelectorAll('.gift-step').forEach(b => {
+      // Update the visible number of THIS row only (not the first <b> in the cell)
+      const row = btn.parentElement; // the .gift-row div
+      const num = row.querySelector('b.gift-val');
+      if (num) num.textContent = field === 'couponPct' ? (next + '%') : String(next);
+      // Update all sibling buttons' data-cur for this same field
+      btn.closest('td').querySelectorAll('.gift-step').forEach(b => {
         if (b.dataset.field === field) b.dataset.cur = String(next);
       });
       // Update our local cache so a later refresh doesn't overwrite
