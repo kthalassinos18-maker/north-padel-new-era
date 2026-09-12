@@ -86,6 +86,13 @@
   .season-radio:has(input:checked){background:rgba(183,255,74,0.15);border-color:#b7ff4a;color:#b7ff4a}
   .edit-season-btn.active{background:#b7ff4a;color:#0a1929;border-color:#b7ff4a}
 
+  /* Member edit modal */
+  .mem-modal{position:fixed;inset:0;z-index:500;background:rgba(6,18,32,0.85);backdrop-filter:blur(10px);display:none;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto}
+  .mem-modal.open{display:flex}
+  .mem-card{width:100%;max-width:680px;background:#0f2540;border:1px solid rgba(183,255,74,0.25);border-radius:16px;padding:26px 24px 20px;position:relative;margin:auto}
+  .mem-close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+  .mem-title{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;letter-spacing:0.05em;margin-bottom:18px}
+
   /* Toggle switch */
   .sw{position:relative;display:inline-block;width:46px;height:24px;vertical-align:middle}
   .sw input{opacity:0;width:0;height:0}
@@ -303,6 +310,55 @@
       </div>
     </section>
   </main>
+</div>
+
+<!-- ============ MEMBER EDIT MODAL ============ -->
+<div class="mem-modal" id="memModal" aria-hidden="true">
+  <div class="mem-card">
+    <button class="mem-close" id="memClose" type="button" aria-label="Κλείσιμο">×</button>
+    <h2 class="mem-title">Επεξεργασία Μέλους</h2>
+    <div class="mem-body">
+      <div class="form-grid">
+        <div class="field"><label>ΟΝΟΜΑ</label><input type="text" id="me_name"></div>
+        <div class="field"><label>ΕΠΙΘΕΤΟ</label><input type="text" id="me_surname"></div>
+        <div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input type="tel" id="me_phone"></div>
+        <div class="field"><label>EMAIL (locked)</label><input type="email" id="me_email" disabled style="opacity:0.6"></div>
+        <div class="field"><label>ΓΕΝΝΗΣΗ</label><input type="date" id="me_birthday"></div>
+        <div class="field"><label>ΦΥΛΟ</label>
+          <select id="me_gender">
+            <option value="">—</option>
+            <option value="M">Άνδρας</option>
+            <option value="F">Γυναίκα</option>
+            <option value="X">Άλλο</option>
+          </select>
+        </div>
+        <div class="field"><label>ΠΟΛΗ</label><input type="text" id="me_city"></div>
+        <div class="field"><label>ΕΠΙΠΕΔΟ</label>
+          <select id="me_level">
+            <option value="1">🔰 Beginner</option>
+            <option value="2">🥉 Amateur</option>
+            <option value="3">🥈 Regular</option>
+            <option value="4">🥇 Pro</option>
+            <option value="5">🏆 Champion</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>📝 ΣΗΜΕΙΩΣΗ ΔΙΑΧΕΙΡΙΣΤΗ <span style="color:rgba(244,249,255,0.4);font-weight:400">(μόνο εσύ βλέπεις)</span></label>
+        <textarea id="me_note" rows="3" placeholder="π.χ. VIP · φίλος · έχει πρόβλημα στην πλάτη · δωρεάν καφές" style="padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;resize:vertical;min-width:100%;max-width:100%"></textarea>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:14px;padding:10px 12px;background:rgba(10,25,41,0.4);border-radius:9px;font-size:12px;color:rgba(244,249,255,0.7)">
+        <div>📊 <b style="color:#b7ff4a">Κρατήσεις:</b> <span id="me_bookings">0</span></div>
+        <div>📬 <b style="color:#b7ff4a">Marketing:</b> <span id="me_marketing">-</span></div>
+        <div>📅 <b style="color:#b7ff4a">Εγγραφή:</b> <span id="me_created">-</span></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button type="button" class="btn solid" id="memSaveBtn" style="flex:1;padding:12px">💾 ΑΠΟΘΗΚΕΥΣΗ</button>
+      <button type="button" class="btn" id="memCancelBtn" style="padding:12px 18px">Ακύρωση</button>
+    </div>
+    <div class="mem-msg" id="memMsg" style="text-align:center;font-size:13px;min-height:16px;margin-top:8px"></div>
+  </div>
 </div>
 
 <!-- ============ FIREBASE ============ -->
@@ -577,9 +633,10 @@ function renderMembers(){
     const isOwner = isAdminEmail(m.email);
     const lvIdx = Math.max(0, Math.min(4, (m.level || 1) - 1));
     const marketing = m.consent && m.consent.marketing ? '<span class="pill ok">ΝΑΙ</span>' : '<span class="pill canc">ΟΧΙ</span>';
+    const noteBadge = m.adminNote ? ` <span title="${esc(m.adminNote)}" style="cursor:help;color:#ffc14a">📝</span>` : '';
     return `
     <tr${isOwner?' style="background:rgba(183,255,74,0.06)"':''}>
-      <td>${esc((m.name||'') + ' ' + (m.surname||''))}${isOwner?' <span class="pill ok" style="margin-left:6px">👑 OWNER</span>':''}</td>
+      <td>${esc((m.name||'') + ' ' + (m.surname||''))}${isOwner?' <span class="pill ok" style="margin-left:6px">👑 OWNER</span>':''}${noteBadge}</td>
       <td>${esc(m.email)}</td>
       <td>${esc(m.phone)}</td>
       <td>${LEVEL_ICONS[lvIdx]} ${esc(LEVEL_NAMES[lvIdx])}</td>
@@ -608,6 +665,7 @@ function renderMembers(){
         </div>
       </td>
       <td style="text-align:right;white-space:nowrap">
+        <button class="btn" data-edit-mem="${esc(m.uid)}" style="margin-right:4px">✎ Edit</button>
         <button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button>
       </td>
     </tr>`;
@@ -619,6 +677,12 @@ function renderMembers(){
       await window.npFB.deleteUser(btn.dataset.delMem);
       await refreshAll();
     } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  document.querySelectorAll('[data-edit-mem]').forEach(btn => btn.addEventListener('click', () => {
+    const uid = btn.dataset.editMem;
+    const m = CACHE.users.find(x => x.uid === uid);
+    if (!m) return;
+    openMemberEditor(m);
   }));
   document.querySelectorAll('.gift-toggle').forEach(inp => inp.addEventListener('change', async () => {
     const uid = inp.dataset.uid;
@@ -891,6 +955,64 @@ async function refreshAll(){
   renderDashboard(); renderBookings(); renderMembers(); renderSessions(); renderPrices();
   renderUpcomingClosures();
 }
+/* ============ MEMBER EDIT MODAL ============ */
+let EDITING_UID = null;
+const memModal = document.getElementById('memModal');
+function openMemberEditor(m){
+  EDITING_UID = m.uid;
+  document.getElementById('me_name').value     = m.name || '';
+  document.getElementById('me_surname').value  = m.surname || '';
+  document.getElementById('me_phone').value    = m.phone || '';
+  document.getElementById('me_email').value    = m.email || '';
+  document.getElementById('me_birthday').value = m.birthday || '';
+  document.getElementById('me_gender').value   = m.gender || '';
+  document.getElementById('me_city').value     = m.city || '';
+  document.getElementById('me_level').value    = String(m.level || 1);
+  document.getElementById('me_note').value     = m.adminNote || '';
+  document.getElementById('me_bookings').textContent  = m.bookingsCount || 0;
+  document.getElementById('me_marketing').textContent = (m.consent && m.consent.marketing) ? 'ΝΑΙ' : 'ΟΧΙ';
+  document.getElementById('me_created').textContent   = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate().toISOString().slice(0,10) : '—';
+  document.getElementById('memMsg').textContent = '';
+  memModal.classList.add('open');
+  memModal.setAttribute('aria-hidden','false');
+}
+function closeMemberEditor(){
+  memModal.classList.remove('open');
+  memModal.setAttribute('aria-hidden','true');
+  EDITING_UID = null;
+}
+document.getElementById('memClose').addEventListener('click', closeMemberEditor);
+document.getElementById('memCancelBtn').addEventListener('click', closeMemberEditor);
+memModal.addEventListener('click', (e) => { if (e.target === memModal) closeMemberEditor(); });
+
+document.getElementById('memSaveBtn').addEventListener('click', async () => {
+  if (!EDITING_UID) return;
+  const msg = document.getElementById('memMsg');
+  msg.textContent = 'Αποθήκευση...'; msg.style.color = 'rgba(244,249,255,0.6)';
+  const patch = {
+    name:     document.getElementById('me_name').value.trim(),
+    surname:  document.getElementById('me_surname').value.trim(),
+    phone:    document.getElementById('me_phone').value.trim(),
+    birthday: document.getElementById('me_birthday').value,
+    gender:   document.getElementById('me_gender').value,
+    city:     document.getElementById('me_city').value.trim(),
+    level:    +document.getElementById('me_level').value,
+    adminNote: document.getElementById('me_note').value.trim().slice(0, 500),
+  };
+  try {
+    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+    await setDoc(doc(window.npFB.db, 'users', EDITING_UID), patch, { merge: true });
+    const u = CACHE.users.find(x => x.uid === EDITING_UID);
+    if (u) Object.assign(u, patch);
+    msg.style.color = '#b7ff4a';
+    msg.textContent = '✅ Αποθηκεύτηκε';
+    setTimeout(() => { closeMemberEditor(); renderMembers(); }, 700);
+  } catch(e){
+    msg.style.color = '#ff6b6b';
+    msg.textContent = 'Αποτυχία: ' + e.message;
+  }
+});
+
 document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
 document.getElementById('closureDate').value = new Date().toISOString().slice(0,10);
 document.getElementById('bkFilterDate').addEventListener('change', (e) => {
