@@ -1301,10 +1301,10 @@
     await setDoc(doc(db, 'users', cred.user.uid), {
       name, surname, phone, email,
       level: level || 1,
-      // welcomeCoupon defaults ON, but the discount only actually applies
-      // when the user has verified their email (see updateTotal / submit).
-      // Fake-email bots never receive the verification link → no discount.
-      welcomeCoupon: true,
+      // welcomeCoupon starts OFF; admin activates per-user from the
+      // admin panel (Members table 🎫 +5). Bots and low-effort signups
+      // never receive the discount without admin approval.
+      welcomeCoupon: false,
       freeCourts: 0,
       bookingsCount: 0,
       consent: consent || null,
@@ -1726,6 +1726,11 @@
           <div class="pf-card-title" style="color:#ffc14a">⚠ ΜΗ ΕΠΙΒΕΒΑΙΩΜΕΝΟ EMAIL</div>
           <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5;margin-bottom:10px">Στείλαμε email στο <strong>${esc(u.email)}</strong>. Πάτα τον σύνδεσμο μέσα του για να το επιβεβαιώσεις.</p>
           <button type="button" class="pf-cta outline" id="resendVerifyBtn" style="font-size:12px">📧 ΞΑΝΑΣΤΕΙΛΕ EMAIL</button>
+        </div>` : ''}
+        ${!u.welcomeCoupon && !(u.couponPct > 0) && !(u.freeCourts > 0) ? `
+        <div class="pf-card" style="border-color:rgba(255,193,74,0.35);background:rgba(255,193,74,0.05)">
+          <div class="pf-card-title" style="color:#ffc14a">⏳ ΚΟΥΠΟΝΙ ΣΕ ΑΝΑΜΟΝΗ</div>
+          <p style="font-size:13px;color:rgba(244,249,255,0.8);line-height:1.5">Ο κωδικός σου −10% θα ενεργοποιηθεί σύντομα από τον διαχειριστή. Θα σε ενημερώσουμε.</p>
         </div>` : ''}
         <button type="button" class="pf-cta" id="fullProfileBtn">👤 ΠΛΗΡΕΣ ΠΡΟΦΙΛ · ΕΠΕΞΕΡΓΑΣΙΑ</button>
         <button type="button" class="pf-cta outline" id="changePwBtn">🔒 ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ</button>
@@ -2678,7 +2683,7 @@
         const disc = Math.round(total * (u.couponPct/100));
         total = total - disc;
         discountLine = ' − 🎫 −' + u.couponPct + '% (−' + disc + '€)';
-      } else if (u.welcomeCoupon && u.emailVerified && (u.bookingsCount||0) === 0){
+      } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
         const disc = Math.round(total * 0.10);
         total = total - disc;
         discountLine = ' − 🎁 καλωσόρισμα (−' + disc + '€)';
@@ -2770,7 +2775,7 @@
       } else if ((u.couponPct||0) > 0){
         total = Math.max(0, gross - Math.round(gross * (u.couponPct/100)));
         discountKind = 'coupon';
-      } else if (u.welcomeCoupon && u.emailVerified && (u.bookingsCount||0) === 0){
+      } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
         total = Math.max(0, gross - Math.round(gross * 0.10));
         discountKind = 'welcome';
       }

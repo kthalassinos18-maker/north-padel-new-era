@@ -558,17 +558,28 @@ function renderBookings(){
 }
 
 function renderMembers(){
-  const users = CACHE.users;
+  const users = [...CACHE.users];
+  // Sort: admin emails first, then by createdAt (newest first)
+  const isAdminEmail = e => (window.npFB.ADMIN_EMAILS || []).includes((e || '').toLowerCase());
+  users.sort((a, b) => {
+    const aa = isAdminEmail(a.email) ? 0 : 1;
+    const bb = isAdminEmail(b.email) ? 0 : 1;
+    if (aa !== bb) return aa - bb;
+    const at = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+    const bt = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+    return bt - at;
+  });
   document.getElementById('pendingCount').textContent = '0 νέες';
   document.getElementById('tblPending').innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν χρησιμοποιείται (Firebase auto-approves email/password).</td></tr>';
   const LEVEL_ICONS = ['🔰','🥉','🥈','🥇','🏆'];
   const LEVEL_NAMES = ['Beginner','Amateur','Regular','Pro','Champion'];
   document.getElementById('tblMembers').innerHTML = users.map(m => {
+    const isOwner = isAdminEmail(m.email);
     const lvIdx = Math.max(0, Math.min(4, (m.level || 1) - 1));
     const marketing = m.consent && m.consent.marketing ? '<span class="pill ok">ΝΑΙ</span>' : '<span class="pill canc">ΟΧΙ</span>';
     return `
-    <tr>
-      <td>${esc((m.name||'') + ' ' + (m.surname||''))}</td>
+    <tr${isOwner?' style="background:rgba(183,255,74,0.06)"':''}>
+      <td>${esc((m.name||'') + ' ' + (m.surname||''))}${isOwner?' <span class="pill ok" style="margin-left:6px">👑 OWNER</span>':''}</td>
       <td>${esc(m.email)}</td>
       <td>${esc(m.phone)}</td>
       <td>${LEVEL_ICONS[lvIdx]} ${esc(LEVEL_NAMES[lvIdx])}</td>
@@ -577,6 +588,10 @@ function renderMembers(){
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
       <td>
         <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <span title="Καλωσόρισμα -10% (μία μόνο κράτηση)" style="min-width:20px">🎁</span>
+            <button class="btn gift-toggle ${m.welcomeCoupon?'solid':''}" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" data-cur="${m.welcomeCoupon?'1':'0'}" style="padding:3px 10px;font-size:11px">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</button>
+          </div>
           <div style="display:flex;align-items:center;gap:4px">
             <span title="Δωρεάν γήπεδα" style="min-width:20px">🎾</span>
             <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="-1" style="padding:2px 8px;min-width:26px">−</button>
@@ -602,6 +617,20 @@ function renderMembers(){
     try {
       await window.npFB.deleteUser(btn.dataset.delMem);
       await refreshAll();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  document.querySelectorAll('.gift-toggle').forEach(btn => btn.addEventListener('click', async () => {
+    const uid = btn.dataset.uid;
+    const cur = btn.dataset.cur === '1';
+    const next = !cur;
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+      await setDoc(doc(window.npFB.db, 'users', uid), { welcomeCoupon: next }, { merge: true });
+      btn.dataset.cur = next ? '1' : '0';
+      btn.textContent = next ? 'ΕΝΕΡΓΟ' : 'ΑΝΕΝΕΡΓΟ';
+      btn.classList.toggle('solid', next);
+      const u = CACHE.users.find(x => x.uid === uid);
+      if (u) u.welcomeCoupon = next;
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
   document.querySelectorAll('.gift-step').forEach(btn => btn.addEventListener('click', async () => {
