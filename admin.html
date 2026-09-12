@@ -588,9 +588,10 @@ function renderMembers(){
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
       <td>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="gift-row" style="display:flex;align-items:center;gap:8px">
+          <div class="gift-row" style="display:flex;align-items:center;gap:10px">
             <span title="Καλωσόρισμα -10% (μία μόνο κράτηση)" style="min-width:22px;font-size:16px">🎁</span>
-            <button class="btn gift-toggle ${m.welcomeCoupon?'solid':''}" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" data-cur="${m.welcomeCoupon?'1':'0'}" style="padding:6px 14px;font-size:12px;min-width:96px">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</button>
+            <label class="sw"><input type="checkbox" class="gift-toggle" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" ${m.welcomeCoupon?'checked':''}><span class="sw-slider"></span></label>
+            <span class="gift-toggle-txt" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.12em;color:${m.welcomeCoupon?'#b7ff4a':'#ff6b6b'}">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</span>
           </div>
           <div class="gift-row" style="display:flex;align-items:center;gap:8px">
             <span title="Δωρεάν γήπεδα" style="min-width:22px;font-size:16px">🎾</span>
@@ -619,19 +620,24 @@ function renderMembers(){
       await refreshAll();
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
-  document.querySelectorAll('.gift-toggle').forEach(btn => btn.addEventListener('click', async () => {
-    const uid = btn.dataset.uid;
-    const cur = btn.dataset.cur === '1';
-    const next = !cur;
+  document.querySelectorAll('.gift-toggle').forEach(inp => inp.addEventListener('change', async () => {
+    const uid = inp.dataset.uid;
+    const next = inp.checked;
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
       await setDoc(doc(window.npFB.db, 'users', uid), { welcomeCoupon: next }, { merge: true });
-      btn.dataset.cur = next ? '1' : '0';
-      btn.textContent = next ? 'ΕΝΕΡΓΟ' : 'ΑΝΕΝΕΡΓΟ';
-      btn.classList.toggle('solid', next);
+      // Update the ΕΝΕΡΓΟ/ΑΝΕΝΕΡΓΟ label next to the slider
+      const txt = inp.closest('.gift-row').querySelector('.gift-toggle-txt');
+      if (txt){
+        txt.textContent = next ? 'ΕΝΕΡΓΟ' : 'ΑΝΕΝΕΡΓΟ';
+        txt.style.color = next ? '#b7ff4a' : '#ff6b6b';
+      }
       const u = CACHE.users.find(x => x.uid === uid);
       if (u) u.welcomeCoupon = next;
-    } catch(e){ alert('Αποτυχία: '+e.message); }
+    } catch(e){
+      alert('Αποτυχία: '+e.message);
+      inp.checked = !next; // revert
+    }
   }));
   document.querySelectorAll('.gift-step').forEach(btn => btn.addEventListener('click', async () => {
     const uid = btn.dataset.uid;
