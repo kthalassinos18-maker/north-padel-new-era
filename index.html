@@ -470,8 +470,16 @@
   .act-btn svg{width:16px;height:16px}
 
   /* ============ LOCATION CHIP ============ */
-  .loc-chip{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:55;display:inline-flex;align-items:center;gap:8px;padding:11px 15px 11px 12px;border-radius:999px;background:rgba(6,18,32,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(183,255,74,0.28);color:#fff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.04em;box-shadow:0 10px 30px rgba(0,0,0,0.4)}
-  .loc-chip .pin{width:16px;height:16px;fill:#b7ff4a}
+  .loc-chip{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:55;display:inline-flex;align-items:center;gap:10px;padding:10px 18px 10px 14px;border-radius:18px;background:rgba(6,18,32,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(183,255,74,0.4);color:#fff;text-decoration:none;box-shadow:0 12px 32px rgba(0,0,0,0.5),0 0 0 3px rgba(183,255,74,0.08);animation:locPulse 2.6s ease-in-out infinite;transition:transform .2s}
+  .loc-chip:hover{transform:translateY(-2px) scale(1.03)}
+  .loc-chip .pin{width:22px;height:22px;fill:#b7ff4a;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(183,255,74,0.55))}
+  .loc-labels{display:flex;flex-direction:column;line-height:1.15}
+  .loc-find{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.16em;color:#b7ff4a}
+  .loc-place{font-size:12px;font-weight:600;color:rgba(244,249,255,0.88);margin-top:1px}
+  @keyframes locPulse {
+    0%,100%{box-shadow:0 12px 32px rgba(0,0,0,0.5),0 0 0 3px rgba(183,255,74,0.08)}
+    50%   {box-shadow:0 12px 32px rgba(0,0,0,0.5),0 0 0 8px rgba(183,255,74,0.18)}
+  }
 
   /* ============ LANGUAGE SWITCHER ============ */
   .lang-switch{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:350;display:inline-flex;align-items:center;gap:4px;padding:6px;border-radius:999px;background:rgba(6,18,32,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(183,255,74,0.28);box-shadow:0 10px 30px rgba(0,0,0,0.5)}
@@ -1271,7 +1279,10 @@
 <!-- ============ LOCATION CHIP ============ -->
 <a href="https://maps.app.goo.gl/mArGwkLA1FK3ABes5" class="loc-chip" target="_blank" rel="noopener">
   <svg class="pin" viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5z"/></svg>
-  Νέα Καλλικράτεια
+  <span class="loc-labels">
+    <span class="loc-find" data-i18n="loc_find">ΒΡΕΣ ΜΑΣ</span>
+    <span class="loc-place">Νέα Καλλικράτεια</span>
+  </span>
 </a>
 
 <!-- Invisible reCAPTCHA host for Firebase Phone Auth -->
@@ -2966,6 +2977,8 @@ T.en['sess_noon'] = '🍽️ NOON';
 T.de['sess_noon'] = '🍽️ MITTAG';
 T.en['sess_afternoon'] = '🌤️ AFTERNOON';
 T.de['sess_afternoon'] = '🌤️ NACHMITTAG';
+T.en['loc_find'] = 'FIND US';
+T.de['loc_find'] = 'FINDE UNS';
 T.en['sess_late'] = '🌌 LATE NIGHT';
 T.de['sess_late'] = '🌌 SPÄTABEND';
 T.en['form_title'] = 'BOOKING DETAILS';
