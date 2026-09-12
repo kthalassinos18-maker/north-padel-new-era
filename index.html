@@ -551,7 +551,7 @@
         <li data-i18n="c_pizza">🍕 1 πίτσα</li>
         <li data-i18n="c_beers">🍺 4 μπύρες</li>
       </ul>
-      <div class="combo-price">70€</div>
+      <div class="combo-price" data-combo-price="c1">70€</div>
       <button type="button" class="combo-cta" data-combo="1" data-i18n="combo_cta">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
     </article>
     <article class="combo-card">
@@ -562,7 +562,7 @@
         <li data-i18n="c_sandwich">🥪 1 club sandwich</li>
         <li data-i18n="c_beers4">🍺 4 μπύρες</li>
       </ul>
-      <div class="combo-price">65€</div>
+      <div class="combo-price" data-combo-price="c2">65€</div>
       <button type="button" class="combo-cta" data-combo="2" data-i18n="combo_cta">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
     </article>
     <article class="combo-card">
@@ -573,7 +573,7 @@
         <li data-i18n="c_burger">🍔 4 μπέργκερ</li>
         <li data-i18n="c_beers">🍺 4 μπύρες</li>
       </ul>
-      <div class="combo-price">75€</div>
+      <div class="combo-price" data-combo-price="c3">75€</div>
       <button type="button" class="combo-cta" data-combo="3" data-i18n="combo_cta">ΚΡΑΤΗΣΗ ΓΗΠΕΔΟΥ</button>
     </article>
   </div>
@@ -2649,6 +2649,11 @@
     const b2 = document.querySelector('.seg-opt[data-players="2"]');
     if (b4) b4.textContent = '4άδα · €' + LIVE_PRICES.p4;
     if (b2) b2.textContent = '2άδα · €' + LIVE_PRICES.p2;
+    // Combo cards
+    document.querySelectorAll('[data-combo-price]').forEach(el => {
+      const key = el.dataset.comboPrice; // 'c1' | 'c2' | 'c3'
+      if (LIVE_PRICES[key] != null) el.textContent = LIVE_PRICES[key] + '€';
+    });
   }
   (async () => {
     await waitFB();
