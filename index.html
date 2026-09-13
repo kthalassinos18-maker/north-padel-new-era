@@ -28,12 +28,15 @@
   @keyframes playerBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
   .player-btn:hover .pi-head{animation:playerWave 0.6s ease}
   @keyframes playerWave{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-2px) rotate(-8deg)}75%{transform:translateY(-2px) rotate(8deg)}}
-  .door-hotspot{position:absolute;top:52%;right:8%;width:60px;height:120px;z-index:6;background:linear-gradient(90deg,transparent 0%,rgba(183,255,74,0.15) 100%);border:none;border-right:2px solid rgba(183,255,74,0.5);border-radius:6px 30px 30px 6px;cursor:pointer;animation:doorGlow 2.5s ease-in-out infinite;padding:0}
+  .door-hotspot{position:absolute;top:52%;right:8%;width:78px;height:140px;z-index:6;background:linear-gradient(90deg,transparent 0%,rgba(183,255,74,0.18) 100%);border:none;border-right:2px solid rgba(183,255,74,0.55);border-radius:6px 40px 40px 6px;cursor:pointer;animation:doorGlow 2.5s ease-in-out infinite;padding:0;display:flex;align-items:center;justify-content:center}
   @keyframes doorGlow{0%,100%{box-shadow:0 0 15px rgba(183,255,74,0.3),inset 0 0 15px rgba(183,255,74,0.2)}50%{box-shadow:0 0 30px rgba(183,255,74,0.6),inset 0 0 25px rgba(183,255,74,0.4)}}
   .door-hotspot:hover{background:linear-gradient(90deg,transparent 0%,rgba(183,255,74,0.3) 100%)}
-  .door-label{position:absolute;top:50%;right:calc(100% + 8px);transform:translateY(-50%);display:flex;align-items:center;gap:6px;background:rgba(10,25,41,0.85);padding:6px 10px;border-radius:6px;color:#b7ff4a;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:0.1em;font-weight:600;white-space:nowrap}
-  .door-arrow{font-size:14px}
-  @media(max-width:700px){.door-hotspot{top:56%;right:5%;width:40px;height:80px}.door-label{font-size:10px;padding:4px 8px}}
+  .door-label{position:absolute;top:50%;right:calc(100% + 10px);transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-end;gap:6px;background:rgba(10,25,41,0.92);padding:10px 14px;border:1px solid rgba(183,255,74,0.4);border-radius:12px;color:#b7ff4a;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.14em;font-weight:700;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
+  .door-label-top{font-size:9px;letter-spacing:0.22em;color:rgba(244,249,255,0.6);font-weight:600}
+  .door-label-row{display:flex;align-items:center;gap:8px}
+  .door-label-arrow{width:26px;height:26px;border-radius:50%;background:#b7ff4a;color:#0a1929;display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;box-shadow:0 0 12px rgba(183,255,74,0.6);animation:arrowNudge 1.4s ease-in-out infinite}
+  @keyframes arrowNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+  @media(max-width:700px){.door-hotspot{top:54%;right:4%;width:54px;height:100px}.door-label{font-size:12px;padding:8px 12px}.door-label-arrow{width:22px;height:22px;font-size:14px}}
   .court2-content{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:24px;align-items:center}
   .court2-image{width:100%;aspect-ratio:16/10;background:url('court2-image.jpg') center/cover no-repeat;border-radius:16px;position:relative;border:1px solid rgba(183,255,74,0.2)}
   .court2-image::after{content:"ΠΡΟΣΕΧΩΣ";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,25,41,0.65);color:#b7ff4a;font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;letter-spacing:0.15em;border-radius:16px}
@@ -247,8 +250,8 @@
   .cta-hint{font-size:11px;letter-spacing:0.35em;color:#b7ff4a;text-transform:uppercase;font-weight:600;opacity:0.85}
   @keyframes pulse{0%,100%{box-shadow:0 8px 28px rgba(183,255,74,0.35),0 0 0 0 rgba(183,255,74,0.5)}50%{box-shadow:0 8px 28px rgba(183,255,74,0.5),0 0 0 16px rgba(183,255,74,0)}}
   @keyframes shake{10%,90%{transform:translate3d(-2px,0,0) rotate(-2deg)}20%,80%{transform:translate3d(3px,0,0) rotate(2deg)}30%,50%,70%{transform:translate3d(-5px,0,0) rotate(-3deg)}40%,60%{transform:translate3d(5px,0,0) rotate(3deg)}}
-  .step-panel{position:fixed;inset:0;z-index:120;background:rgba(10,25,41,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overflow-y:auto;padding:64px 20px 40px;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1),visibility 0s linear .55s,opacity .55s ease;opacity:0;visibility:hidden}
-  .step-panel.open{transform:translateX(0);opacity:1;visibility:visible;transition:transform .55s cubic-bezier(.4,0,.2,1),visibility 0s,opacity .35s ease}
+  .step-panel{position:fixed;inset:0;z-index:120;background:rgba(10,25,41,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overflow-y:auto;padding:64px 20px 40px;transform:translateX(100%);transition:transform .85s cubic-bezier(.4,0,.2,1),visibility 0s linear .85s,opacity .85s ease;opacity:0;visibility:hidden}
+  .step-panel.open{transform:translateX(0);opacity:1;visibility:visible;transition:transform .85s cubic-bezier(.4,0,.2,1),visibility 0s,opacity .5s ease}
   .step-panel.exit-left{transform:translateX(-100%)}
   .step-header{display:flex;align-items:center;gap:14px;margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto}
   .step-back{width:44px;height:44px;border-radius:50%;background:rgba(183,255,74,0.12);border:1px solid rgba(183,255,74,0.3);color:#b7ff4a;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -523,8 +526,11 @@
 
   <button class="door-hotspot" id="doorHotspot" type="button" aria-label="Πήγαινε στο Γήπεδο 2">
     <span class="door-label">
-      <span class="door-arrow">→</span>
-      <span class="door-text" data-i18n="cc_c2">ΓΗΠΕΔΟ 2</span>
+      <span class="door-label-top" data-i18n="door_visit">ΕΠΙΣΚΕΨΟΥ</span>
+      <span class="door-label-row">
+        <span class="door-text" data-i18n="cc_c2">ΓΗΠΕΔΟ 2</span>
+        <span class="door-label-arrow">→</span>
+      </span>
     </span>
   </button>
 
@@ -2979,6 +2985,8 @@ T.en['sess_afternoon'] = '🌤️ AFTERNOON';
 T.de['sess_afternoon'] = '🌤️ NACHMITTAG';
 T.en['loc_find'] = 'FIND US';
 T.de['loc_find'] = 'FINDE UNS';
+T.en['door_visit'] = 'VISIT';
+T.de['door_visit'] = 'BESUCHE';
 T.en['sess_late'] = '🌌 LATE NIGHT';
 T.de['sess_late'] = '🌌 SPÄTABEND';
 T.en['form_title'] = 'BOOKING DETAILS';

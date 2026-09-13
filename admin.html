@@ -220,10 +220,11 @@
 
     <!-- =========== MEMBERS =========== -->
     <section class="section" id="sec-members">
-      <div class="panel">
-        <h3>ΜΕΛΗ ΣΕ ΕΓΚΡΙΣΗ <span class="actions"><span class="pill pend" id="pendingCount">0 νέες</span></span></h3>
+      <div class="panel" id="pendingPanel" style="border-color:rgba(255,193,74,0.35)">
+        <h3 style="color:#ffc14a">⏳ ΝΕΑ ΜΕΛΗ ΣΕ ΕΓΚΡΙΣΗ ΚΟΥΠΟΝΙΟΥ <span class="actions"><span class="pill pend" id="pendingCount">0</span></span></h3>
+        <p style="color:rgba(244,249,255,0.6);font-size:12px;margin-bottom:12px">Νέες εγγραφές που δεν έχουν ακόμα ενεργοποιημένο το κουπόνι −10%. Πάτα ✓ για να τους το δώσεις.</p>
         <table class="tbl">
-          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Εγγραφή</th><th style="text-align:right">Ενέργειες</th></tr></thead>
+          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Επίπεδο</th><th>Εγγραφή</th><th style="text-align:right">Ενέργειες</th></tr></thead>
           <tbody id="tblPending"></tbody>
         </table>
       </div>
@@ -570,7 +571,8 @@ function renderDashboard(){
   document.getElementById('stMonthBookings').textContent = monthBk.length;
   document.getElementById('stMonthRev').innerHTML = monthBk.reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
   document.getElementById('stMembers').textContent = users.length;
-  document.getElementById('stPending').textContent = 0;
+  const pendingCount = users.filter(m => !m.welcomeCoupon && !(m.bookingsCount > 0) && !((window.npFB.ADMIN_EMAILS||[]).includes((m.email||'').toLowerCase()))).length;
+  document.getElementById('stPending').textContent = pendingCount;
 
   const upcoming = [...bookings].sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).slice(0,5);
   document.getElementById('tblUpcoming').innerHTML = upcoming.map(b => `
@@ -625,8 +627,36 @@ function renderMembers(){
     const bt = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
     return bt - at;
   });
-  document.getElementById('pendingCount').textContent = '0 νέες';
-  document.getElementById('tblPending').innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν χρησιμοποιείται (Firebase auto-approves email/password).</td></tr>';
+  // Pending = new signups with no bookings yet AND welcome coupon still off
+  const pending = users.filter(m => !isAdminEmail(m.email) && !m.welcomeCoupon && !(m.bookingsCount > 0));
+  const pendingPanel = document.getElementById('pendingPanel');
+  document.getElementById('pendingCount').textContent = pending.length;
+  if (pendingPanel) pendingPanel.style.display = pending.length ? '' : 'none';
+  const LI_ICONS = ['🔰','🥉','🥈','🥇','🏆'];
+  document.getElementById('tblPending').innerHTML = pending.map(m => {
+    const lv = LI_ICONS[Math.max(0, Math.min(4, (m.level||1)-1))];
+    const created = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate().toISOString().slice(0,10) : '—';
+    return `<tr>
+      <td>${esc((m.name||'') + ' ' + (m.surname||''))}</td>
+      <td>${esc(m.email)}</td>
+      <td>${esc(m.phone)}</td>
+      <td>${lv}</td>
+      <td>${esc(created)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn solid" data-approve-mem="${esc(m.uid)}" style="margin-right:4px">✓ ΕΝΕΡΓΟΠΟΙΗΣΗ −10%</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία εκκρεμότητα ✓</td></tr>';
+  document.querySelectorAll('[data-approve-mem]').forEach(btn => btn.addEventListener('click', async () => {
+    const uid = btn.dataset.approveMem;
+    btn.disabled = true; btn.textContent = 'Ενεργοποίηση...';
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+      await setDoc(doc(window.npFB.db, 'users', uid), { welcomeCoupon: true }, { merge: true });
+      const u = CACHE.users.find(x => x.uid === uid); if (u) u.welcomeCoupon = true;
+      renderMembers();
+    } catch(e){ alert('Αποτυχία: '+e.message); btn.disabled = false; btn.textContent = '✓ ΕΝΕΡΓΟΠΟΙΗΣΗ −10%'; }
+  }));
   const LEVEL_ICONS = ['🔰','🥉','🥈','🥇','🏆'];
   const LEVEL_NAMES = ['Beginner','Amateur','Regular','Pro','Champion'];
   document.getElementById('tblMembers').innerHTML = users.map(m => {
