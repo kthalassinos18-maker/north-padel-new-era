@@ -276,7 +276,18 @@
   .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
   .cal-weekdays span{text-align:center;font-size:11px;letter-spacing:0.1em;color:rgba(244,249,255,0.4);font-weight:600;padding:6px 0}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .cal-day{aspect-ratio:1;border:none;background:rgba(255,255,255,0.04);color:#f4f9ff;border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .15s}
+  .cal-day{aspect-ratio:1;border:none;background:rgba(255,255,255,0.04);color:#f4f9ff;border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .15s;position:relative}
+  .cal-day[data-day]::after{content:"";position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:transparent}
+  .cal-day.day-open::after{background:#b7ff4a;box-shadow:0 0 6px rgba(183,255,74,0.55)}
+  .cal-day.day-few::after {background:#ffc14a;box-shadow:0 0 6px rgba(255,193,74,0.55)}
+  .cal-day.day-full::after{background:#ff6b6b;box-shadow:0 0 6px rgba(255,107,107,0.55)}
+  .cal-day.day-full{opacity:0.55}
+  .cal-day.selected::after{background:#0a1929;box-shadow:none}
+  .cal-legend{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:rgba(244,249,255,0.7);letter-spacing:0.04em}
+  .cal-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .cal-legend .dot-green {background:#b7ff4a;box-shadow:0 0 6px rgba(183,255,74,0.55)}
+  .cal-legend .dot-orange{background:#ffc14a;box-shadow:0 0 6px rgba(255,193,74,0.55)}
+  .cal-legend .dot-red   {background:#ff6b6b;box-shadow:0 0 6px rgba(255,107,107,0.55)}
   .cal-day:hover:not(:disabled){background:rgba(183,255,74,0.15);transform:scale(1.05)}
   .cal-day:disabled{opacity:0.25;cursor:not-allowed;background:transparent}
   .cal-day.today{border:1px solid rgba(183,255,74,0.5)}
@@ -864,6 +875,11 @@
       <span data-i18n="wd_mon">Δ</span><span data-i18n="wd_tue">Τ</span><span data-i18n="wd_wed">Τ</span><span data-i18n="wd_thu">Π</span><span data-i18n="wd_fri">Π</span><span data-i18n="wd_sat">Σ</span><span data-i18n="wd_sun">Κ</span>
     </div>
     <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><i class="dot dot-green"></i> <span data-i18n="cal_open">Ελεύθερο</span></span>
+      <span><i class="dot dot-orange"></i> <span data-i18n="cal_few">Λίγα slots</span></span>
+      <span><i class="dot dot-red"></i> <span data-i18n="cal_full">Γεμάτο</span></span>
+    </div>
   </div>
 </section>
 
@@ -1570,6 +1586,20 @@
     }
     return null;
   }
+  // Get a { "YYYY-MM-DD": count } map of occupied slots for a whole month.
+  async function listOccupiedMonth(yearMonth, court){
+    const start = yearMonth + '-01';
+    const end   = yearMonth + '-32';
+    const q = query(collection(db, 'slots'),
+      where('date','>=', start), where('date','<=', end), where('court','==', court));
+    const snap = await getDocs(q);
+    const byDate = {};
+    snap.docs.forEach(d => {
+      const date = d.data().date;
+      byDate[date] = (byDate[date] || 0) + 1;
+    });
+    return byDate;
+  }
   async function listBookingsOnDate(dateISO, court){
     const q = query(
       collection(db, 'bookings'),
@@ -1613,7 +1643,7 @@
     resetPassword, changePassword, getConfig, resendVerification, findBooking, listBookingsOnDate,
     notifyAdminWhatsApp, cancelBookingDoc, ensureGuestAuth,
     startPhoneVerification, confirmPhoneOTP,
-    createBookingWithSlot, listOccupiedTimes, isSlotFree,
+    createBookingWithSlot, listOccupiedTimes, listOccupiedMonth, isSlotFree,
     upsertPublicProfile, removePublicProfile, listLookingForGame,
     isAdmin: (u) => !!u && ADMIN_EMAILS.includes((u.email||'').toLowerCase()),
   };
@@ -2673,6 +2703,7 @@
       if (thisDate < today) btn.disabled = true;
       if (thisDate.getTime() === today.getTime()) btn.classList.add('today');
       if (selectedDate && selectedDate.getTime() === thisDate.getTime()) btn.classList.add('selected');
+      btn.dataset.day = d;
       btn.addEventListener('click', async () => {
         selectedDate = thisDate;
         sessionsCrumb.textContent = GREEK_DAYS[thisDate.getDay()] + ' ' + d + ' ' + GREEK_MONTHS[calMonth];
@@ -2682,6 +2713,36 @@
       });
       grid.appendChild(btn);
     }
+    // Async: fetch this month's occupancy + closures + schedule size, then paint colors
+    paintCalendarAvailability();
+  }
+
+  async function paintCalendarAvailability(){
+    try {
+      await waitFB();
+      const ym = calYear + '-' + String(calMonth+1).padStart(2,'0');
+      const [occ, sched, cl] = await Promise.all([
+        window.npFB.listOccupiedMonth(ym, 'Γήπεδο 1').catch(()=>({})),
+        window.npFB.getConfig('schedule').catch(()=>null),
+        window.npFB.getConfig('closures').catch(()=>null),
+      ]);
+      const activeSeason = (sched && sched.activeSeason) || 'summer';
+      const scheduleSize = (sched && Array.isArray(sched[activeSeason]))
+        ? sched[activeSeason].filter(s => s.enabled !== false).length : 12;
+      const closuresByDate = (cl && cl.byDate) || {};
+      document.querySelectorAll('#calGrid .cal-day[data-day]').forEach(btn => {
+        if (btn.disabled) return;
+        const d = +btn.dataset.day;
+        const iso = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        const occupied = occ[iso] || 0;
+        const closedCount = (closuresByDate[iso] || []).length;
+        const available = Math.max(0, scheduleSize - occupied - closedCount);
+        btn.classList.remove('day-open','day-few','day-full');
+        if (available <= 0)                                  btn.classList.add('day-full');
+        else if (available <= Math.ceil(scheduleSize * 0.3)) btn.classList.add('day-few');
+        else                                                 btn.classList.add('day-open');
+      });
+    } catch(e){ console.warn('cal paint', e); }
   }
   document.getElementById('calPrev').addEventListener('click', () => {
     calMonth--;
@@ -3090,6 +3151,12 @@ T.en['rev_ago_1m'] = '1 month ago';
 T.de['rev_ago_1m'] = 'vor 1 Monat';
 T.en['rev_more'] = 'See all on Google Maps →';
 T.de['rev_more'] = 'Alle auf Google Maps ansehen →';
+T.en['cal_open'] = 'Available';
+T.de['cal_open'] = 'Verfügbar';
+T.en['cal_few']  = 'Few slots';
+T.de['cal_few']  = 'Wenige Plätze';
+T.en['cal_full'] = 'Fully booked';
+T.de['cal_full'] = 'Ausgebucht';
 T.en['sess_late'] = '🌌 LATE NIGHT';
 T.de['sess_late'] = '🌌 SPÄTABEND';
 T.en['form_title'] = 'BOOKING DETAILS';
