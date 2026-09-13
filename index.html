@@ -482,13 +482,13 @@
   .act-btn svg{width:16px;height:16px}
 
   /* ============ LOCATION CHIP ============ */
-  .loc-chip{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:55;display:inline-flex;align-items:center;gap:10px;padding:10px 18px 10px 14px;border-radius:18px;background:rgba(6,18,32,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(183,255,74,0.4);color:#fff;text-decoration:none;box-shadow:0 12px 32px rgba(0,0,0,0.5),0 0 0 3px rgba(183,255,74,0.08);animation:locPulse 2.6s ease-in-out infinite;transition:transform .2s}
+  .loc-chip{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 62px);z-index:55;display:inline-flex;align-items:center;gap:10px;padding:10px 18px 10px 14px;border-radius:18px;background:rgba(6,18,32,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(183,255,74,0.4);color:#fff;text-decoration:none;box-shadow:0 12px 32px rgba(0,0,0,0.5),0 0 0 3px rgba(183,255,74,0.08);animation:locPulse 2.6s ease-in-out infinite;transition:transform .2s}
 
   /* Reviews chip on hero + modal */
-  .rev-chip{position:fixed;top:calc(env(safe-area-inset-top,0px) + 82px);right:18px;z-index:55;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:14px;background:rgba(6,18,32,0.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,193,74,0.35);color:#fff;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.35);transition:transform .2s}
+  .rev-chip{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:55;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:14px;background:rgba(6,18,32,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,193,74,0.35);color:#fff;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.35);transition:transform .2s}
   .rev-chip:hover{transform:translateY(-2px)}
   .rev-stars{color:#ffc14a;font-size:11px;letter-spacing:0.05em}
-  @media(max-width:700px){.rev-chip{font-size:10px;padding:5px 9px;top:calc(env(safe-area-inset-top,0px) + 74px)}}
+  @media(max-width:700px){.rev-chip{font-size:10px;padding:6px 10px}}
 
   .rev-body{max-width:640px;margin:0 auto;padding:22px 20px 34px;display:flex;flex-direction:column;gap:14px}
   .rev-hero-line{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:6px}
