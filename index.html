@@ -2738,9 +2738,9 @@
         const closedCount = (closuresByDate[iso] || []).length;
         const available = Math.max(0, scheduleSize - occupied - closedCount);
         btn.classList.remove('day-open','day-few','day-full');
-        if (available <= 0)                                  btn.classList.add('day-full');
-        else if (available <= Math.ceil(scheduleSize * 0.3)) btn.classList.add('day-few');
-        else                                                 btn.classList.add('day-open');
+        if (available <= 0)                    btn.classList.add('day-full');
+        else if (occupied > 0 || closedCount > 0) btn.classList.add('day-few');
+        else                                    btn.classList.add('day-open');
       });
     } catch(e){ console.warn('cal paint', e); }
   }
