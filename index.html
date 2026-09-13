@@ -38,7 +38,13 @@
   .door-label-row{display:flex;align-items:center;gap:8px}
   .door-label-arrow{width:26px;height:26px;border-radius:50%;background:#b7ff4a;color:#0a1929;display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;box-shadow:0 0 12px rgba(183,255,74,0.6);animation:arrowNudge 1.4s ease-in-out infinite}
   @keyframes arrowNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
-  @media(max-width:700px){.door-hotspot{top:54%;right:4%;width:54px;height:100px}.door-label{font-size:12px;padding:8px 12px}.door-label-arrow{width:22px;height:22px;font-size:14px}}
+  @media(max-width:700px){
+    .door-hotspot{top:52%;right:3%;width:72px;height:120px;filter:drop-shadow(0 0 16px rgba(183,255,74,0.6))}
+    .door-label{font-size:13px;padding:9px 12px;right:calc(100% - 2px)}
+    .door-label-arrow{width:24px;height:24px;font-size:15px}
+    /* Always-on brighter arrow on touch devices (no hover) */
+    .door-hotspot::before{background:linear-gradient(90deg,rgba(183,255,74,0.20) 0%,rgba(183,255,74,0.55) 100%);border-right-color:rgba(183,255,74,0.85)}
+  }
   .court2-content{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:24px;align-items:center}
   .court2-image{width:100%;aspect-ratio:16/10;background:url('court2-image.jpg') center/cover no-repeat;border-radius:16px;position:relative;border:1px solid rgba(183,255,74,0.2)}
   .court2-image::after{content:"ΠΡΟΣΕΧΩΣ";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,25,41,0.65);color:#b7ff4a;font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;letter-spacing:0.15em;border-radius:16px}
@@ -217,7 +223,8 @@
   .door-flash{position:absolute;inset:0;background:radial-gradient(circle at 60% 55%, rgba(255,255,255,0.9) 0%, transparent 50%);opacity:0}
   .door-transition.active .door-flash{animation:doorFlash 1.4s ease-out forwards}
   @keyframes doorFlash{0%,60%{opacity:0}72%{opacity:0.9;background:radial-gradient(circle at 45% 55%, rgba(255,255,255,0.9) 0%, transparent 55%)}85%{opacity:0.3}100%{opacity:0}}
-  .menu-overlay{position:fixed;inset:0;z-index:200;background:rgba(10,25,41,0.4);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:opacity .4s ease,visibility .4s ease;display:flex;flex-direction:column;justify-content:flex-start;padding:90px 32px 40px}
+  .menu-overlay{position:fixed;inset:0;z-index:200;background:rgba(10,25,41,0.4);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:opacity .4s ease,visibility .4s ease;display:flex;flex-direction:column;justify-content:flex-start;padding:90px 32px 40px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  @media(max-width:700px){.menu-overlay{padding:80px 22px 100px}}
   .menu-overlay.open{opacity:1;visibility:visible}
   .menu-overlay.shake{animation:screenShake 0.6s cubic-bezier(.36,.07,.19,.97)}
   @keyframes screenShake{10%,90%{transform:translate3d(-2px,0,0)}20%,80%{transform:translate3d(3px,0,0)}30%,50%,70%{transform:translate3d(-4px,0,0)}40%,60%{transform:translate3d(4px,0,0)}}
@@ -493,7 +500,7 @@
   .lang-switch button.active{background:#b7ff4a;color:#0a1929}
 
   /* ============ MENU BUTTONS (avoid href popups) ============ */
-  .menu-nav>.mnu-item{background:transparent;border:0;text-align:left;color:#f4f9ff;text-decoration:none;font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;letter-spacing:0.03em;padding:8px 0;opacity:0;transform:translateX(-30px);transition:opacity .4s ease,transform .4s ease,color .2s ease;display:inline-block;width:fit-content;cursor:pointer}
+  .menu-nav>.mnu-item{background:transparent;border:0;text-align:left;color:#f4f9ff;text-decoration:none;font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;letter-spacing:0.03em;padding:12px 0;min-height:44px;opacity:0;transform:translateX(-30px);transition:opacity .4s ease,transform .4s ease,color .2s ease;display:inline-block;width:fit-content;cursor:pointer}
   .menu-overlay.open .menu-nav>.mnu-item{opacity:1;transform:translateX(0)}
   .menu-nav>.mnu-item:hover{color:#b7ff4a}
   @media(min-width:700px){.menu-nav>.mnu-item{font-size:34px}}
@@ -504,7 +511,7 @@
   .menu-overlay.open .menu-nav>.mnu-item:nth-child(6){transition-delay:.54s}
   .menu-overlay.open .menu-nav>.mnu-item:nth-child(7){transition-delay:.60s}
   .menu-overlay.open .menu-nav>.mnu-item:nth-child(8){transition-delay:.66s}
-  .submenu .sub-item{background:transparent;border:0;text-align:left;display:block;font-size:22px;padding:12px 0;color:rgba(244,249,255,0.85);transition:color .2s;text-decoration:none;font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:0.03em;cursor:pointer;width:100%}
+  .submenu .sub-item{background:transparent;border:0;text-align:left;display:block;font-size:20px;padding:14px 0;min-height:44px;color:rgba(244,249,255,0.85);transition:color .2s;text-decoration:none;font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:0.03em;cursor:pointer;width:100%}
   .submenu .sub-item:hover{color:#b7ff4a}
   @media(min-width:700px){.submenu .sub-item{font-size:28px}}
 </style>
