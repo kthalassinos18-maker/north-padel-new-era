@@ -28,8 +28,8 @@
   @keyframes playerBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
   .player-btn:hover .pi-head{animation:playerWave 0.6s ease}
   @keyframes playerWave{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-2px) rotate(-8deg)}75%{transform:translateY(-2px) rotate(8deg)}}
-  .door-hotspot{position:absolute;top:52%;right:8%;width:78px;height:140px;z-index:6;background:linear-gradient(90deg,transparent 0%,rgba(183,255,74,0.18) 100%);border:none;border-right:2px solid rgba(183,255,74,0.55);border-radius:6px 40px 40px 6px;cursor:pointer;animation:doorGlow 2.5s ease-in-out infinite;padding:0;display:flex;align-items:center;justify-content:center}
-  @keyframes doorGlow{0%,100%{box-shadow:0 0 15px rgba(183,255,74,0.3),inset 0 0 15px rgba(183,255,74,0.2)}50%{box-shadow:0 0 30px rgba(183,255,74,0.6),inset 0 0 25px rgba(183,255,74,0.4)}}
+  .door-hotspot{position:absolute;top:52%;right:6%;width:90px;height:140px;z-index:6;background:linear-gradient(90deg,transparent 0%,rgba(183,255,74,0.22) 100%);border:none;cursor:pointer;animation:doorGlow 2.5s ease-in-out infinite;padding:0;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 15%, 55% 15%, 100% 50%, 55% 85%, 0 85%);-webkit-clip-path:polygon(0 15%, 55% 15%, 100% 50%, 55% 85%, 0 85%);filter:drop-shadow(0 0 12px rgba(183,255,74,0.35))}
+  @keyframes doorGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(183,255,74,0.35))}50%{filter:drop-shadow(0 0 20px rgba(183,255,74,0.75))}}
   .door-hotspot:hover{background:linear-gradient(90deg,transparent 0%,rgba(183,255,74,0.3) 100%)}
   .door-label{position:absolute;top:50%;right:calc(100% + 10px);transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-end;gap:6px;background:rgba(10,25,41,0.92);padding:10px 14px;border:1px solid rgba(183,255,74,0.4);border-radius:12px;color:#b7ff4a;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.14em;font-weight:700;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
   .door-label-top{font-size:9px;letter-spacing:0.22em;color:rgba(244,249,255,0.6);font-weight:600}
@@ -526,7 +526,6 @@
 
   <button class="door-hotspot" id="doorHotspot" type="button" aria-label="Πήγαινε στο Γήπεδο 2">
     <span class="door-label">
-      <span class="door-label-top" data-i18n="door_visit">ΕΠΙΣΚΕΨΟΥ</span>
       <span class="door-label-row">
         <span class="door-text" data-i18n="cc_c2">ΓΗΠΕΔΟ 2</span>
         <span class="door-label-arrow">→</span>
