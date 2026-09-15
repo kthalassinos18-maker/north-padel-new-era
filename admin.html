@@ -36,6 +36,8 @@
   .nav-item{background:transparent;border:0;color:rgba(244,249,255,0.75);padding:12px 22px;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;letter-spacing:0.03em;display:flex;align-items:center;gap:12px;transition:background .15s,color .15s;border-left:3px solid transparent}
   .nav-item:hover{background:rgba(183,255,74,0.05);color:#f4f9ff}
   .nav-item.active{background:rgba(183,255,74,0.1);color:#b7ff4a;border-left-color:#b7ff4a}
+  .nav-badge{margin-left:auto;background:#ff6b6b;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0;animation:navBadgePulse 1.4s ease-in-out infinite}
+  @keyframes navBadgePulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,107,0.55)}50%{box-shadow:0 0 0 5px rgba(255,107,107,0)}}
   .nav-ico{font-size:16px;width:22px;text-align:center}
   .sidebar-foot{margin-top:auto;padding:16px 22px;border-top:1px solid rgba(255,255,255,0.06)}
   .logout{background:transparent;border:1px solid rgba(255,107,107,0.4);color:#ff6b6b;padding:8px 14px;border-radius:8px;font-family:inherit;font-size:12px;letter-spacing:0.1em;cursor:pointer;width:100%}
@@ -197,7 +199,7 @@
     </div>
     <button class="nav-item active" data-section="dashboard"><span class="nav-ico">📊</span><span>Dashboard</span></button>
     <button class="nav-item" data-section="bookings"><span class="nav-ico">📅</span><span>Κρατήσεις</span></button>
-    <button class="nav-item" data-section="members"><span class="nav-ico">👥</span><span>Μέλη</span></button>
+    <button class="nav-item" data-section="members"><span class="nav-ico">👥</span><span>Μέλη</span><span class="nav-badge" id="memNavBadge" style="display:none">0</span></button>
     <button class="nav-item" data-section="prices"><span class="nav-ico">💶</span><span>Τιμές</span></button>
     <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Sessions</span></button>
     <div class="sidebar-foot">
@@ -222,6 +224,8 @@
         <div class="stat"><div class="stat-label">ΕΣΟΔΑ ΣΗΜΕΡΑ</div><div class="stat-value" id="stTodayRev">0<span class="unit">€</span></div><div class="stat-delta" id="stRevDelta">+0€ από χθες</div></div>
         <div class="stat"><div class="stat-label">ΚΡΑΤΗΣΕΙΣ ΜΗΝΑ</div><div class="stat-value" id="stMonthBookings">0</div><div class="stat-delta">Σύνολο</div></div>
         <div class="stat"><div class="stat-label">ΕΣΟΔΑ ΜΗΝΑ</div><div class="stat-value" id="stMonthRev">0<span class="unit">€</span></div><div class="stat-delta">Σύνολο</div></div>
+        <div class="stat"><div class="stat-label">💵 ΜΕΤΡΗΤΑ ΜΗΝΑ</div><div class="stat-value" id="stCashMonth" style="color:#b7ff4a">0<span class="unit">€</span></div><div class="stat-delta">Πληρωμές cash</div></div>
+        <div class="stat"><div class="stat-label">💳 ΚΑΡΤΑ ΜΗΝΑ</div><div class="stat-value" id="stCardMonth" style="color:#4a9fff">0<span class="unit">€</span></div><div class="stat-delta">Πληρωμές κάρτα</div></div>
         <div class="stat"><div class="stat-label">ΕΝΕΡΓΑ ΜΕΛΗ</div><div class="stat-value" id="stMembers">0</div><div class="stat-delta">Εγγεγραμμένοι</div></div>
         <div class="stat"><div class="stat-label">ΣΕ ΕΓΚΡΙΣΗ</div><div class="stat-value" id="stPending">0</div><div class="stat-delta">Νέες αιτήσεις</div></div>
       </div>
@@ -256,7 +260,7 @@
           <button type="button" class="btn" id="bkFilterClear">Όλες</button>
         </span></h3>
         <div class="tbl-scroll"><table class="tbl">
-          <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Κατάσταση</th><th></th></tr></thead>
+          <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Πληρωμή</th><th>Κατάσταση</th><th></th></tr></thead>
           <tbody id="tblBookings"></tbody>
         </table></div>
       </div>
@@ -653,9 +657,16 @@ function renderDashboard(){
   document.getElementById('stTodayRev').innerHTML = todayBk.reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
   document.getElementById('stMonthBookings').textContent = monthBk.length;
   document.getElementById('stMonthRev').innerHTML = monthBk.reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
+  document.getElementById('stCashMonth').innerHTML = monthBk.filter(b=>b.payMethod==='cash').reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
+  document.getElementById('stCardMonth').innerHTML = monthBk.filter(b=>b.payMethod==='card').reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
   document.getElementById('stMembers').textContent = users.length;
   const pendingCount = users.filter(m => !m.welcomeCoupon && !(m.bookingsCount > 0) && !((window.npFB.ADMIN_EMAILS||[]).includes((m.email||'').toLowerCase()))).length;
   document.getElementById('stPending').textContent = pendingCount;
+  const badge = document.getElementById('memNavBadge');
+  if (badge){
+    badge.textContent = String(pendingCount);
+    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
 
   const upcoming = [...bookings].sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).slice(0,5);
   document.getElementById('tblUpcoming').innerHTML = upcoming.map(b => `
@@ -669,21 +680,42 @@ function renderBookings(){
   if (BOOKINGS_FILTER_DATE){
     bookings = bookings.filter(b => b.date === BOOKINGS_FILTER_DATE);
   }
-  document.getElementById('tblBookings').innerHTML = bookings.map(b => `
+  const PAY_LABELS = { cash:'💵 Μετρητά', card:'💳 Κάρτα', pending:'⏳ Εκκρεμεί' };
+  document.getElementById('tblBookings').innerHTML = bookings.map(b => {
+    const pay = b.payMethod || 'pending';
+    return `
     <tr>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
       <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td>
       <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
+      <td>
+        <select data-pay="${esc(b.id)}" class="pay-sel" style="padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(10,25,41,0.6);color:${pay==='cash'?'#b7ff4a':pay==='card'?'#4a9fff':'#ffc14a'};font-size:12px;font-family:inherit;cursor:pointer">
+          <option value="pending" ${pay==='pending'?'selected':''}>⏳ Εκκρεμεί</option>
+          <option value="cash" ${pay==='cash'?'selected':''}>💵 Μετρητά</option>
+          <option value="card" ${pay==='card'?'selected':''}>💳 Κάρτα</option>
+        </select>
+      </td>
       <td>${pillFor(b.status)}</td>
       <td style="text-align:right"><button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
+    </tr>`;
+  }).join('') || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
   document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', async () => {
     if (!confirm('Διαγραφή κράτησης;')) return;
     try {
       await window.npFB.deleteBooking(btn.dataset.delBk);
       await refreshAll();
     } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  document.querySelectorAll('.pay-sel').forEach(sel => sel.addEventListener('change', async () => {
+    const id = sel.dataset.pay;
+    const val = sel.value;
+    // Colored based on selection
+    sel.style.color = val === 'cash' ? '#b7ff4a' : val === 'card' ? '#4a9fff' : '#ffc14a';
+    try {
+      await window.npFB.updateBooking(id, { payMethod: val, payMethodAt: new Date().toISOString() });
+      const b = CACHE.bookings.find(x => x.id === id);
+      if (b) b.payMethod = val;
+    } catch(e){ alert('Αποτυχία: '+e.message); sel.value = sel.dataset.prev || 'pending'; }
   }));
   document.querySelectorAll('[data-edit-price]').forEach(btn => btn.addEventListener('click', async () => {
     const cur = +btn.dataset.cur;

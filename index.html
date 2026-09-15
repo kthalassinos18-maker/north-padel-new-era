@@ -1431,6 +1431,18 @@
     });
     // Send verification email — non-blocking; failure shouldn't block signup
     try { await sendEmailVerification(cred.user); } catch(e){ console.warn('verify email', e); }
+    // Notify admin(s) via WhatsApp that a new member is waiting for coupon approval
+    try {
+      notifyAdminWhatsApp(
+        '👤 Νέα εγγραφή North Padel!\n' +
+        '📛 ' + (name||'') + ' ' + (surname||'') + '\n' +
+        '📧 ' + email + '\n' +
+        '📞 ' + (phone||'') + '\n' +
+        '🎾 Επίπεδο: ' + (level||1) + '/5\n\n' +
+        '⏳ Περιμένει την έγκρισή σου για το −10% κουπόνι.\n' +
+        '👉 admin.html → Μέλη → ΕΝΕΡΓΟΠΟΙΗΣΗ'
+      );
+    } catch(e){ console.warn('signup wa notify', e); }
     return cred.user;
   }
   async function resendVerification(){
