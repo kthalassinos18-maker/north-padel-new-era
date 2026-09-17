@@ -249,15 +249,24 @@
         </table></div>
       </div>
 
-      <div class="panel">
-        <h3>ΟΛΕΣ ΟΙ ΑΛΛΕΣ ΚΡΑΤΗΣΕΙΣ <span class="actions">
+      <div class="panel" id="futurePanel">
+        <h3>📅 ΜΕΛΛΟΝΤΙΚΕΣ ΚΡΑΤΗΣΕΙΣ <span class="actions">
+          <span class="pill ok" id="futureCount" style="margin-right:8px">0</span>
           <label style="font-size:11px;letter-spacing:0.15em;color:rgba(244,249,255,0.55);margin-right:6px">ΗΜΕΡΑ:</label>
           <input type="date" id="bkFilterDate" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:12px">
           <button type="button" class="btn" id="bkFilterClear">Όλες</button>
         </span></h3>
         <div class="tbl-scroll"><table class="tbl">
           <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Πληρωμή</th><th>Κατάσταση</th><th></th></tr></thead>
-          <tbody id="tblBookings"></tbody>
+          <tbody id="tblFuture"></tbody>
+        </table></div>
+      </div>
+
+      <div class="panel" id="pastPanel" style="opacity:0.9">
+        <h3 style="color:rgba(244,249,255,0.7)">🕓 ΠΑΛΙΕΣ ΚΡΑΤΗΣΕΙΣ <span class="actions"><span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)" id="pastCount">0</span></span></h3>
+        <div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Πληρωμή</th><th>Κατάσταση</th><th></th></tr></thead>
+          <tbody id="tblPast"></tbody>
         </table></div>
       </div>
 
@@ -686,27 +695,29 @@ let BOOKINGS_FILTER_DATE = '';
 function renderBookings(){
   const todayISO = new Date().toISOString().slice(0,10);
   const all = [...CACHE.bookings];
-  let bookings, todayList;
-  const todayPanel = document.getElementById('todayPanel');
+  let todayList = [], futureList = [], pastList = [];
+  const todayPanel  = document.getElementById('todayPanel');
+  const futurePanel = document.getElementById('futurePanel');
+  const pastPanel   = document.getElementById('pastPanel');
   if (BOOKINGS_FILTER_DATE){
-    bookings = all.filter(b => b.date === BOOKINGS_FILTER_DATE);
-    todayList = [];
+    // Filter mode: show only the picked date in the future list, hide today+past panels
+    futureList = all.filter(b => b.date === BOOKINGS_FILTER_DATE);
     if (todayPanel) todayPanel.style.display = 'none';
+    if (pastPanel)  pastPanel.style.display  = 'none';
   } else {
-    // Split: today's in a separate list, rest in the main list
-    todayList = all.filter(b => b.date === todayISO)
-      .sort((a,b) => (a.time||'').localeCompare(b.time||''));
-    bookings = all.filter(b => b.date !== todayISO);
-    // Rest: future asc, then past desc
-    bookings.sort((a, b) => {
-      const da = a.date || '', db = b.date || '';
-      const aFuture = da > todayISO, bFuture = db > todayISO;
-      if (aFuture !== bFuture) return aFuture ? -1 : 1;
-      if (aFuture) return da.localeCompare(db) || (a.time||'').localeCompare(b.time||'');
-      return db.localeCompare(da) || (b.time||'').localeCompare(a.time||'');
-    });
-    if (todayPanel) todayPanel.style.display = '';
+    todayList  = all.filter(b => b.date === todayISO).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+    futureList = all.filter(b => (b.date||'') > todayISO).sort((a,b) => (a.date||'').localeCompare(b.date||'') || (a.time||'').localeCompare(b.time||''));
+    pastList   = all.filter(b => (b.date||'') < todayISO).sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.time||'').localeCompare(a.time||''));
+    if (todayPanel)  todayPanel.style.display  = '';
+    if (futurePanel) futurePanel.style.display = '';
+    if (pastPanel)   pastPanel.style.display   = '';
   }
+  const futureCount = document.getElementById('futureCount');
+  const pastCount   = document.getElementById('pastCount');
+  if (futureCount) futureCount.textContent = futureList.length;
+  if (pastCount)   pastCount.textContent   = pastList.length;
+  // The old `bookings` variable now maps to the future list for the existing render code below
+  const bookings = futureList;
   // Render today's mini-table (fewer columns — no Ημέρα)
   const tblToday = document.getElementById('tblToday');
   const todayCount = document.getElementById('todayCount');
@@ -734,10 +745,10 @@ function renderBookings(){
     }).join('') : '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν υπάρχει κράτηση για σήμερα.</td></tr>';
   }
   const PAY_LABELS = { cash:'💵 Μετρητά', card:'💳 Κάρτα', pending:'⏳ Εκκρεμεί' };
-  document.getElementById('tblBookings').innerHTML = bookings.map(b => {
+  function rowHtml(b, faded){
     const pay = b.payMethod || 'pending';
-    return `
-    <tr>
+    const rowStyle = faded ? ' style="opacity:0.75"' : '';
+    return `<tr${rowStyle}>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
       <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td>
       <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
@@ -751,7 +762,11 @@ function renderBookings(){
       <td>${pillFor(b.status)}</td>
       <td style="text-align:right"><button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
+  }
+  const tblFuture = document.getElementById('tblFuture');
+  const tblPast   = document.getElementById('tblPast');
+  if (tblFuture) tblFuture.innerHTML = futureList.map(b => rowHtml(b, false)).join('') || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία μελλοντική κράτηση.</td></tr>';
+  if (tblPast)   tblPast.innerHTML   = pastList.map(b => rowHtml(b, true)).join('')   || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία παλιά κράτηση.</td></tr>';
   document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', async () => {
     if (!confirm('Διαγραφή κράτησης;')) return;
     try {
