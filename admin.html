@@ -264,6 +264,18 @@
           <tbody id="tblBookings"></tbody>
         </table></div>
       </div>
+
+      <div class="panel">
+        <h3>ΝΕΑ ΚΡΑΤΗΣΗ (ΧΕΙΡΟΚΙΝΗΤΗ) <span class="actions"><button class="btn solid" id="addBookingBtn2">+ ΠΡΟΣΘΗΚΗ</button></span></h3>
+        <div class="form-grid">
+          <div class="field"><label>ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="bkDate2"></div>
+          <div class="field"><label>ΩΡΑ (24h)</label><input type="text" inputmode="numeric" pattern="[0-9]{1,2}:[0-9]{2}" maxlength="5" id="bkTime2" value="19:30" placeholder="HH:MM"></div>
+          <div class="field"><label>ΓΗΠΕΔΟ</label><select id="bkCourt2"><option>Γήπεδο 1</option><option>Γήπεδο 2</option></select></div>
+          <div class="field"><label>ΠΑΙΚΤΕΣ</label><select id="bkPlayers2"><option value="4">4άδα · 44€</option><option value="2">2άδα · 30€</option></select></div>
+          <div class="field"><label>ΟΝΟΜΑ ΠΑΙΚΤΗ</label><input type="text" id="bkName2" placeholder="π.χ. Γιάννης Παπαδόπουλος"></div>
+          <div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input type="tel" id="bkPhone2" placeholder="69XXXXXXXX"></div>
+        </div>
+      </div>
     </section>
 
     <!-- =========== MEMBERS =========== -->
@@ -676,15 +688,33 @@ function renderDashboard(){
 
 let BOOKINGS_FILTER_DATE = '';
 function renderBookings(){
-  let bookings = CACHE.bookings;
+  let bookings = [...CACHE.bookings];
   if (BOOKINGS_FILTER_DATE){
     bookings = bookings.filter(b => b.date === BOOKINGS_FILTER_DATE);
+  } else {
+    // Show today first, then future dates (asc), then past dates (desc)
+    const today = new Date().toISOString().slice(0,10);
+    bookings.sort((a, b) => {
+      const da = a.date || '';
+      const db = b.date || '';
+      const aIsToday = da === today;
+      const bIsToday = db === today;
+      if (aIsToday !== bIsToday) return aIsToday ? -1 : 1;
+      const aIsFuture = da > today;
+      const bIsFuture = db > today;
+      if (aIsFuture !== bIsFuture) return aIsFuture ? -1 : 1;
+      // Both future or both past
+      if (aIsFuture) return da.localeCompare(db) || (a.time||'').localeCompare(b.time||'');
+      return db.localeCompare(da) || (b.time||'').localeCompare(a.time||'');
+    });
   }
   const PAY_LABELS = { cash:'💵 Μετρητά', card:'💳 Κάρτα', pending:'⏳ Εκκρεμεί' };
+  const todayISO = new Date().toISOString().slice(0,10);
   document.getElementById('tblBookings').innerHTML = bookings.map(b => {
     const pay = b.payMethod || 'pending';
+    const isToday = b.date === todayISO;
     return `
-    <tr>
+    <tr${isToday?' style="background:rgba(183,255,74,0.06);box-shadow:inset 3px 0 0 #b7ff4a"':''}>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
       <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td>
       <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
@@ -933,23 +963,26 @@ function renderPrices(){
 }
 
 /* ============ ACTIONS ============ */
-document.getElementById('addBookingBtn').addEventListener('click', async () => {
-  const date = document.getElementById('bkDate').value;
-  const time = document.getElementById('bkTime').value;
-  const court = document.getElementById('bkCourt').value;
-  const players = +document.getElementById('bkPlayers').value;
-  const name = document.getElementById('bkName').value.trim();
-  const phone = document.getElementById('bkPhone').value.trim();
+async function doManualBooking(suffix){
+  const date = document.getElementById('bkDate'+suffix).value;
+  const time = document.getElementById('bkTime'+suffix).value;
+  const court = document.getElementById('bkCourt'+suffix).value;
+  const players = +document.getElementById('bkPlayers'+suffix).value;
+  const name = document.getElementById('bkName'+suffix).value.trim();
+  const phone = document.getElementById('bkPhone'+suffix).value.trim();
   if (!date || !name || !phone){ alert('Συμπλήρωσε ημερομηνία, όνομα και τηλέφωνο.'); return; }
   const total = players === 4 ? CACHE.prices.p4 : CACHE.prices.p2;
   try {
     const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
     await addDoc(collection(window.npFB.db, 'bookings'), { date, time, court, name, phone, players, total, status:'ok', userId:null, createdAt: serverTimestamp() });
-    document.getElementById('bkName').value = ''; document.getElementById('bkPhone').value = '';
+    document.getElementById('bkName'+suffix).value = '';
+    document.getElementById('bkPhone'+suffix).value = '';
     await refreshAll();
     alert('Η κράτηση προστέθηκε.');
   } catch(e){ alert('Αποτυχία: '+e.message); }
-});
+}
+document.getElementById('addBookingBtn').addEventListener('click', () => doManualBooking(''));
+document.getElementById('addBookingBtn2').addEventListener('click', () => doManualBooking('2'));
 
 document.getElementById('savePricesBtn').addEventListener('click', async () => {
   const p = {
@@ -1233,7 +1266,9 @@ document.getElementById('memSaveBtn').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('bkDate').value  = new Date().toISOString().slice(0,10);
+const _bkDate2 = document.getElementById('bkDate2');
+if (_bkDate2) _bkDate2.value = new Date().toISOString().slice(0,10);
 document.getElementById('closureDate').value = new Date().toISOString().slice(0,10);
 document.getElementById('bkFilterDate').addEventListener('change', (e) => {
   BOOKINGS_FILTER_DATE = e.target.value;
