@@ -1913,8 +1913,8 @@
         rv.addEventListener('click', async () => {
           try {
             await window.npFB.resendVerification();
-            alert('✅ Στάλθηκε νέο email επαλήθευσης στο ' + u.email);
-          } catch(ex){ alert('Σφάλμα: ' + ex.message); }
+            alert('✅ ' + L('alert_verify_sent','Στάλθηκε νέο email επαλήθευσης στο') + ' ' + u.email);
+          } catch(ex){ alert(L('alert_error','Σφάλμα') + ': ' + ex.message); }
         });
       }
 
@@ -1923,23 +1923,23 @@
       const chgPw = document.getElementById('changePwBtn');
       if (chgPw){
         chgPw.addEventListener('click', async () => {
-          const cur  = prompt('Ο τρέχων κωδικός σου:');
+          const cur  = prompt(L('pw_cur_prompt','Ο τρέχων κωδικός σου:'));
           if (!cur) return;
-          const np1 = prompt('Νέος κωδικός (τουλάχιστον 6 χαρακτήρες):');
-          if (!np1 || np1.length < 6){ alert('Ο νέος κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.'); return; }
-          const np2 = prompt('Επιβεβαίωση νέου κωδικού:');
-          if (np1 !== np2){ alert('Οι κωδικοί δεν ταιριάζουν.'); return; }
+          const np1 = prompt(L('pw_new_prompt','Νέος κωδικός (τουλάχιστον 6 χαρακτήρες):'));
+          if (!np1 || np1.length < 6){ alert(L('pw_too_short','Ο νέος κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.')); return; }
+          const np2 = prompt(L('pw_confirm_prompt','Επιβεβαίωση νέου κωδικού:'));
+          if (np1 !== np2){ alert(L('pw_mismatch','Οι κωδικοί δεν ταιριάζουν.')); return; }
           try {
             await window.npFB.changePassword(cur, np1);
-            alert('✅ Ο κωδικός άλλαξε επιτυχώς.');
+            alert('✅ ' + L('pw_changed_ok','Ο κωδικός άλλαξε επιτυχώς.'));
           } catch(ex){
             const map = {
-              'auth/invalid-credential':'Λάθος τρέχων κωδικός.',
-              'auth/wrong-password':'Λάθος τρέχων κωδικός.',
-              'auth/weak-password':'Ο νέος κωδικός είναι πολύ αδύναμος.',
-              'auth/requires-recent-login':'Χρειάζεται πρόσφατη σύνδεση. Κάνε logout και ξανα-login.',
+              'auth/invalid-credential': L('pw_wrong_current','Λάθος τρέχων κωδικός.'),
+              'auth/wrong-password':     L('pw_wrong_current','Λάθος τρέχων κωδικός.'),
+              'auth/weak-password':      L('pw_weak','Ο νέος κωδικός είναι πολύ αδύναμος.'),
+              'auth/requires-recent-login': L('pw_need_relogin','Χρειάζεται πρόσφατη σύνδεση. Κάνε logout και ξανα-login.'),
             };
-            alert(map[ex.code] || ('Σφάλμα: ' + ex.message));
+            alert(map[ex.code] || (L('alert_error','Σφάλμα') + ': ' + ex.message));
           }
         });
       }
@@ -1949,14 +1949,14 @@
       if (changeBtn){
         changeBtn.addEventListener('click', async () => {
           const opts = LEVELS.map((l,i)=>`${i+1}. ${l.icon} ${l.name}`).join('\n');
-          const ans = prompt('Επίλεξε νέο επίπεδο (1-5):\n\n'+opts+'\n\nΤρέχον: '+(lvIdx+1), String(lvIdx+1));
+          const ans = prompt(L('lvl_prompt','Επίλεξε νέο επίπεδο (1-5):')+'\n\n'+opts+'\n\n'+L('lvl_current','Τρέχον')+': '+(lvIdx+1), String(lvIdx+1));
           const n = parseInt(ans,10);
           if (n >= 1 && n <= 5 && window.npFB){
             try {
               await window.npFB.updateProfile(u.uid, { level: n });
               currentProfile.level = n;
               renderAuth();
-            } catch(err){ alert('Αποτυχία αλλαγής: '+err.message); }
+            } catch(err){ alert(L('lvl_change_fail','Αποτυχία αλλαγής')+': '+err.message); }
           }
         });
       }
@@ -2011,7 +2011,7 @@
     const email = document.getElementById('li_email').value.trim().toLowerCase();
     const pass  = document.getElementById('li_pass').value;
     const err = document.getElementById('loginError');
-    err.textContent = 'Σύνδεση...';
+    err.textContent = L('login_ing','Σύνδεση...');
     await waitFB();
     try {
       await window.npFB.signInUser(email, pass);
@@ -2019,13 +2019,13 @@
       // onAuth listener below will render the profile
     } catch(ex){
       const map = {
-        'auth/invalid-credential':'Λάθος email ή κωδικός.',
-        'auth/user-not-found':'Δεν υπάρχει λογαριασμός με αυτό το email.',
-        'auth/wrong-password':'Λάθος κωδικός.',
-        'auth/invalid-email':'Μη έγκυρο email.',
-        'auth/too-many-requests':'Πολλές αποτυχημένες προσπάθειες. Δοκίμασε αργότερα.',
+        'auth/invalid-credential':  L('err_invalid_cred','Λάθος email ή κωδικός.'),
+        'auth/user-not-found':      L('err_user_notfound','Δεν υπάρχει λογαριασμός με αυτό το email.'),
+        'auth/wrong-password':      L('err_wrong_pw','Λάθος κωδικός.'),
+        'auth/invalid-email':       L('err_bad_email','Μη έγκυρο email.'),
+        'auth/too-many-requests':   L('err_too_many','Πολλές αποτυχημένες προσπάθειες. Δοκίμασε αργότερα.'),
       };
-      err.textContent = map[ex.code] || ('Σφάλμα: ' + ex.message);
+      err.textContent = map[ex.code] || (L('alert_error','Σφάλμα') + ': ' + ex.message);
     }
   });
 
@@ -2038,7 +2038,7 @@
       inp.type = showing ? 'password' : 'text';
       btn.classList.toggle('on', !showing);
       btn.textContent = showing ? '👁' : '🙈';
-      btn.setAttribute('aria-label', showing ? 'Εμφάνιση κωδικού' : 'Απόκρυψη κωδικού');
+      btn.setAttribute('aria-label', showing ? L('aria_show_pw','Εμφάνιση κωδικού') : L('aria_hide_pw','Απόκρυψη κωδικού'));
     });
   });
 
@@ -2047,11 +2047,11 @@
     const email = document.getElementById('li_email').value.trim().toLowerCase();
     const err = document.getElementById('loginError');
     if (!email){
-      err.textContent = 'Γράψε πρώτα το email σου παραπάνω και μετά πάτα εδώ.';
+      err.textContent = L('reset_need_email','Γράψε πρώτα το email σου παραπάνω και μετά πάτα εδώ.');
       return;
     }
     err.style.color = '#b7ff4a';
-    err.textContent = 'Αποστολή email...';
+    err.textContent = L('reset_sending','Αποστολή email...');
     try {
       await waitFB();
       await window.npFB.resetPassword(email);
@@ -2060,12 +2060,12 @@
       // same success message to avoid leaking which emails are registered.
       if (ex.code === 'auth/invalid-email'){
         err.style.color = '#ff6b6b';
-        err.textContent = 'Μη έγκυρο email.';
+        err.textContent = L('err_bad_email','Μη έγκυρο email.');
         return;
       }
       console.warn('reset', ex);
     }
-    err.textContent = '✉️ Αν αυτό το email είναι εγγεγραμμένο, θα λάβεις σύνδεσμο επαναφοράς. Έλεγξε και τα spam.';
+    err.textContent = '✉️ ' + L('reset_sent','Αν αυτό το email είναι εγγεγραμμένο, θα λάβεις σύνδεσμο επαναφοράς. Έλεγξε και τα spam.');
     setTimeout(() => { err.style.color = '#ff6b6b'; }, 4000);
   });
 
@@ -2074,13 +2074,13 @@
     const err = document.getElementById('signupError');
     err.textContent = '';
     if (!document.getElementById('si_consent_essential').checked){
-      err.textContent = 'Πρέπει να αποδεχτείς τη χρήση των στοιχείων για τη διαχείριση του λογαριασμού.';
+      err.textContent = L('signup_need_consent','Πρέπει να αποδεχτείς τη χρήση των στοιχείων για τη διαχείριση του λογαριασμού.');
       return;
     }
     const pass1 = document.getElementById('si_pass').value;
     const pass2 = document.getElementById('si_pass2').value;
     if (pass1 !== pass2){
-      err.textContent = 'Οι δύο κωδικοί δεν ταιριάζουν.';
+      err.textContent = L('signup_pw_mismatch','Οι δύο κωδικοί δεν ταιριάζουν.');
       return;
     }
     const email = document.getElementById('si_email').value.trim().toLowerCase();
@@ -2097,7 +2097,7 @@
         acceptedAt: new Date().toISOString(),
       },
     };
-    err.textContent = 'Εγγραφή...';
+    err.textContent = L('signup_ing','Εγγραφή...');
     await waitFB();
     try {
       await window.npFB.signUpUser(payload);
@@ -2105,11 +2105,11 @@
       // onAuth will fire and render profile
     } catch(ex){
       const map = {
-        'auth/email-already-in-use':'Το email είναι ήδη εγγεγραμμένο.',
-        'auth/invalid-email':'Μη έγκυρο email.',
-        'auth/weak-password':'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.',
+        'auth/email-already-in-use': L('err_email_used','Το email είναι ήδη εγγεγραμμένο.'),
+        'auth/invalid-email':        L('err_bad_email','Μη έγκυρο email.'),
+        'auth/weak-password':        L('err_weak_pw','Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.'),
       };
-      err.textContent = map[ex.code] || ('Σφάλμα: ' + ex.message);
+      err.textContent = map[ex.code] || (L('alert_error','Σφάλμα') + ': ' + ex.message);
     }
   });
 
@@ -2168,12 +2168,13 @@
 
   /* ============ FULL PROFILE EDITOR ============ */
   const DAYS_EL = ['Δευτ','Τρι','Τετ','Πεμ','Παρ','Σαβ','Κυρ'];
+  const DAYS_KEYS = ['day_mon','day_tue','day_wed','day_thu','day_fri','day_sat','day_sun'];
   const TIME_PERIODS = [
-    { key:'morning',   label:'☀️ Πρωί (07:30-13:30)'   },
-    { key:'noon',      label:'🍽️ Μεσημέρι (13:30-15:00)'},
-    { key:'afternoon', label:'🌤️ Απόγευμα (15:00-19:30)'},
-    { key:'evening',   label:'🌙 Βράδυ (19:30-22:30)'   },
-    { key:'late',      label:'🌌 Νύχτα (22:30-01:30)'   },
+    { key:'morning',   label:'☀️ Πρωί (07:30-13:30)',   i18n:'tp_morning'   },
+    { key:'noon',      label:'🍽️ Μεσημέρι (13:30-15:00)', i18n:'tp_noon'    },
+    { key:'afternoon', label:'🌤️ Απόγευμα (15:00-19:30)', i18n:'tp_afternoon' },
+    { key:'evening',   label:'🌙 Βράδυ (19:30-22:30)',   i18n:'tp_evening'   },
+    { key:'late',      label:'🌌 Νύχτα (22:30-01:30)',   i18n:'tp_late'      },
   ];
 
   function renderFullProfile(){
@@ -2185,92 +2186,92 @@
     const lvIdx = Math.max(0, Math.min(4, (u.level || 1) - 1));
 
     const rewardBits = [];
-    if (u.welcomeCoupon) rewardBits.push('🎁 −10% καλωσόρισμα στην πρώτη κράτηση');
+    if (u.welcomeCoupon) rewardBits.push('🎁 ' + L('reward_welcome','−10% καλωσόρισμα στην πρώτη κράτηση'));
 
     document.getElementById('profileFull').innerHTML = `
       <div class="pf-section">
-        <h3><span class="ico">🪪</span>ΠΡΟΣΩΠΙΚΑ</h3>
+        <h3><span class="ico">🪪</span>${L('pf_personal','ΠΡΟΣΩΠΙΚΑ')}</h3>
         <div class="pf-grid">
-          <div class="pf-field"><label>ΟΝΟΜΑ</label><input id="p_name" value="${esc(u.name||'')}"></div>
-          <div class="pf-field"><label>ΕΠΙΘΕΤΟ</label><input id="p_surname" value="${esc(u.surname||'')}"></div>
-          <div class="pf-field"><label>ΤΗΛΕΦΩΝΟ</label><input id="p_phone" type="tel" value="${esc(u.phone||'')}"></div>
+          <div class="pf-field"><label>${L('pf_name','ΟΝΟΜΑ')}</label><input id="p_name" value="${esc(u.name||'')}"></div>
+          <div class="pf-field"><label>${L('pf_surname','ΕΠΙΘΕΤΟ')}</label><input id="p_surname" value="${esc(u.surname||'')}"></div>
+          <div class="pf-field"><label>${L('pf_phone','ΤΗΛΕΦΩΝΟ')}</label><input id="p_phone" type="tel" value="${esc(u.phone||'')}"></div>
           <div class="pf-field"><label>EMAIL</label><input value="${esc(u.email||'')}" disabled style="opacity:0.6"></div>
-          <div class="pf-field"><label>ΓΕΝΝΗΣΗ</label><input id="p_birthday" type="date" value="${esc(u.birthday||'')}"></div>
-          <div class="pf-field"><label>ΦΥΛΟ</label><select id="p_gender">
+          <div class="pf-field"><label>${L('pf_birthday','ΓΕΝΝΗΣΗ')}</label><input id="p_birthday" type="date" value="${esc(u.birthday||'')}"></div>
+          <div class="pf-field"><label>${L('pf_gender','ΦΥΛΟ')}</label><select id="p_gender">
             <option value="">—</option>
-            <option value="M" ${u.gender==='M'?'selected':''}>Άνδρας</option>
-            <option value="F" ${u.gender==='F'?'selected':''}>Γυναίκα</option>
-            <option value="X" ${u.gender==='X'?'selected':''}>Άλλο / Προτιμώ να μην πω</option>
+            <option value="M" ${u.gender==='M'?'selected':''}>${L('gender_m','Άνδρας')}</option>
+            <option value="F" ${u.gender==='F'?'selected':''}>${L('gender_f','Γυναίκα')}</option>
+            <option value="X" ${u.gender==='X'?'selected':''}>${L('gender_x','Άλλο / Προτιμώ να μην πω')}</option>
           </select></div>
-          <div class="pf-field" style="grid-column:1/-1"><label>ΠΟΛΗ</label><input id="p_city" value="${esc(u.city||'')}"></div>
+          <div class="pf-field" style="grid-column:1/-1"><label>${L('pf_city','ΠΟΛΗ')}</label><input id="p_city" value="${esc(u.city||'')}"></div>
         </div>
       </div>
 
       <div class="pf-section">
-        <h3><span class="ico">🎾</span>ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ</h3>
+        <h3><span class="ico">🎾</span>${L('pf_level','ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ')}</h3>
         <div class="pf-field">
           <select id="p_level">
-            ${LEVELS.map((l,i) => `<option value="${i+1}" ${i===lvIdx?'selected':''}>${l.icon} ${esc(l.name)}</option>`).join('')}
+            ${LEVELS.map((l,i) => `<option value="${i+1}" ${i===lvIdx?'selected':''}>${l.icon} ${esc(L('level_'+(i+1), l.name))}</option>`).join('')}
           </select>
         </div>
       </div>
 
       <div class="pf-section">
-        <h3><span class="ico">📅</span>ΔΙΑΘΕΣΙΜΟΤΗΤΑ</h3>
+        <h3><span class="ico">📅</span>${L('pf_availability','ΔΙΑΘΕΣΙΜΟΤΗΤΑ')}</h3>
         <div style="margin-bottom:14px">
-          <label style="font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:8px">ΗΜΕΡΕΣ</label>
-          <div class="pf-chips">${DAYS_EL.map((d,i) => `<button type="button" class="pf-chip ${availDays.has(i)?'active':''}" data-day="${i}">${esc(d)}</button>`).join('')}</div>
+          <label style="font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:8px">${L('pf_days','ΗΜΕΡΕΣ')}</label>
+          <div class="pf-chips">${DAYS_EL.map((d,i) => `<button type="button" class="pf-chip ${availDays.has(i)?'active':''}" data-day="${i}">${esc(L(DAYS_KEYS[i], d))}</button>`).join('')}</div>
         </div>
         <div>
-          <label style="font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:8px">ΩΡΕΣ</label>
-          <div class="pf-chips">${TIME_PERIODS.map(t => `<button type="button" class="pf-chip ${availTimes.has(t.key)?'active':''}" data-period="${esc(t.key)}">${esc(t.label)}</button>`).join('')}</div>
+          <label style="font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:8px">${L('pf_hours','ΩΡΕΣ')}</label>
+          <div class="pf-chips">${TIME_PERIODS.map(t => `<button type="button" class="pf-chip ${availTimes.has(t.key)?'active':''}" data-period="${esc(t.key)}">${esc(L(t.i18n, t.label))}</button>`).join('')}</div>
         </div>
       </div>
 
       <div class="pf-section">
-        <h3><span class="ico">👋</span>ΨΑΧΝΩ ΠΑΙΚΤΕΣ / ΟΜΑΔΑ</h3>
+        <h3><span class="ico">👋</span>${L('pf_lfg_title','ΨΑΧΝΩ ΠΑΙΚΤΕΣ / ΟΜΑΔΑ')}</h3>
         <div class="pf-lfg-row">
           <label class="sw"><input type="checkbox" id="p_lfg" ${lfg?'checked':''}><span class="sw-slider"></span></label>
           <div class="pf-lfg-text">
-            <strong>Εμφάνιση στο "Βρες παίκτη"</strong>
-            <small>Ενεργοποίησε για να σε βρίσκουν άλλοι παίκτες παρόμοιου επιπέδου. Θα φαίνεται το μικρό σου όνομα, το επίπεδο, η πόλη, και η διαθεσιμότητα.</small>
+            <strong>${L('pf_lfg_show','Εμφάνιση στο "Βρες παίκτη"')}</strong>
+            <small>${L('pf_lfg_help','Ενεργοποίησε για να σε βρίσκουν άλλοι παίκτες παρόμοιου επιπέδου. Θα φαίνεται το μικρό σου όνομα, το επίπεδο, η πόλη, και η διαθεσιμότητα.')}</small>
           </div>
         </div>
         <div class="pf-field" style="margin-top:10px">
-          <label>ΛΙΓΑ ΛΟΓΙΑ ΓΙΑ ΣΕΝΑ (προαιρετικό)</label>
-          <textarea id="p_bio" maxlength="280" placeholder="π.χ. Παίζω 3 χρόνια, ψάχνω παρέα για Σαββατοκύριακα.">${esc(u.bio||'')}</textarea>
+          <label>${L('pf_bio_label','ΛΙΓΑ ΛΟΓΙΑ ΓΙΑ ΣΕΝΑ (προαιρετικό)')}</label>
+          <textarea id="p_bio" maxlength="280" placeholder="${esc(L('pf_bio_ph','π.χ. Παίζω 3 χρόνια, ψάχνω παρέα για Σαββατοκύριακα.'))}">${esc(u.bio||'')}</textarea>
         </div>
         <div class="pf-field" style="margin-top:10px">
-          <label>ΠΩΣ ΝΑ ΣΕ ΒΡΟΥΝ</label>
+          <label>${L('pf_contact_label','ΠΩΣ ΝΑ ΣΕ ΒΡΟΥΝ')}</label>
           <select id="p_contact">
-            <option value="whatsapp" ${(u.contactMethod||'whatsapp')==='whatsapp'?'selected':''}>WhatsApp (μέσω τηλεφώνου)</option>
-            <option value="phone"    ${u.contactMethod==='phone'?'selected':''}>Κλήση (μέσω τηλεφώνου)</option>
-            <option value="hidden"   ${u.contactMethod==='hidden'?'selected':''}>Κρυφό — μόνο εμφάνιση</option>
+            <option value="whatsapp" ${(u.contactMethod||'whatsapp')==='whatsapp'?'selected':''}>${L('contact_wa','WhatsApp (μέσω τηλεφώνου)')}</option>
+            <option value="phone"    ${u.contactMethod==='phone'?'selected':''}>${L('contact_call','Κλήση (μέσω τηλεφώνου)')}</option>
+            <option value="hidden"   ${u.contactMethod==='hidden'?'selected':''}>${L('contact_hidden','Κρυφό — μόνο εμφάνιση')}</option>
           </select>
         </div>
       </div>
 
       ${rewardBits.length ? `<div class="pf-section" style="border-color:rgba(183,255,74,0.3)">
-        <h3><span class="ico">🎁</span>ΠΡΟΣΦΟΡΕΣ ΣΟΥ</h3>
+        <h3><span class="ico">🎁</span>${L('pf_rewards','ΠΡΟΣΦΟΡΕΣ ΣΟΥ')}</h3>
         ${rewardBits.map(r => `<div style="padding:6px 0;font-size:14px">${r}</div>`).join('')}
       </div>` : ''}
 
       <div class="pf-section">
-        <h3><span class="ico">📅</span>ΟΙ ΚΡΑΤΗΣΕΙΣ ΜΟΥ</h3>
+        <h3><span class="ico">📅</span>${L('pf_my_bookings','ΟΙ ΚΡΑΤΗΣΕΙΣ ΜΟΥ')}</h3>
         <div id="myBookingsList" style="display:flex;flex-direction:column;gap:8px">
-          <div style="color:rgba(244,249,255,0.5);font-size:13px">Φόρτωση...</div>
+          <div style="color:rgba(244,249,255,0.5);font-size:13px">${L('loading','Φόρτωση...')}</div>
         </div>
         <div class="cancel-policy">
-          <div class="cp-title">ℹ️ ΠΟΛΙΤΙΚΗ ΑΚΥΡΩΣΗΣ</div>
+          <div class="cp-title">ℹ️ ${L('cp_title','ΠΟΛΙΤΙΚΗ ΑΚΥΡΩΣΗΣ')}</div>
           <ul class="cp-list">
-            <li><span class="cp-ok">✅</span> <b>Πάνω από 48 ώρες πριν:</b> Δωρεάν ακύρωση από εδώ.</li>
-            <li><span class="cp-warn">⚠️</span> <b>24–48 ώρες πριν:</b> Απαιτείται τηλέφωνο — <a href="tel:+306934391978" style="color:#b7ff4a">693 439 1978</a> ή <a href="tel:+306951784471" style="color:#b7ff4a">695 178 4471</a>.</li>
-            <li><span class="cp-bad">❌</span> <b>Κάτω από 24 ώρες (ή no-show):</b> Οφείλεις την τιμή του γηπέδου — <b>44€ για 4άδα</b>, <b>30€ για 2άδα</b>. Επικοινώνησε μαζί μας.</li>
+            <li><span class="cp-ok">✅</span> ${L('cp_48h','<b>Πάνω από 48 ώρες πριν:</b> Δωρεάν ακύρωση από εδώ.')}</li>
+            <li><span class="cp-warn">⚠️</span> ${L('cp_24_48h','<b>24–48 ώρες πριν:</b> Απαιτείται τηλέφωνο — <a href="tel:+306934391978" style="color:#b7ff4a">693 439 1978</a> ή <a href="tel:+306951784471" style="color:#b7ff4a">695 178 4471</a>.')}</li>
+            <li><span class="cp-bad">❌</span> ${L('cp_under_24h','<b>Κάτω από 24 ώρες (ή no-show):</b> Οφείλεις την τιμή του γηπέδου — <b>44€ για 4άδα</b>, <b>30€ για 2άδα</b>. Επικοινώνησε μαζί μας.')}</li>
           </ul>
         </div>
       </div>
 
-      <button type="button" class="pf-save-btn" id="saveProfileBtn">ΑΠΟΘΗΚΕΥΣΗ</button>
+      <button type="button" class="pf-save-btn" id="saveProfileBtn">${L('pf_save','ΑΠΟΘΗΚΕΥΣΗ')}</button>
       <div class="pf-save-msg" id="saveProfileMsg"></div>
     `;
 
@@ -2284,7 +2285,7 @@
     // Save
     document.getElementById('saveProfileBtn').addEventListener('click', async () => {
       const msg = document.getElementById('saveProfileMsg');
-      msg.textContent = 'Αποθήκευση...';
+      msg.textContent = L('saving','Αποθήκευση...');
       msg.style.color = 'rgba(244,249,255,0.6)';
       const days  = [...document.querySelectorAll('#profileFull [data-day]')].filter(c => c.classList.contains('active')).map(c => +c.dataset.day);
       const times = [...document.querySelectorAll('#profileFull [data-period]')].filter(c => c.classList.contains('active')).map(c => c.dataset.period);
@@ -2307,7 +2308,7 @@
         // Sync public snapshot
         if (patch.lookingForGame){
           await window.npFB.upsertPublicProfile(u.uid, {
-            firstName: patch.name || 'Παίκτης',
+            firstName: patch.name || 'Player',
             level: patch.level,
             city: patch.city || '',
             bio: patch.bio || '',
@@ -2321,12 +2322,12 @@
           await window.npFB.removePublicProfile(u.uid);
         }
         msg.style.color = '#b7ff4a';
-        msg.textContent = '✅ Αποθηκεύτηκε.';
+        msg.textContent = '✅ ' + L('saved_ok','Αποθηκεύτηκε.');
         setTimeout(() => { msg.textContent = ''; }, 3000);
         renderAuth();
       } catch(err){
         msg.style.color = '#ff6b6b';
-        msg.textContent = 'Αποτυχία: ' + err.message;
+        msg.textContent = L('save_failed','Αποτυχία') + ': ' + err.message;
       }
     });
   }
@@ -2338,17 +2339,17 @@
     const body = document.getElementById('findPlayerBody');
     if (!u){
       body.innerHTML = `<div class="fp-empty">
-        <h4>Χρειάζεσαι λογαριασμό</h4>
-        <p>Κάνε σύνδεση ή εγγραφή για να δεις άλλους παίκτες.</p>
-        <button type="button" class="pf-save-btn" onclick="document.getElementById('playerBtn').click();">ΣΥΝΔΕΣΗ / ΕΓΓΡΑΦΗ</button>
+        <h4>${L('fp_need_account','Χρειάζεσαι λογαριασμό')}</h4>
+        <p>${L('fp_need_account_p','Κάνε σύνδεση ή εγγραφή για να δεις άλλους παίκτες.')}</p>
+        <button type="button" class="pf-save-btn" onclick="document.getElementById('playerBtn').click();">${L('fp_login_signup','ΣΥΝΔΕΣΗ / ΕΓΓΡΑΦΗ')}</button>
       </div>`;
       return;
     }
     if (!u.city || !u.birthday || !u.gender){
       body.innerHTML = `<div class="fp-empty">
-        <h4>Συμπλήρωσε πρώτα το προφίλ σου</h4>
-        <p>Για να μπεις στο Match-making, χρειαζόμαστε πόλη, γέννηση και φύλο — ώστε να σε προτείνουμε στους σωστούς παίκτες.</p>
-        <button type="button" class="pf-save-btn" id="goToProfile">ΑΝΟΙΞΕ ΤΟ ΠΡΟΦΙΛ</button>
+        <h4>${L('fp_complete_profile','Συμπλήρωσε πρώτα το προφίλ σου')}</h4>
+        <p>${L('fp_complete_profile_p','Για να μπεις στο Match-making, χρειαζόμαστε πόλη, γέννηση και φύλο — ώστε να σε προτείνουμε στους σωστούς παίκτες.')}</p>
+        <button type="button" class="pf-save-btn" id="goToProfile">${L('fp_open_profile','ΑΝΟΙΞΕ ΤΟ ΠΡΟΦΙΛ')}</button>
       </div>`;
       document.getElementById('goToProfile').addEventListener('click', () => {
         stepFindPlayer.classList.remove('open');
@@ -2358,9 +2359,9 @@
     }
     if (!u.lookingForGame){
       body.innerHTML = `<div class="fp-empty">
-        <h4>Ενεργοποίησε το "Ψάχνω παίκτες"</h4>
-        <p>Πρέπει πρώτα να δηλώσεις εσύ ότι ψάχνεις παρέα για παιχνίδι. Θα εμφανίζεσαι και εσύ στους άλλους.</p>
-        <button type="button" class="pf-save-btn" id="goToProfile2">ΕΝΕΡΓΟΠΟΙΗΣΗ ΣΤΟ ΠΡΟΦΙΛ</button>
+        <h4>${L('fp_enable_lfg','Ενεργοποίησε το "Ψάχνω παίκτες"')}</h4>
+        <p>${L('fp_enable_lfg_p','Πρέπει πρώτα να δηλώσεις εσύ ότι ψάχνεις παρέα για παιχνίδι. Θα εμφανίζεσαι και εσύ στους άλλους.')}</p>
+        <button type="button" class="pf-save-btn" id="goToProfile2">${L('fp_enable_in_profile','ΕΝΕΡΓΟΠΟΙΗΣΗ ΣΤΟ ΠΡΟΦΙΛ')}</button>
       </div>`;
       document.getElementById('goToProfile2').addEventListener('click', () => {
         stepFindPlayer.classList.remove('open');
@@ -2368,7 +2369,7 @@
       });
       return;
     }
-    body.innerHTML = '<div class="fp-count">Αναζήτηση...</div>';
+    body.innerHTML = `<div class="fp-count">${L('searching','Αναζήτηση...')}</div>`;
     await waitFB();
     const minLv = Math.max(1, u.level - 1);
     const maxLv = Math.min(5, u.level + 1);
@@ -2378,33 +2379,37 @@
       const others = all.filter(p => p.uid !== u.uid);
       if (!others.length){
         body.innerHTML = `<div class="fp-empty">
-          <h4>Κανένας άλλος προς το παρόν</h4>
-          <p>Δεν υπάρχουν άλλοι παίκτες που ψάχνουν παρέα σε επίπεδο ±1 από το δικό σου. Έλα ξανά σε λίγες μέρες!</p>
+          <h4>${L('fp_empty_h','Κανένας άλλος προς το παρόν')}</h4>
+          <p>${L('fp_empty_p','Δεν υπάρχουν άλλοι παίκτες που ψάχνουν παρέα σε επίπεδο ±1 από το δικό σου. Έλα ξανά σε λίγες μέρες!')}</p>
         </div>`;
         return;
       }
-      body.innerHTML = `<div class="fp-count">${others.length} παίκτ${others.length===1?'ης':'ες'} · επίπεδο ${minLv}–${maxLv}</div>` +
+      const playersLbl = others.length === 1
+        ? L('fp_player_single','παίκτης')
+        : L('fp_player_plural','παίκτες');
+      const levelLbl = L('fp_level_range','επίπεδο');
+      body.innerHTML = `<div class="fp-count">${others.length} ${playersLbl} · ${levelLbl} ${minLv}–${maxLv}</div>` +
         others.map(p => {
           const lvIdx = Math.max(0, Math.min(4, (p.level||1) - 1));
           const lv = LEVELS[lvIdx];
           const initial = (p.firstName||'?')[0]?.toUpperCase() || '?';
-          const daysStr = (p.availability?.days || []).map(i => DAYS_EL[i]).join(', ') || '—';
+          const daysStr = (p.availability?.days || []).map(i => L(DAYS_KEYS[i], DAYS_EL[i])).join(', ') || '—';
           const meta = [
             p.city ? '📍 ' + esc(p.city) : '',
             daysStr !== '—' ? '📅 ' + esc(daysStr) : '',
           ].filter(Boolean).join(' · ');
           let contactBtn = '';
           if (p.contactMethod === 'whatsapp' && p.phone){
-            contactBtn = `<a class="fp-contact" target="_blank" rel="noopener" href="https://wa.me/${esc(p.phone.replace(/[^0-9]/g,''))}?text=${encodeURIComponent('Γεια σου! Είδα το προφίλ σου στο North Padel και ψάχνω παρέα για παιχνίδι.')}">WhatsApp</a>`;
+            contactBtn = `<a class="fp-contact" target="_blank" rel="noopener" href="https://wa.me/${esc(p.phone.replace(/[^0-9]/g,''))}?text=${encodeURIComponent(L('fp_wa_msg','Γεια σου! Είδα το προφίλ σου στο North Padel και ψάχνω παρέα για παιχνίδι.'))}">WhatsApp</a>`;
           } else if (p.contactMethod === 'phone' && p.phone){
-            contactBtn = `<a class="fp-contact" href="tel:${esc(p.phone)}">📞 ΚΛΗΣΗ</a>`;
+            contactBtn = `<a class="fp-contact" href="tel:${esc(p.phone)}">📞 ${L('fp_call','ΚΛΗΣΗ')}</a>`;
           } else {
-            contactBtn = `<span class="fp-contact" style="cursor:default;opacity:0.6">Κρυφό</span>`;
+            contactBtn = `<span class="fp-contact" style="cursor:default;opacity:0.6">${L('fp_hidden','Κρυφό')}</span>`;
           }
           return `<div class="fp-card">
             <div class="fp-avatar">${esc(initial)}</div>
             <div class="fp-info">
-              <div class="fp-name"><span class="fp-lvl">${lv.icon} ${esc(lv.name)}</span>${esc(p.firstName||'Παίκτης')}</div>
+              <div class="fp-name"><span class="fp-lvl">${lv.icon} ${esc(L('level_'+(lvIdx+1), lv.name))}</span>${esc(p.firstName||L('fp_default_name','Παίκτης'))}</div>
               <div class="fp-meta">${meta}</div>
               ${p.bio ? `<div class="fp-meta" style="margin-top:4px;color:rgba(244,249,255,0.8)">"${esc(p.bio)}"</div>` : ''}
             </div>
@@ -2412,7 +2417,7 @@
           </div>`;
         }).join('');
     } catch(e){
-      body.innerHTML = `<div class="fp-empty"><h4>Σφάλμα</h4><p>Δεν φορτώθηκαν οι παίκτες: ${esc(e.message)}</p></div>`;
+      body.innerHTML = `<div class="fp-empty"><h4>${L('alert_error','Σφάλμα')}</h4><p>${L('fp_load_fail','Δεν φορτώθηκαν οι παίκτες')}: ${esc(e.message)}</p></div>`;
     }
   }
   // expose so onclick inline can call
@@ -2429,9 +2434,12 @@
     const now = Date.now();
     bookings.sort((a,b) => (b.startsAt||0) - (a.startsAt||0));
     if (!bookings.length){
-      list.innerHTML = '<div style="color:rgba(244,249,255,0.4);font-size:13px;padding:8px 0">Δεν έχεις κρατήσεις ακόμα.</div>';
+      list.innerHTML = `<div style="color:rgba(244,249,255,0.4);font-size:13px;padding:8px 0">${L('mb_none','Δεν έχεις κρατήσεις ακόμα.')}</div>`;
       return;
     }
+    const langMap = { el:'el-GR', en:'en-GB', de:'de-DE' };
+    const dtLocale = langMap[document.documentElement.lang] || 'el-GR';
+    const playersUnit = (n) => (n === 2 ? L('unit_2p','2άδα') : L('unit_4p','4άδα'));
     list.innerHTML = bookings.map(b => {
       const startsAt = b.startsAt || 0;
       const hoursTo = (startsAt - now) / 3600000;
@@ -2439,35 +2447,35 @@
       const past = startsAt && startsAt < now;
       let action;
       if (cancelled){
-        action = '<span class="mb-pill canc">Ακυρώθηκε</span>';
+        action = `<span class="mb-pill canc">${L('mb_cancelled','Ακυρώθηκε')}</span>`;
       } else if (past){
-        action = '<span class="mb-pill neutral">Ολοκληρώθηκε</span>';
+        action = `<span class="mb-pill neutral">${L('mb_completed','Ολοκληρώθηκε')}</span>`;
       } else if (hoursTo >= 48){
-        action = `<button class="mb-cancel" data-cancel="${esc(b.id)}" data-date="${esc(b.date||'')}" data-court="${esc(b.court||'')}" data-time="${esc(b.time||'')}">ΑΚΥΡΩΣΗ</button>`;
+        action = `<button class="mb-cancel" data-cancel="${esc(b.id)}" data-date="${esc(b.date||'')}" data-court="${esc(b.court||'')}" data-time="${esc(b.time||'')}">${L('mb_cancel_btn','ΑΚΥΡΩΣΗ')}</button>`;
       } else if (hoursTo >= 24){
-        action = '<span class="mb-pill warn" title="Πάρε τηλέφωνο 693 439 1978 ή 695 178 4471">📞 Τηλεφωνικά</span>';
+        action = `<span class="mb-pill warn" title="${esc(L('mb_call_us_title','Πάρε τηλέφωνο 693 439 1978 ή 695 178 4471'))}">📞 ${L('mb_by_phone','Τηλεφωνικά')}</span>`;
       } else {
-        action = '<span class="mb-pill bad" title="Οφείλεις το ελάχιστο γήπεδο 30€">❌ &lt;24h</span>';
+        action = `<span class="mb-pill bad" title="${esc(L('mb_owe_title','Οφείλεις το ελάχιστο γήπεδο 30€'))}">❌ &lt;24h</span>`;
       }
-      const dt = b.date ? new Date(b.date + 'T00:00:00').toLocaleDateString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit'}) : '—';
+      const dt = b.date ? new Date(b.date + 'T00:00:00').toLocaleDateString(dtLocale,{weekday:'short',day:'2-digit',month:'2-digit'}) : '—';
       return `<div class="mb-row ${cancelled?'is-cancelled':''}${past?' is-past':''}">
         <div class="mb-info">
           <div class="mb-when">${esc(dt)} · ${esc(b.time||'')}</div>
-          <div class="mb-sub">${esc(b.court||'')} · ${+b.players||0}άδα · €${+b.total||0}</div>
+          <div class="mb-sub">${esc(b.court||'')} · ${playersUnit(+b.players||0)} · €${+b.total||0}</div>
         </div>
         <div class="mb-action">${action}</div>
       </div>`;
     }).join('');
     list.querySelectorAll('[data-cancel]').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Σίγουρα θέλεις να ακυρώσεις αυτή την κράτηση;')) return;
-        btn.disabled = true; btn.textContent = 'Ακύρωση...';
+        if (!confirm(L('mb_confirm_cancel','Σίγουρα θέλεις να ακυρώσεις αυτή την κράτηση;'))) return;
+        btn.disabled = true; btn.textContent = L('mb_cancelling','Ακύρωση...');
         try {
           await window.npFB.cancelBookingDoc(btn.dataset.cancel, btn.dataset.date, btn.dataset.court, btn.dataset.time);
           renderMyBookings(u);
         } catch(err){
-          alert('Σφάλμα ακύρωσης: ' + err.message);
-          btn.disabled = false; btn.textContent = 'ΑΚΥΡΩΣΗ';
+          alert(L('mb_cancel_err','Σφάλμα ακύρωσης') + ': ' + err.message);
+          btn.disabled = false; btn.textContent = L('mb_cancel_btn','ΑΚΥΡΩΣΗ');
         }
       });
     });
@@ -2675,7 +2683,7 @@
         setTimeout(() => openInfoModal(modalMap[target]), 300);
         return;
       }
-      alert('"' + link.textContent + '" — σύντομα!');
+      alert('"' + link.textContent + '" — ' + L('coming_soon','σύντομα!'));
       closeMenu();
     });
   });
@@ -2705,7 +2713,7 @@
           setTimeout(() => openInfoModal('modalCoaching'), 300);
           return;
         }
-        alert('"' + a.textContent + '" — σύντομα!');
+        alert('"' + a.textContent + '" — ' + L('coming_soon','σύντομα!'));
         closeMenu();
       });
     });
@@ -2717,7 +2725,7 @@
     btn.addEventListener('click', () => {
       if (navigator.vibrate) navigator.vibrate(30);
       selectedCombo = btn.dataset.combo;
-      document.getElementById('courtChooseCrumb').textContent = 'ΠΡΟΣΦΟΡΑ ' + selectedCombo;
+      document.getElementById('courtChooseCrumb').textContent = L('combo_crumb','ΠΡΟΣΦΟΡΑ') + ' ' + selectedCombo;
       slideTo(stepCombos, stepCourtChoose);
     });
   });
@@ -2860,7 +2868,7 @@
       opt2.classList.remove('active');
       document.querySelector('.seg-opt[data-players="4"]').classList.add('active');
       document.getElementById('playersHint').style.display = 'block';
-      document.getElementById('playersHint').textContent = 'Μετά τις 21:00 διαθέσιμη μόνο η 4άδα.';
+      document.getElementById('playersHint').textContent = L('form_hint_late','Μετά τις 21:00 διαθέσιμη μόνο η 4άδα.');
     }
     formCrumb.textContent = sessionsCrumb.textContent + ' · ' + selectedSession.replace('-',' – ');
     updateTotal();
@@ -2876,8 +2884,8 @@
   function reflectPricesInUI(){
     const b4 = document.querySelector('.seg-opt[data-players="4"]');
     const b2 = document.querySelector('.seg-opt[data-players="2"]');
-    if (b4) b4.textContent = '4άδα · €' + LIVE_PRICES.p4;
-    if (b2) b2.textContent = '2άδα · €' + LIVE_PRICES.p2;
+    if (b4) b4.textContent = L('unit_4p','4άδα') + ' · €' + LIVE_PRICES.p4;
+    if (b2) b2.textContent = L('unit_2p','2άδα') + ' · €' + LIVE_PRICES.p2;
     // Combo cards
     document.querySelectorAll('[data-combo-price]').forEach(el => {
       const key = el.dataset.comboPrice; // 'c1' | 'c2' | 'c3'
@@ -2901,9 +2909,9 @@
     const racketCost = players === 4 ? rackets * (LIVE_PRICES.racket||0) : 0;
     const ballCost = premiumBalls ? (LIVE_PRICES.balls||0) : 0;
     let total = base + racketCost + ballCost;
-    const parts = [players === 4 ? '4άδα · €' + base : '2άδα · €' + base + ' (ρακέτες μέσα)'];
-    if (rackets > 0 && racketCost > 0) parts.push(rackets + ' ρακέτ' + (rackets===1?'α':'ες') + ' · €' + racketCost);
-    if (premiumBalls) parts.push('premium μπάλες · €' + (LIVE_PRICES.balls||0));
+    const parts = [players === 4 ? L('unit_4p','4άδα') + ' · €' + base : L('unit_2p','2άδα') + ' · €' + base + ' (' + L('rackets_included','ρακέτες μέσα') + ')'];
+    if (rackets > 0 && racketCost > 0) parts.push(rackets + ' ' + (rackets===1?L('rk_single','ρακέτα'):L('rk_plural','ρακέτες')) + ' · €' + racketCost);
+    if (premiumBalls) parts.push(L('booking_prem_balls','premium μπάλες') + ' · €' + (LIVE_PRICES.balls||0));
 
     // Rewards preview: pick the best applicable
     // Welcome discount requires phone verification (anti-abuse).
@@ -2912,7 +2920,7 @@
     if (u){
       if ((u.freeCourts||0) > 0){
         total = 0;
-        discountLine = ' − 🎾 δωρεάν γήπεδο (δώρο)';
+        discountLine = ' − 🎾 ' + L('disc_free_court','δωρεάν γήπεδο (δώρο)');
       } else if ((u.couponPct||0) > 0){
         const disc = Math.round(total * (u.couponPct/100));
         total = total - disc;
@@ -2920,13 +2928,13 @@
       } else if (u.welcomeCoupon && (u.bookingsCount||0) === 0){
         const disc = Math.round(total * 0.10);
         total = total - disc;
-        discountLine = ' − 🎁 καλωσόρισμα (−' + disc + '€)';
+        discountLine = ' − 🎁 ' + L('disc_welcome','καλωσόρισμα') + ' (−' + disc + '€)';
       }
     }
     document.getElementById('totalBreakdown').textContent = parts.join(' + ') + discountLine;
     document.getElementById('totalAmount').textContent = '€' + total;
     const rh = document.getElementById('racketHint');
-    if (rh) rh.textContent = players === 2 ? '(περιλαμβάνονται δωρεάν)' : '(+€' + (LIVE_PRICES.racket||2) + ' η καθεμία)';
+    if (rh) rh.textContent = players === 2 ? L('rackets_free_inline','(περιλαμβάνονται δωρεάν)') : ('(+€' + (LIVE_PRICES.racket||2) + ' ' + L('rackets_each','η καθεμία') + ')');
     document.querySelectorAll('.step-btn').forEach(b => {
       if (b.dataset.op === 'inc') b.disabled = rackets >= players;
       if (b.dataset.op === 'dec') b.disabled = rackets <= 0;
@@ -2964,9 +2972,9 @@
     e.preventDefault();
     const name = document.getElementById('fName').value.trim();
     const phone = document.getElementById('fPhone').value.trim();
-    if (!name || !phone){ alert('Συμπλήρωσε όνομα και τηλέφωνο.'); return; }
+    if (!name || !phone){ alert(L('need_name_phone','Συμπλήρωσε όνομα και τηλέφωνο.')); return; }
     if (!selectedDate || !selectedSession){
-      alert('Επίλεξε πρώτα ημερομηνία και ώρα.');
+      alert(L('need_date_time','Επίλεξε πρώτα ημερομηνία και ώρα.'));
       return;
     }
     const u = currentUser();
@@ -2974,7 +2982,7 @@
 
     // Signed-in users must have a verified email; guests skip this.
     if (u && !u.emailVerified){
-      alert('Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.');
+      alert(L('need_verify_email','Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.'));
       return;
     }
 
@@ -3027,7 +3035,7 @@
       if (siteKey && siteKey !== 'SITE_KEY_HERE'){
         const token = window.__npTurnstileToken;
         if (!token){
-          alert('Ολοκλήρωσε τον έλεγχο ασφαλείας στο check-box πριν την κράτηση.');
+          alert(L('ts_complete','Ολοκλήρωσε τον έλεγχο ασφαλείας στο check-box πριν την κράτηση.'));
           return;
         }
         try {
@@ -3038,13 +3046,13 @@
           });
           const j = await r.json().catch(() => ({}));
           if (!r.ok || !j.success){
-            alert('Απέτυχε ο έλεγχος ασφαλείας. Δοκίμασε ξανά.');
+            alert(L('ts_failed','Απέτυχε ο έλεγχος ασφαλείας. Δοκίμασε ξανά.'));
             try { window.turnstile && window.turnstile.reset(); } catch(_){}
             window.__npTurnstileToken = null;
             return;
           }
         } catch(err){
-          alert('Δεν ήταν δυνατή η επαλήθευση ασφαλείας: ' + err.message);
+          alert(L('ts_unreachable','Δεν ήταν δυνατή η επαλήθευση ασφαλείας') + ': ' + err.message);
           return;
         }
       }
@@ -3052,7 +3060,7 @@
         const anon = await window.npFB.ensureGuestAuth();
         bookerUid = anon.uid;
       } catch(err){
-        alert('Δεν ήταν δυνατή η δημιουργία guest session: ' + err.message);
+        alert(L('guest_session_fail','Δεν ήταν δυνατή η δημιουργία guest session') + ': ' + err.message);
         return;
       }
     }
@@ -3102,10 +3110,12 @@
         '💶 Σύνολο: ' + total + '€' + (discountKind === 'welcome' ? ' (−10% καλωσόρισμα)' : '');
       window.npFB.notifyAdminWhatsApp(waText);
 
-      alert('✅ Κράτηση καταχωρήθηκε!\n' + name + ' · ' + phone + '\n' + dateISO + ' · ' + selectedSession + '\n' + players + 'άδα, ' + rackets + ' ρακέτες' + (premiumBalls?', premium μπάλες':'') + '\nΣύνολο: €' + total + (isGuest ? '\n\n(Guest κράτηση — για ακύρωση/αλλαγή τηλεφώνησε στο 693 439 1978 ή 695 178 4471)' : ''));
+      const rktLbl = rackets === 1 ? L('rk_single','ρακέτα') : L('rk_plural','ρακέτες');
+      const guestNote = isGuest ? '\n\n' + L('booking_guest_note','(Guest κράτηση — για ακύρωση/αλλαγή τηλεφώνησε στο 693 439 1978 ή 695 178 4471)') : '';
+      alert('✅ ' + L('booking_ok','Κράτηση καταχωρήθηκε!') + '\n' + name + ' · ' + phone + '\n' + dateISO + ' · ' + selectedSession + '\n' + (players===2?L('unit_2p','2άδα'):L('unit_4p','4άδα')) + ', ' + rackets + ' ' + rktLbl + (premiumBalls?', ' + L('booking_prem_balls','premium μπάλες'):'') + '\n' + L('booking_total','Σύνολο') + ': €' + total + guestNote);
       if (u) renderAuth();
     } catch(err){
-      alert('Αποτυχία καταχώρησης: ' + err.message);
+      alert(L('booking_fail','Αποτυχία καταχώρησης') + ': ' + err.message);
     }
   });
 
@@ -3121,6 +3131,15 @@
 
   /* ============ i18n LANGUAGE SWITCHER ============ */
   const T = { en: {},  de: {} };
+  // Runtime lookup for dynamically-rendered strings (profile, find-a-player,
+  // my-bookings, alerts). Greek default is the literal passed as `fallback`,
+  // so a missing key gracefully degrades to Greek (matches the site's default
+  // language). Exposed on window so onclick= handlers can call it.
+  window.L = function(key, fallback){
+    const lang = (document.documentElement.lang || 'el');
+    if (lang === 'el') return fallback;
+    return (T[lang] && T[lang][key]) || fallback;
+  };
 T.en['hero_hint'] = 'START NOW';
 T.de['hero_hint'] = 'JETZT STARTEN';
 T.en['hero_cta'] = 'BOOKING';
@@ -3609,6 +3628,160 @@ T.en['aria_goto_c2'] = 'Go to Court 2';
 T.de['aria_goto_c2'] = 'Zum Platz 2';
 T.en['aria_login_player'] = 'Player login';
 T.de['aria_login_player'] = 'Spieler-Login';
+T.en['aria_hide_pw'] = 'Hide password';
+T.de['aria_hide_pw'] = 'Passwort ausblenden';
+
+/* ---- Dynamic UI strings (profile / find-a-player / my-bookings) ---- */
+// Days
+T.en['day_mon'] = 'Mon';  T.de['day_mon'] = 'Mo';
+T.en['day_tue'] = 'Tue';  T.de['day_tue'] = 'Di';
+T.en['day_wed'] = 'Wed';  T.de['day_wed'] = 'Mi';
+T.en['day_thu'] = 'Thu';  T.de['day_thu'] = 'Do';
+T.en['day_fri'] = 'Fri';  T.de['day_fri'] = 'Fr';
+T.en['day_sat'] = 'Sat';  T.de['day_sat'] = 'Sa';
+T.en['day_sun'] = 'Sun';  T.de['day_sun'] = 'So';
+// Time periods
+T.en['tp_morning']   = '☀️ Morning (07:30-13:30)';       T.de['tp_morning']   = '☀️ Morgen (07:30-13:30)';
+T.en['tp_noon']      = '🍽️ Midday (13:30-15:00)';        T.de['tp_noon']      = '🍽️ Mittag (13:30-15:00)';
+T.en['tp_afternoon'] = '🌤️ Afternoon (15:00-19:30)';     T.de['tp_afternoon'] = '🌤️ Nachmittag (15:00-19:30)';
+T.en['tp_evening']   = '🌙 Evening (19:30-22:30)';        T.de['tp_evening']   = '🌙 Abend (19:30-22:30)';
+T.en['tp_late']      = '🌌 Night (22:30-01:30)';          T.de['tp_late']      = '🌌 Nacht (22:30-01:30)';
+// Levels 1-5
+T.en['level_1'] = 'Beginner';        T.de['level_1'] = 'Anfänger';
+T.en['level_2'] = 'Casual';          T.de['level_2'] = 'Gelegenheitsspieler';
+T.en['level_3'] = 'Regular';         T.de['level_3'] = 'Regelmäßig';
+T.en['level_4'] = 'Intermediate';    T.de['level_4'] = 'Mittelstufe';
+T.en['level_5'] = 'Advanced';        T.de['level_5'] = 'Fortgeschritten';
+
+// Common
+T.en['alert_error']         = 'Error';                                         T.de['alert_error']         = 'Fehler';
+T.en['coming_soon']         = 'coming soon!';                                  T.de['coming_soon']         = 'demnächst!';
+T.en['loading']             = 'Loading...';                                    T.de['loading']             = 'Wird geladen...';
+T.en['searching']           = 'Searching...';                                  T.de['searching']           = 'Suche...';
+T.en['saving']              = 'Saving...';                                     T.de['saving']              = 'Speichern...';
+T.en['saved_ok']            = 'Saved.';                                        T.de['saved_ok']            = 'Gespeichert.';
+T.en['save_failed']         = 'Failed';                                        T.de['save_failed']         = 'Fehlgeschlagen';
+T.en['unit_2p']             = '2-player';                                      T.de['unit_2p']             = '2-Spieler';
+T.en['unit_4p']             = '4-player';                                      T.de['unit_4p']             = '4-Spieler';
+T.en['rk_single']           = 'racket';                                        T.de['rk_single']           = 'Schläger';
+T.en['rk_plural']           = 'rackets';                                       T.de['rk_plural']           = 'Schläger';
+T.en['rackets_included']    = 'rackets included';                              T.de['rackets_included']    = 'Schläger inklusive';
+T.en['rackets_free_inline'] = '(included free)';                               T.de['rackets_free_inline'] = '(kostenlos enthalten)';
+T.en['rackets_each']        = 'each';                                          T.de['rackets_each']        = 'je Stück';
+T.en['combo_crumb']         = 'OFFER';                                         T.de['combo_crumb']         = 'ANGEBOT';
+
+// Login / signup / password
+T.en['login_ing']           = 'Signing in...';                                 T.de['login_ing']           = 'Anmeldung läuft...';
+T.en['signup_ing']          = 'Signing up...';                                 T.de['signup_ing']          = 'Registrierung läuft...';
+T.en['signup_need_consent'] = 'You must accept the use of your details to manage your account.'; T.de['signup_need_consent'] = 'Du musst der Nutzung deiner Daten zur Kontoverwaltung zustimmen.';
+T.en['signup_pw_mismatch']  = 'The two passwords do not match.';              T.de['signup_pw_mismatch']  = 'Die beiden Passwörter stimmen nicht überein.';
+T.en['err_invalid_cred']    = 'Wrong email or password.';                      T.de['err_invalid_cred']    = 'Falsche E-Mail oder Passwort.';
+T.en['err_user_notfound']   = 'No account with this email.';                   T.de['err_user_notfound']   = 'Kein Konto mit dieser E-Mail.';
+T.en['err_wrong_pw']        = 'Wrong password.';                               T.de['err_wrong_pw']        = 'Falsches Passwort.';
+T.en['err_bad_email']       = 'Invalid email.';                                T.de['err_bad_email']       = 'Ungültige E-Mail.';
+T.en['err_too_many']        = 'Too many failed attempts. Try again later.';    T.de['err_too_many']        = 'Zu viele fehlgeschlagene Versuche. Später erneut versuchen.';
+T.en['err_email_used']      = 'This email is already registered.';             T.de['err_email_used']      = 'Diese E-Mail ist bereits registriert.';
+T.en['err_weak_pw']         = 'Password must be at least 6 characters.';       T.de['err_weak_pw']         = 'Passwort muss mindestens 6 Zeichen haben.';
+T.en['reset_need_email']    = 'Enter your email above first, then tap here.';  T.de['reset_need_email']    = 'Gib zuerst deine E-Mail oben ein, dann hier tippen.';
+T.en['reset_sending']       = 'Sending email...';                              T.de['reset_sending']       = 'E-Mail wird gesendet...';
+T.en['reset_sent']          = 'If this email is registered, you\'ll get a reset link. Check spam too.'; T.de['reset_sent']          = 'Falls diese E-Mail registriert ist, erhältst du einen Reset-Link. Prüfe auch Spam.';
+T.en['alert_verify_sent']   = 'A new verification email was sent to';          T.de['alert_verify_sent']   = 'Eine neue Bestätigungs-E-Mail wurde gesendet an';
+T.en['pw_cur_prompt']       = 'Your current password:';                        T.de['pw_cur_prompt']       = 'Dein aktuelles Passwort:';
+T.en['pw_new_prompt']       = 'New password (at least 6 characters):';         T.de['pw_new_prompt']       = 'Neues Passwort (mindestens 6 Zeichen):';
+T.en['pw_confirm_prompt']   = 'Confirm new password:';                         T.de['pw_confirm_prompt']   = 'Neues Passwort bestätigen:';
+T.en['pw_too_short']        = 'New password must be at least 6 characters.';   T.de['pw_too_short']        = 'Neues Passwort muss mindestens 6 Zeichen haben.';
+T.en['pw_mismatch']         = 'Passwords do not match.';                       T.de['pw_mismatch']         = 'Passwörter stimmen nicht überein.';
+T.en['pw_changed_ok']       = 'Password changed successfully.';                T.de['pw_changed_ok']       = 'Passwort erfolgreich geändert.';
+T.en['pw_wrong_current']    = 'Wrong current password.';                       T.de['pw_wrong_current']    = 'Falsches aktuelles Passwort.';
+T.en['pw_weak']             = 'The new password is too weak.';                 T.de['pw_weak']             = 'Das neue Passwort ist zu schwach.';
+T.en['pw_need_relogin']     = 'Recent sign-in required. Please log out and back in.'; T.de['pw_need_relogin']     = 'Kürzliche Anmeldung erforderlich. Bitte ab- und wieder anmelden.';
+T.en['lvl_prompt']          = 'Choose your new level (1-5):';                  T.de['lvl_prompt']          = 'Wähle dein neues Niveau (1-5):';
+T.en['lvl_current']         = 'Current';                                       T.de['lvl_current']         = 'Aktuell';
+T.en['lvl_change_fail']     = 'Failed to change';                              T.de['lvl_change_fail']     = 'Änderung fehlgeschlagen';
+
+// Booking flow
+T.en['need_name_phone']     = 'Fill in name and phone.';                       T.de['need_name_phone']     = 'Name und Telefon ausfüllen.';
+T.en['need_date_time']      = 'Pick a date and time first.';                   T.de['need_date_time']      = 'Zuerst Datum und Uhrzeit wählen.';
+T.en['need_verify_email']   = 'You need to verify your email first. Check your inbox or tap "Resend email" in your profile.'; T.de['need_verify_email']   = 'Du musst zuerst deine E-Mail bestätigen. Prüfe dein Postfach oder tippe „E-Mail erneut senden" im Profil.';
+T.en['ts_complete']         = 'Complete the security check-box before booking.'; T.de['ts_complete']         = 'Bitte den Sicherheitscheck abschließen, bevor du buchst.';
+T.en['ts_failed']           = 'Security check failed. Please try again.';      T.de['ts_failed']           = 'Sicherheitsprüfung fehlgeschlagen. Bitte erneut versuchen.';
+T.en['ts_unreachable']      = 'Could not verify the security check';           T.de['ts_unreachable']      = 'Sicherheitsprüfung nicht erreichbar';
+T.en['guest_session_fail']  = 'Could not create guest session';                T.de['guest_session_fail']  = 'Guest-Session konnte nicht erstellt werden';
+T.en['booking_ok']          = 'Booking confirmed!';                            T.de['booking_ok']          = 'Buchung bestätigt!';
+T.en['booking_fail']        = 'Booking failed';                                T.de['booking_fail']        = 'Buchung fehlgeschlagen';
+T.en['booking_prem_balls']  = 'premium balls';                                 T.de['booking_prem_balls']  = 'Premium-Bälle';
+T.en['booking_total']       = 'Total';                                         T.de['booking_total']       = 'Gesamt';
+T.en['booking_guest_note']  = '(Guest booking — to cancel/change call 693 439 1978 or 695 178 4471)'; T.de['booking_guest_note']  = '(Gast-Buchung — für Stornierung/Änderung rufe 693 439 1978 oder 695 178 4471 an)';
+T.en['disc_free_court']     = 'free court (gift)';                             T.de['disc_free_court']     = 'kostenloser Platz (Geschenk)';
+T.en['disc_welcome']        = 'welcome bonus';                                 T.de['disc_welcome']        = 'Willkommensbonus';
+T.en['reward_welcome']      = '−10% welcome bonus on your first booking';     T.de['reward_welcome']      = '−10% Willkommensbonus auf deine erste Buchung';
+
+// Profile editor
+T.en['pf_personal']         = 'PERSONAL';                                      T.de['pf_personal']         = 'PERSÖNLICH';
+T.en['pf_name']             = 'FIRST NAME';                                    T.de['pf_name']             = 'VORNAME';
+T.en['pf_surname']          = 'LAST NAME';                                     T.de['pf_surname']          = 'NACHNAME';
+T.en['pf_phone']            = 'PHONE';                                         T.de['pf_phone']            = 'TELEFON';
+T.en['pf_birthday']         = 'BIRTHDAY';                                      T.de['pf_birthday']         = 'GEBURTSTAG';
+T.en['pf_gender']           = 'GENDER';                                        T.de['pf_gender']           = 'GESCHLECHT';
+T.en['pf_city']             = 'CITY';                                          T.de['pf_city']             = 'STADT';
+T.en['gender_m']            = 'Male';                                          T.de['gender_m']            = 'Männlich';
+T.en['gender_f']            = 'Female';                                        T.de['gender_f']            = 'Weiblich';
+T.en['gender_x']            = 'Other / prefer not to say';                     T.de['gender_x']            = 'Anderes / lieber nicht angeben';
+T.en['pf_level']            = 'PLAYER LEVEL';                                  T.de['pf_level']            = 'SPIELERNIVEAU';
+T.en['pf_availability']     = 'AVAILABILITY';                                  T.de['pf_availability']     = 'VERFÜGBARKEIT';
+T.en['pf_days']             = 'DAYS';                                          T.de['pf_days']             = 'TAGE';
+T.en['pf_hours']            = 'HOURS';                                         T.de['pf_hours']            = 'ZEITEN';
+T.en['pf_lfg_title']        = 'LOOKING FOR PLAYERS / TEAM';                    T.de['pf_lfg_title']        = 'SUCHE SPIELER / TEAM';
+T.en['pf_lfg_show']         = 'Show me in "Find a Player"';                    T.de['pf_lfg_show']         = 'Zeige mich unter „Spieler finden"';
+T.en['pf_lfg_help']         = 'Enable this to be found by other players of similar level. Others will see your first name, level, city and availability.'; T.de['pf_lfg_help']         = 'Aktiviere dies, damit dich andere Spieler auf ähnlichem Niveau finden. Sichtbar: Vorname, Niveau, Stadt und Verfügbarkeit.';
+T.en['pf_bio_label']        = 'A LITTLE ABOUT YOU (optional)';                 T.de['pf_bio_label']        = 'EIN PAAR WORTE ZU DIR (optional)';
+T.en['pf_bio_ph']           = 'e.g. Playing for 3 years, looking for weekend games.'; T.de['pf_bio_ph']           = 'z. B. Spiele seit 3 Jahren, suche Spiele am Wochenende.';
+T.en['pf_contact_label']    = 'HOW OTHERS CAN REACH YOU';                      T.de['pf_contact_label']    = 'WIE ANDERE DICH ERREICHEN';
+T.en['contact_wa']          = 'WhatsApp (via phone)';                          T.de['contact_wa']          = 'WhatsApp (über Telefon)';
+T.en['contact_call']        = 'Call (via phone)';                              T.de['contact_call']        = 'Anruf (über Telefon)';
+T.en['contact_hidden']      = 'Hidden — display only';                         T.de['contact_hidden']      = 'Verborgen — nur Anzeige';
+T.en['pf_rewards']          = 'YOUR REWARDS';                                  T.de['pf_rewards']          = 'DEINE PRÄMIEN';
+T.en['pf_my_bookings']      = 'MY BOOKINGS';                                   T.de['pf_my_bookings']      = 'MEINE BUCHUNGEN';
+T.en['pf_save']             = 'SAVE';                                          T.de['pf_save']             = 'SPEICHERN';
+
+// Cancellation policy (in profile)
+T.en['cp_title']            = 'CANCELLATION POLICY';                           T.de['cp_title']            = 'STORNIERUNGSRICHTLINIE';
+T.en['cp_48h']              = '<b>More than 48 hours before:</b> Free cancellation from here.'; T.de['cp_48h']              = '<b>Mehr als 48 Stunden vorher:</b> Kostenlose Stornierung von hier.';
+T.en['cp_24_48h']           = '<b>24–48 hours before:</b> Phone required — <a href="tel:+306934391978" style="color:#b7ff4a">693 439 1978</a> or <a href="tel:+306951784471" style="color:#b7ff4a">695 178 4471</a>.'; T.de['cp_24_48h']           = '<b>24–48 Stunden vorher:</b> Telefon erforderlich — <a href="tel:+306934391978" style="color:#b7ff4a">693 439 1978</a> oder <a href="tel:+306951784471" style="color:#b7ff4a">695 178 4471</a>.';
+T.en['cp_under_24h']        = '<b>Under 24 hours (or no-show):</b> You owe the court price — <b>€44 for 4-player</b>, <b>€30 for 2-player</b>. Please contact us.'; T.de['cp_under_24h']        = '<b>Unter 24 Stunden (oder No-Show):</b> Du schuldest den Platzpreis — <b>44 € für 4-Spieler</b>, <b>30 € für 2-Spieler</b>. Bitte kontaktiere uns.';
+
+// My bookings
+T.en['mb_none']             = 'You have no bookings yet.';                     T.de['mb_none']             = 'Du hast noch keine Buchungen.';
+T.en['mb_cancelled']        = 'Cancelled';                                     T.de['mb_cancelled']        = 'Storniert';
+T.en['mb_completed']        = 'Completed';                                     T.de['mb_completed']        = 'Abgeschlossen';
+T.en['mb_cancel_btn']       = 'CANCEL';                                        T.de['mb_cancel_btn']       = 'STORNIEREN';
+T.en['mb_cancelling']       = 'Cancelling...';                                 T.de['mb_cancelling']       = 'Wird storniert...';
+T.en['mb_cancel_err']       = 'Cancellation error';                            T.de['mb_cancel_err']       = 'Stornierungs-Fehler';
+T.en['mb_confirm_cancel']   = 'Are you sure you want to cancel this booking?'; T.de['mb_confirm_cancel']   = 'Möchtest du diese Buchung wirklich stornieren?';
+T.en['mb_by_phone']         = 'By phone';                                      T.de['mb_by_phone']         = 'Telefonisch';
+T.en['mb_call_us_title']    = 'Call 693 439 1978 or 695 178 4471';             T.de['mb_call_us_title']    = 'Rufe 693 439 1978 oder 695 178 4471 an';
+T.en['mb_owe_title']        = 'You owe the minimum court fee €30';             T.de['mb_owe_title']        = 'Du schuldest die Mindestgebühr von 30 €';
+
+// Find a Player
+T.en['fp_need_account']       = 'You need an account';                         T.de['fp_need_account']       = 'Du brauchst ein Konto';
+T.en['fp_need_account_p']     = 'Sign in or sign up to see other players.';    T.de['fp_need_account_p']     = 'Melde dich an oder registriere dich, um andere Spieler zu sehen.';
+T.en['fp_login_signup']       = 'SIGN IN / SIGN UP';                           T.de['fp_login_signup']       = 'ANMELDEN / REGISTRIEREN';
+T.en['fp_complete_profile']   = 'Complete your profile first';                 T.de['fp_complete_profile']   = 'Vervollständige zuerst dein Profil';
+T.en['fp_complete_profile_p'] = 'To join Match-making, we need your city, birthday and gender — so we can match you with the right players.'; T.de['fp_complete_profile_p'] = 'Für das Match-making brauchen wir Stadt, Geburtstag und Geschlecht — damit wir dich mit den passenden Spielern verbinden.';
+T.en['fp_open_profile']       = 'OPEN PROFILE';                                T.de['fp_open_profile']       = 'PROFIL ÖFFNEN';
+T.en['fp_enable_lfg']         = 'Enable "Looking for players"';                T.de['fp_enable_lfg']         = 'Aktiviere „Suche Spieler"';
+T.en['fp_enable_lfg_p']       = 'You need to state you\'re looking for a game first. You\'ll then also appear to others.'; T.de['fp_enable_lfg_p']       = 'Du musst zuerst angeben, dass du eine Runde suchst. Dann erscheinst auch du bei anderen.';
+T.en['fp_enable_in_profile']  = 'ENABLE IN PROFILE';                           T.de['fp_enable_in_profile']  = 'IM PROFIL AKTIVIEREN';
+T.en['fp_empty_h']            = 'No one else right now';                       T.de['fp_empty_h']            = 'Zurzeit niemand anderes';
+T.en['fp_empty_p']            = 'There are no other players looking for a game at level ±1 from yours. Check back in a few days!'; T.de['fp_empty_p']            = 'Es gibt derzeit keine anderen Spieler auf Niveau ±1 zu deinem, die eine Runde suchen. Schau in ein paar Tagen wieder rein!';
+T.en['fp_player_single']      = 'player';                                      T.de['fp_player_single']      = 'Spieler';
+T.en['fp_player_plural']      = 'players';                                     T.de['fp_player_plural']      = 'Spieler';
+T.en['fp_level_range']        = 'level';                                       T.de['fp_level_range']        = 'Niveau';
+T.en['fp_wa_msg']             = 'Hi! I saw your profile on North Padel and am looking for a game.'; T.de['fp_wa_msg']             = 'Hi! Ich habe dein Profil auf North Padel gesehen und suche eine Runde.';
+T.en['fp_call']               = 'CALL';                                        T.de['fp_call']               = 'ANRUFEN';
+T.en['fp_hidden']             = 'Hidden';                                      T.de['fp_hidden']             = 'Verborgen';
+T.en['fp_default_name']       = 'Player';                                      T.de['fp_default_name']       = 'Spieler';
+T.en['fp_load_fail']          = 'Could not load players';                      T.de['fp_load_fail']          = 'Spieler konnten nicht geladen werden';
 
 /* ============ Auth panel — extra keys ============ */
 T.en['auth_login_btn'] = 'LOG IN';
