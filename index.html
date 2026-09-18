@@ -2744,12 +2744,22 @@
   const GREEK_MONTHS = ['ΙΑΝ','ΦΕΒ','ΜΑΡ','ΑΠΡ','ΜΑΪ','ΙΟΥΝ','ΙΟΥΛ','ΑΥΓ','ΣΕΠ','ΟΚΤ','ΝΟΕ','ΔΕΚ'];
   const GREEK_MONTHS_FULL = ['ΙΑΝΟΥΑΡΙΟΣ','ΦΕΒΡΟΥΑΡΙΟΣ','ΜΑΡΤΙΟΣ','ΑΠΡΙΛΙΟΣ','ΜΑΪΟΣ','ΙΟΥΝΙΟΣ','ΙΟΥΛΙΟΣ','ΑΥΓΟΥΣΤΟΣ','ΣΕΠΤΕΜΒΡΙΟΣ','ΟΚΤΩΒΡΙΟΣ','ΝΟΕΜΒΡΙΟΣ','ΔΕΚΕΜΒΡΙΟΣ'];
   const GREEK_DAYS = ['ΚΥΡ','ΔΕΥ','ΤΡΙ','ΤΕΤ','ΠΕΜ','ΠΑΡ','ΣΑΒ'];
+  // Localised month/day names — L() falls back to Greek if the key is missing.
+  function monthFull(i){
+    return L('month_full_'+i, GREEK_MONTHS_FULL[i]);
+  }
+  function monthShort(i){
+    return L('month_short_'+i, GREEK_MONTHS[i]);
+  }
+  function dayShort(i){
+    return L('cal_day_'+i, GREEK_DAYS[i]);
+  }
   let calYear = new Date().getFullYear();
   let calMonth = new Date().getMonth();
   let selectedDate = null;
 
   function renderCalendar(){
-    document.getElementById('calMonth').textContent = GREEK_MONTHS_FULL[calMonth] + ' ' + calYear;
+    document.getElementById('calMonth').textContent = monthFull(calMonth) + ' ' + calYear;
     const grid = document.getElementById('calGrid');
     grid.innerHTML = '';
     const firstDay = new Date(calYear, calMonth, 1);
@@ -2774,7 +2784,7 @@
       btn.dataset.day = d;
       btn.addEventListener('click', async () => {
         selectedDate = thisDate;
-        sessionsCrumb.textContent = GREEK_DAYS[thisDate.getDay()] + ' ' + d + ' ' + GREEK_MONTHS[calMonth];
+        sessionsCrumb.textContent = dayShort(thisDate.getDay()) + ' ' + d + ' ' + monthShort(calMonth);
         slideTo(stepCalendar, stepSessions);
         // Load session availability for the selected date (occupied slots + disabled)
         await refreshSessionsForDate();
@@ -3783,6 +3793,41 @@ T.en['fp_hidden']             = 'Hidden';                                      T
 T.en['fp_default_name']       = 'Player';                                      T.de['fp_default_name']       = 'Spieler';
 T.en['fp_load_fail']          = 'Could not load players';                      T.de['fp_load_fail']          = 'Spieler konnten nicht geladen werden';
 
+// Calendar — full month names (used in the month header)
+T.en['month_full_0']  = 'JANUARY';   T.de['month_full_0']  = 'JANUAR';
+T.en['month_full_1']  = 'FEBRUARY';  T.de['month_full_1']  = 'FEBRUAR';
+T.en['month_full_2']  = 'MARCH';     T.de['month_full_2']  = 'MÄRZ';
+T.en['month_full_3']  = 'APRIL';     T.de['month_full_3']  = 'APRIL';
+T.en['month_full_4']  = 'MAY';       T.de['month_full_4']  = 'MAI';
+T.en['month_full_5']  = 'JUNE';      T.de['month_full_5']  = 'JUNI';
+T.en['month_full_6']  = 'JULY';      T.de['month_full_6']  = 'JULI';
+T.en['month_full_7']  = 'AUGUST';    T.de['month_full_7']  = 'AUGUST';
+T.en['month_full_8']  = 'SEPTEMBER'; T.de['month_full_8']  = 'SEPTEMBER';
+T.en['month_full_9']  = 'OCTOBER';   T.de['month_full_9']  = 'OKTOBER';
+T.en['month_full_10'] = 'NOVEMBER';  T.de['month_full_10'] = 'NOVEMBER';
+T.en['month_full_11'] = 'DECEMBER';  T.de['month_full_11'] = 'DEZEMBER';
+// Calendar — short month abbrev (used in the crumb after picking a day)
+T.en['month_short_0']  = 'JAN'; T.de['month_short_0']  = 'JAN';
+T.en['month_short_1']  = 'FEB'; T.de['month_short_1']  = 'FEB';
+T.en['month_short_2']  = 'MAR'; T.de['month_short_2']  = 'MÄR';
+T.en['month_short_3']  = 'APR'; T.de['month_short_3']  = 'APR';
+T.en['month_short_4']  = 'MAY'; T.de['month_short_4']  = 'MAI';
+T.en['month_short_5']  = 'JUN'; T.de['month_short_5']  = 'JUN';
+T.en['month_short_6']  = 'JUL'; T.de['month_short_6']  = 'JUL';
+T.en['month_short_7']  = 'AUG'; T.de['month_short_7']  = 'AUG';
+T.en['month_short_8']  = 'SEP'; T.de['month_short_8']  = 'SEP';
+T.en['month_short_9']  = 'OCT'; T.de['month_short_9']  = 'OKT';
+T.en['month_short_10'] = 'NOV'; T.de['month_short_10'] = 'NOV';
+T.en['month_short_11'] = 'DEC'; T.de['month_short_11'] = 'DEZ';
+// Calendar — day-of-week short (Sun-first, matches JavaScript getDay())
+T.en['cal_day_0'] = 'SUN'; T.de['cal_day_0'] = 'SO';
+T.en['cal_day_1'] = 'MON'; T.de['cal_day_1'] = 'MO';
+T.en['cal_day_2'] = 'TUE'; T.de['cal_day_2'] = 'DI';
+T.en['cal_day_3'] = 'WED'; T.de['cal_day_3'] = 'MI';
+T.en['cal_day_4'] = 'THU'; T.de['cal_day_4'] = 'DO';
+T.en['cal_day_5'] = 'FRI'; T.de['cal_day_5'] = 'FR';
+T.en['cal_day_6'] = 'SAT'; T.de['cal_day_6'] = 'SA';
+
 /* ============ Auth panel — extra keys ============ */
 T.en['auth_login_btn'] = 'LOG IN';
 T.de['auth_login_btn'] = 'ANMELDEN';
@@ -3912,6 +3957,13 @@ T.de['wd_sun'] = 'S';
     document.documentElement.lang = lang;
     // Persist
     try { localStorage.setItem('northPadelLang', lang); } catch(e){}
+    // Re-render dynamic UIs that build their own text nodes: calendar month
+    // label, session period labels, profile editor if open, my-bookings row.
+    try { if (typeof renderCalendar === 'function') renderCalendar(); } catch(_){}
+    try {
+      const pf = document.getElementById('profileFull');
+      if (pf && pf.innerHTML.trim() && typeof renderFullProfile === 'function') renderFullProfile();
+    } catch(_){}
     // Update switch UI
     document.querySelectorAll('#langSwitch button').forEach(b => {
       b.classList.toggle('active', b.dataset.lang === lang);
