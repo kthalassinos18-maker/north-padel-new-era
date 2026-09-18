@@ -22,9 +22,12 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
 
+      // welcomeCoupon MUST start false — admin manually approves via slider.
+      // This closes the loophole where any legacy account without a Firestore
+      // doc would get welcomeCoupon:true automatically via ensureProfile().
       allow create: if isOwner(uid)
         && request.resource.data.email == request.auth.token.email
-        && request.resource.data.welcomeCoupon == true
+        && request.resource.data.welcomeCoupon == false
         && request.resource.data.freeCourts == 0
         && request.resource.data.bookingsCount == 0
         && request.resource.data.level is int
@@ -133,8 +136,18 @@ service cloud.firestore {
     //   Update: admin only (shouldn't happen in normal flow).
     match /slots/{slotId} {
       allow read:   if true;
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid;
+      // Anti-spam: creating a slot marker requires an existing booking with the
+      // same bookingId + userId already in /bookings. This prevents an
+      // anonymous script from writing thousands of fake slot markers to block
+      // all future courts. The booking MUST be written first in the batch.
+      // Admin bypasses (needed for manual walk-in bookings).
+      allow create: if isAdmin() || (
+        isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.bookingId is string
+        && exists(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
+        && get(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.userId == request.auth.uid
+      );
       allow delete: if isAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin();
@@ -144,8 +157,10 @@ service cloud.firestore {
     //   Owner writes/deletes. Any signed-in user reads (so Find a Player
     //   works). Only fields the user opted to share are stored here.
     match /public_profiles/{uid} {
-      allow read:   if isSignedIn();
-      allow create, update: if isOwner(uid);
+      // Only VERIFIED users see Find-a-Player profiles (phones etc.) — this
+      // blocks anonymous scraping of member phone numbers.
+      allow read:   if isVerified() || isAdmin();
+      allow create, update: if isOwner(uid) && isVerified();
       allow delete: if isOwner(uid) || isAdmin();
     }
   }

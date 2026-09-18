@@ -469,8 +469,8 @@
 <!-- ============ FIREBASE ============ -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyAnn6RtsAqfJxeWesN3WF1jVv_egCDb21k",
@@ -482,6 +482,9 @@
   };
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  // Admin session dies when the tab closes — physical access to the machine
+  // doesn't equal admin access if the tab was closed.
+  setPersistence(auth, browserSessionPersistence).catch(e => console.warn('persistence', e));
   const db = getFirestore(app);
   const ADMIN_EMAILS = ['k.thalassinos18@gmail.com'];
 
@@ -499,7 +502,21 @@
       const snap = await getDocs(collection(db, 'users'));
       return snap.docs.map(d => ({ uid:d.id, ...d.data() }));
     },
-    deleteBooking: (id) => deleteDoc(doc(db, 'bookings', id)),
+    deleteBooking: async (id) => {
+      // Also delete the /slots marker so the time frees up publicly.
+      const bref = doc(db, 'bookings', id);
+      const bsnap = await getDoc(bref);
+      const batch = writeBatch(db);
+      batch.delete(bref);
+      if (bsnap.exists()){
+        const b = bsnap.data();
+        if (b.date && b.court && b.time){
+          const sId = (b.date + '_' + b.court + '_' + b.time).replace(/[^a-zA-Z0-9_-]/g, '_');
+          batch.delete(doc(db, 'slots', sId));
+        }
+      }
+      await batch.commit();
+    },
     updateBooking: (id, patch) => updateDoc(doc(db, 'bookings', id), patch),
     deleteUser:    (uid) => deleteDoc(doc(db, 'users', uid)),
     getConfig: async (name) => {
@@ -1011,8 +1028,19 @@ async function doManualBooking(suffix){
   if (!date || !name || !phone){ alert('Συμπλήρωσε ημερομηνία, όνομα και τηλέφωνο.'); return; }
   const total = players === 4 ? CACHE.prices.p4 : CACHE.prices.p2;
   try {
-    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
-    await addDoc(collection(window.npFB.db, 'bookings'), { date, time, court, name, phone, players, total, status:'ok', userId:null, createdAt: serverTimestamp() });
+    const { collection, doc, writeBatch, getDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+    const db = window.npFB.db;
+    // Slot id must match the public site's slotId() format to prevent
+    // double-booking when a customer books online at the same time.
+    const sId = (date + '_' + court + '_' + time).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const slotRef = doc(db, 'slots', sId);
+    const existing = await getDoc(slotRef);
+    if (existing.exists()) { alert('Το slot κρατήθηκε ήδη από κάποιον άλλον. Ανανέωσε τη λίστα.'); return; }
+    const bookingRef = doc(collection(db, 'bookings'));
+    const batch = writeBatch(db);
+    batch.set(bookingRef, { date, time, court, name, phone, players, total, status:'ok', userId:null, manual:true, createdAt: serverTimestamp() });
+    batch.set(slotRef, { date, court, time, userId: window.npFB.auth.currentUser.uid, bookingId: bookingRef.id, manual:true, createdAt: serverTimestamp() });
+    await batch.commit();
     document.getElementById('bkName'+suffix).value = '';
     document.getElementById('bkPhone'+suffix).value = '';
     await refreshAll();

@@ -549,21 +549,21 @@
 <body>
 
 <section class="hero">
-  <button class="menu-btn" id="menuBtn" type="button" aria-label="Μενού">
+  <button class="menu-btn" id="menuBtn" type="button" aria-label="Μενού" data-i18n-aria="aria_menu">
     <div class="menu-icon-wrap">
       <img class="mb-racket-img" src="menu-racket.png" alt="">
       <div class="mb-ball"></div>
     </div>
   </button>
 
-  <button class="player-btn" id="playerBtn" type="button" aria-label="Σύνδεση παίκτη">
+  <button class="player-btn" id="playerBtn" type="button" aria-label="Σύνδεση παίκτη" data-i18n-aria="aria_login_player">
     <svg viewBox="0 0 40 40" class="player-icon" aria-hidden="true">
       <circle class="pi-head" cx="20" cy="14" r="6" fill="#b7ff4a"/>
       <path class="pi-body" d="M8 34 Q 8 22 20 22 Q 32 22 32 34" fill="#b7ff4a"/>
     </svg>
   </button>
 
-  <button class="door-hotspot" id="doorHotspot" type="button" aria-label="Πήγαινε στο Γήπεδο 2">
+  <button class="door-hotspot" id="doorHotspot" type="button" aria-label="Πήγαινε στο Γήπεδο 2" data-i18n-aria="aria_goto_c2">
     <span class="door-label">
       <span class="door-label-row">
         <span class="door-text" data-i18n="cc_c2">ΓΗΠΕΔΟ 2</span>
@@ -586,7 +586,7 @@
 <!-- COMBO OFFERS PANEL -->
 <section class="step-panel" id="stepCombos" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -641,7 +641,7 @@
 <!-- COURT CHOOSER -->
 <section class="step-panel" id="stepCourtChoose" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="combos" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="combos" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -664,7 +664,7 @@
 <!-- COURT 2 COMING SOON -->
 <section class="step-panel" id="stepCourt2" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -684,7 +684,7 @@
 
 <!-- AUTH PANEL -->
 <aside class="auth-panel" id="authPanel" aria-hidden="true">
-  <button class="auth-close" id="authClose" type="button" aria-label="Κλείσιμο">×</button>
+  <button class="auth-close" id="authClose" type="button" aria-label="Κλείσιμο" data-i18n-aria="aria_close">×</button>
   <div class="auth-tabs">
     <button class="auth-tab active" data-tab="login" type="button" data-i18n="auth_login">ΣΥΝΔΕΣΗ</button>
     <button class="auth-tab" data-tab="signup" type="button" data-i18n="auth_signup">ΕΓΓΡΑΦΗ</button>
@@ -693,7 +693,7 @@
     <div class="form-field"><label data-i18n="auth_email">EMAIL</label><input type="email" id="li_email" required></div>
     <div class="form-field pw-wrap"><label data-i18n="auth_pass">ΚΩΔΙΚΟΣ</label>
       <input type="password" id="li_pass" required>
-      <button type="button" class="pw-toggle" data-toggle="li_pass" aria-label="Εμφάνιση κωδικού">👁</button>
+      <button type="button" class="pw-toggle" data-toggle="li_pass" aria-label="Εμφάνιση κωδικού" data-i18n-aria="aria_show_pw">👁</button>
     </div>
     <button type="submit" class="submit-btn" data-i18n="auth_login_btn">ΣΥΝΔΕΣΗ</button>
     <button type="button" class="auth-link" id="forgotPwBtn" style="background:transparent;border:0;cursor:pointer;font-family:inherit" data-i18n="auth_forgot">Ξέχασες τον κωδικό;</button>
@@ -708,11 +708,11 @@
     <div class="form-field"><label data-i18n="auth_email">EMAIL</label><input type="email" id="si_email" required></div>
     <div class="form-field pw-wrap"><label data-i18n="auth_pass_hint">ΚΩΔΙΚΟΣ (τουλάχιστον 6 χαρακτήρες)</label>
       <input type="password" id="si_pass" required minlength="6">
-      <button type="button" class="pw-toggle" data-toggle="si_pass" aria-label="Εμφάνιση κωδικού">👁</button>
+      <button type="button" class="pw-toggle" data-toggle="si_pass" aria-label="Εμφάνιση κωδικού" data-i18n-aria="aria_show_pw">👁</button>
     </div>
     <div class="form-field pw-wrap"><label data-i18n="auth_pass_confirm">ΕΠΙΒΕΒΑΙΩΣΗ ΚΩΔΙΚΟΥ</label>
       <input type="password" id="si_pass2" required minlength="6">
-      <button type="button" class="pw-toggle" data-toggle="si_pass2" aria-label="Εμφάνιση κωδικού">👁</button>
+      <button type="button" class="pw-toggle" data-toggle="si_pass2" aria-label="Εμφάνιση κωδικού" data-i18n-aria="aria_show_pw">👁</button>
     </div>
     <div class="form-field">
       <label data-i18n="auth_level">ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ</label>
@@ -750,7 +750,7 @@
 <!-- ============ GUEST-OR-SIGNUP CHOICE MODAL ============ -->
 <div class="choice-modal" id="choiceModal" aria-hidden="true">
   <div class="choice-card">
-    <button class="choice-close" id="choiceClose" type="button" aria-label="Κλείσιμο">×</button>
+    <button class="choice-close" id="choiceClose" type="button" aria-label="Κλείσιμο" data-i18n-aria="aria_close">×</button>
     <h2 class="choice-title" data-i18n="choice_title">Πώς θέλεις να κλείσεις;</h2>
 
     <div class="choice-box choice-primary">
@@ -782,7 +782,7 @@
 <!-- ============ FULL PROFILE STEP-PANEL ============ -->
 <section class="step-panel" id="stepProfile" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -796,7 +796,7 @@
 <!-- ============ FIND A PLAYER STEP-PANEL ============ -->
 <section class="step-panel" id="stepFindPlayer" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -832,7 +832,7 @@
       </g>
     </svg>
   </div>
-  <button class="menu-close" id="menuClose" type="button" aria-label="Κλείσιμο">×</button>
+  <button class="menu-close" id="menuClose" type="button" aria-label="Κλείσιμο" data-i18n-aria="aria_close">×</button>
   <nav class="menu-nav">
     <button type="button" class="mnu-item" data-menu-item data-open-section="combos" data-i18n="menu_combos">Προσφορές &amp; Combo</button>
     <div class="menu-expandable">
@@ -857,7 +857,7 @@
 <!-- CALENDAR -->
 <section class="step-panel" id="stepCalendar" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -867,9 +867,9 @@
   </header>
   <div class="calendar">
     <div class="cal-nav">
-      <button id="calPrev" type="button" aria-label="Προηγούμενος μήνας">‹</button>
+      <button id="calPrev" type="button" aria-label="Προηγούμενος μήνας" data-i18n-aria="aria_prev_month">‹</button>
       <div class="cal-month" id="calMonth"></div>
-      <button id="calNext" type="button" aria-label="Επόμενος μήνας">›</button>
+      <button id="calNext" type="button" aria-label="Επόμενος μήνας" data-i18n-aria="aria_next_month">›</button>
     </div>
     <div class="cal-weekdays">
       <span data-i18n="wd_mon">Δ</span><span data-i18n="wd_tue">Τ</span><span data-i18n="wd_wed">Τ</span><span data-i18n="wd_thu">Π</span><span data-i18n="wd_fri">Π</span><span data-i18n="wd_sat">Σ</span><span data-i18n="wd_sun">Κ</span>
@@ -885,7 +885,7 @@
 
 <section class="step-panel" id="stepSessions" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="calendar" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="calendar" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -936,7 +936,7 @@
 
 <section class="step-panel" id="stepForm" aria-hidden="true">
   <header class="step-header">
-    <button class="step-back" data-back="sessions" type="button" aria-label="Πίσω">
+    <button class="step-back" data-back="sessions" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="step-title-block">
@@ -949,7 +949,7 @@
       💡 <b>Κάνεις κράτηση ως guest.</b> Δεν χρειάζεται εγγραφή!<br>
       <span style="color:rgba(244,249,255,0.6)">Αν κάνεις <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">σύνδεση/εγγραφή</button>, παίρνεις −10% στην πρώτη κράτηση.</span>
     </div>
-    <div class="form-field"><label data-i18n="form_name">ΟΝΟΜΑ</label><input type="text" id="fName" placeholder="Το όνομά σου" required></div>
+    <div class="form-field"><label data-i18n="form_name">ΟΝΟΜΑ</label><input type="text" id="fName" placeholder="Το όνομά σου" data-i18n-ph="form_name_ph" required></div>
     <div class="form-field"><label data-i18n="form_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="fPhone" placeholder="6XX XXX XXXX" required></div>
     <div class="form-field">
       <label data-i18n="form_players">ΠΑΙΚΤΕΣ</label>
@@ -989,7 +989,7 @@
 <div class="info-modal" id="modalParties" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2 data-i18n="parties_h2">Παιδικά Πάρτυ 🎉</h2></div>
-    <div class="im-actions"><button class="im-back" data-back-to-menu="modalParties" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalParties" type="button">×</button></div>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalParties" type="button" aria-label="Πίσω" data-i18n-aria="aria_back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalParties" type="button">×</button></div>
   </div>
   <div class="kp-hero">
     <span class="balloon">🎈🎉🎂</span>
@@ -1032,7 +1032,7 @@
 <div class="info-modal" id="modalEquip" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2 data-i18n="eq_h2">Εξοπλισμός</h2></div>
-    <div class="im-actions"><button class="im-back" data-back-to-menu="modalEquip" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalEquip" type="button">×</button></div>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalEquip" type="button" aria-label="Πίσω" data-i18n-aria="aria_back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalEquip" type="button">×</button></div>
   </div>
   <div class="eq-hero">
     <h1><span data-i18n="eq_h1_1">Παίξε με τα</span> <span class="lime" data-i18n="eq_h1_l">καλύτερα</span></h1>
@@ -1087,7 +1087,7 @@
 <div class="info-modal" id="modalAbout" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2 data-i18n="about_h2">Σχετικά με εμάς</h2></div>
-    <div class="im-actions"><button class="im-back" data-back-to-menu="modalAbout" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalAbout" type="button">×</button></div>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalAbout" type="button" aria-label="Πίσω" data-i18n-aria="aria_back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalAbout" type="button">×</button></div>
   </div>
   <div class="ab-hero">
     <span class="em">🎾</span>
@@ -1121,7 +1121,7 @@
 <div class="info-modal" id="modalGallery" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2>Gallery</h2></div>
-    <div class="im-actions"><button class="im-back" data-back-to-menu="modalGallery" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalGallery" type="button">×</button></div>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalGallery" type="button" aria-label="Πίσω" data-i18n-aria="aria_back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalGallery" type="button">×</button></div>
   </div>
   <div class="g-hero">
     <span class="em">📸</span>
@@ -1152,7 +1152,7 @@
 <div class="info-modal" id="modalContact" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k">NORTH PADEL</span><h2 data-i18n="co_h2">Επικοινωνία</h2></div>
-    <div class="im-actions"><button class="im-back" data-back-to-menu="modalContact" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalContact" type="button">×</button></div>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalContact" type="button" aria-label="Πίσω" data-i18n-aria="aria_back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalContact" type="button">×</button></div>
   </div>
   <div class="co-hero">
     <h1><span data-i18n="co_h1_1">Είμαστε</span> <span class="lime" data-i18n="co_h1_l">εδώ</span></h1>
@@ -1195,11 +1195,11 @@
 <div class="info-modal" id="modalPadel" aria-hidden="true">
   <div class="im-hdr">
     <div><span class="k" data-i18n="kicker_info">INFO</span><h2 data-i18n="padel_h2">Padel → Τι είναι?</h2></div>
-    <div class="im-actions"><button class="im-back" data-back-to-menu="modalPadel" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalPadel" type="button">×</button></div>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalPadel" type="button" aria-label="Πίσω" data-i18n-aria="aria_back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalPadel" type="button">×</button></div>
   </div>
   <div class="ab-hero">
     <span class="em">🎾</span>
-    <h1>Το πιο γρήγορα <span class="lime" data-i18n="padel_h1_l">αναπτυσσόμενο</span> άθλημα</h1>
+    <h1><span data-i18n="padel_h1_1">Το πιο γρήγορα</span> <span class="lime" data-i18n="padel_h1_l">αναπτυσσόμενο</span> <span data-i18n="padel_h1_2">άθλημα</span></h1>
     <p class="loc" data-i18n="padel_loc">ΓΡΗΓΟΡΟ · ΚΟΙΝΩΝΙΚΟ · ΕΘΙΣΤΙΚΟ</p>
   </div>
   <div class="ab-body">
@@ -1270,12 +1270,12 @@
 <!-- ============ PERSONAL COACH / PADEL INFO MODAL ============ -->
 <div class="info-modal" id="modalCoaching" aria-hidden="true">
   <div class="im-hdr">
-    <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2>Personal Coach</h2></div>
-    <div class="im-actions"><button class="im-back" data-back-to-menu="modalCoaching" type="button" aria-label="Πίσω"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalCoaching" type="button">×</button></div>
+    <div><span class="k" data-i18n="kicker_services">ΥΠΗΡΕΣΙΕΣ</span><h2 data-i18n="coach_h2">Personal Coach</h2></div>
+    <div class="im-actions"><button class="im-back" data-back-to-menu="modalCoaching" type="button" aria-label="Πίσω" data-i18n-aria="aria_back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="im-close" data-close-modal="modalCoaching" type="button">×</button></div>
   </div>
   <div class="ab-hero">
     <span class="em">🎾</span>
-    <h1>Ανακάλυψε το <span class="lime" data-i18n="coach_h1_l">padel</span></h1>
+    <h1><span data-i18n="coach_h1_1">Ανακάλυψε το</span> <span class="lime" data-i18n="coach_h1_l">padel</span></h1>
     <p class="loc" data-i18n="coach_loc">ΤΟ ΑΘΛΗΜΑ · Η ΠΑΡΕΑ · Η ΕΜΠΕΙΡΙΑ</p>
   </div>
   <div class="ab-body">
@@ -1335,7 +1335,7 @@
 </a>
 
 <!-- ============ REVIEWS CHIP + MODAL ============ -->
-<button type="button" class="rev-chip" id="revChip" aria-label="Δες τις κριτικές">
+<button type="button" class="rev-chip" id="revChip" aria-label="Δες τις κριτικές" data-i18n-aria="aria_reviews">
   <span class="rev-stars">★★★★★</span>
   <span class="rev-txt" data-i18n="rev_chip">Κριτικές</span>
 </button>
@@ -1344,7 +1344,7 @@
   <div class="im-hdr">
     <div><span class="k">GOOGLE MAPS</span><h2 data-i18n="rev_h2">Κριτικές πελατών</h2></div>
     <div class="im-actions">
-      <button class="im-back" data-back-to-menu="modalReviews" type="button" aria-label="Πίσω">
+      <button class="im-back" data-back-to-menu="modalReviews" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <button class="im-close" data-close-modal="modalReviews" type="button">×</button>
@@ -1467,11 +1467,12 @@
     const ref = doc(db, 'users', user.uid);
     const snap = await getDoc(ref);
     if (!snap.exists()){
+      // welcomeCoupon:false — matches the create rule; admin approves manually.
       await setDoc(ref, {
         email: user.email,
         name: '', surname: '', phone: '',
         level: 1,
-        welcomeCoupon: true,
+        welcomeCoupon: false,
         freeCourts: 0,
         bookingsCount: 0,
         createdAt: serverTimestamp(),
@@ -2477,6 +2478,11 @@
     }).join('');
     // Re-apply any active language + occupancy state
     applyDisabledSessions();
+    // Re-translate period labels (h3 nodes were just re-created with Greek).
+    try {
+      const lang = document.documentElement.lang || 'el';
+      if (typeof setLang === 'function' && lang !== 'el') setLang(lang);
+    } catch(_){}
   }
 
   async function loadDisabledSessions(){
@@ -3201,20 +3207,14 @@ T.en['kicker_np'] = 'NORTH PADEL';
 T.de['kicker_np'] = 'NORTH PADEL';
 T.en['kicker_info'] = 'INFO';
 T.de['kicker_info'] = 'INFO';
-T.en['parties_h2'] = 'Kids\' Parties 🎉';
-T.de['parties_h2'] = 'Kinderpartys 🎉';
+// (moved below — see consolidated block near end of T dict)
 T.en['parties_tag1'] = 'THE MOST ACTIVE BIRTHDAY PARTY';
 T.de['parties_tag1'] = 'DIE AKTIVSTE GEBURTSTAGSPARTY';
-T.en['parties_tag2'] = 'Sports, play & endless fun!<br>The birthday you dream of.';
-T.de['parties_tag2'] = 'Sport, Spiel & endloser Spaß!<br>Der Geburtstag, den Sie sich erträumen.';
+// parties_tag2 / inc_games / inc_cake — see consolidated block below
 T.en['parties_inc'] = 'INCLUDES';
 T.de['parties_inc'] = 'INKLUSIVE';
 T.en['inc_padel'] = 'Padel<br>Play';
 T.de['inc_padel'] = 'Padel<br>Spiel';
-T.en['inc_games'] = 'Games & Activities';
-T.de['inc_games'] = 'Spiele & Aktivitäten';
-T.en['inc_cake'] = 'Cake & Treats';
-T.de['inc_cake'] = 'Torte & Süßigkeiten';
 T.en['inc_music'] = 'Music & Fun';
 T.de['inc_music'] = 'Musik & Spaß';
 T.en['inc_safe'] = 'Safe<br>Environment';
@@ -3279,8 +3279,7 @@ T.en['eq_no_t'] = 'NO EQUIPMENT?';
 T.de['eq_no_t'] = 'KEINE AUSRÜSTUNG?';
 T.en['eq_no_d'] = 'Rackets available for rental · €2 each<br>Premium balls · €8 per can';
 T.de['eq_no_d'] = 'Schläger zur Miete verfügbar · €2 pro Stück<br>Premium-Bälle · €8 pro Dose';
-T.en['about_h2'] = 'About Us';
-T.de['about_h2'] = 'Über uns';
+// about_h2 — see consolidated block below
 T.en['about_h1_1'] = 'Our';
 T.de['about_h1_1'] = 'Unsere';
 T.en['about_h1_l'] = 'story';
@@ -3325,14 +3324,13 @@ T.en['g_more'] = 'More coming soon';
 T.de['g_more'] = 'Bald mehr';
 T.en['g_foot'] = 'More albums coming soon';
 T.de['g_foot'] = 'Weitere Alben in Kürze';
-T.en['co_h2'] = 'Contact';
-T.de['co_h2'] = 'Kontakt';
+// co_h2 — see consolidated block below
 T.en['co_h1_1'] = 'We\'re';
 T.de['co_h1_1'] = 'Wir sind';
 T.en['co_h1_l'] = 'here';
 T.de['co_h1_l'] = 'da';
 T.en['co_sub'] = 'Book a court, ask about lessons, or plan an event — we\'re here for you.';
-T.de['co_sub'] = 'Buche einen Platz, frag nach Kursen oder plan ein Event — wir sind für dich da.';
+T.de['co_sub'] = 'Buche einen Platz, frag nach Kursen oder plane ein Event — wir sind für dich da.';
 T.en['call_btn'] = 'CALL';
 T.de['call_btn'] = 'ANRUFEN';
 T.en['coach_h2'] = 'Personal Coach';
@@ -3370,11 +3368,10 @@ T.de['coach_l3'] = '<span class="em">🏆</span> <strong>Profi</strong> — Du s
 T.en['coach_q'] = '«Ask us anything about the sport — we will help you start right.»';
 T.de['coach_q'] = '«Fragen Sie uns alles über den Sport — wir helfen Ihnen, richtig zu starten.»';
 T.en['coach_ct'] = 'WANT TO LEARN MORE?';
-T.de['coach_ct'] = 'MÖCHTEN SIE MEHR ERFAHREN?';
+T.de['coach_ct'] = 'MÖCHTEST DU MEHR ERFAHREN?';
 T.en['coach_cd'] = 'Contact us for any questions about padel';
-T.de['coach_cd'] = 'Kontaktieren Sie uns für alle Fragen rund um Padel';
-T.en['padel_h2'] = 'Padel → What is it?';
-T.de['padel_h2'] = 'Padel → Was ist das?';
+T.de['coach_cd'] = 'Kontaktiere uns für alle Fragen rund um Padel';
+// padel_h2 — see consolidated block below
 T.en['padel_h1_1'] = 'The fastest';
 T.de['padel_h1_1'] = 'Die am schnellsten';
 T.en['padel_h1_l'] = 'growing';
@@ -3468,10 +3465,11 @@ T.en['form_2p_note'] = 'The 2-player option is only available up to and includin
 T.de['form_2p_note'] = 'Die 2er-Option ist nur bis einschließlich der Session 19:30–21:00 verfügbar.';
 T.en['form_premium_balls'] = 'Premium balls';
 T.de['form_premium_balls'] = 'Premium-Bälle';
+/* ---- Consolidated (dedup + Sie→du + currency + grammar) ---- */
 T.en['parties_h2'] = "Kids' Parties 🎉";
 T.de['parties_h2'] = 'Kinderpartys 🎉';
 T.en['parties_tag2'] = 'Sports, play & endless fun!<br>Birthdays as special as you dream them.';
-T.de['parties_tag2'] = 'Sport, Spiel & endlose Freude!<br>Geburtstage so besonders, wie Sie sie träumen.';
+T.de['parties_tag2'] = 'Sport, Spiel & endlose Freude!<br>Geburtstage so besonders, wie du sie träumst.';
 T.en['inc_games'] = 'Games & Activities';
 T.de['inc_games'] = 'Spiele & Aktivitäten';
 T.en['inc_cake'] = 'Cake & Treats';
@@ -3479,7 +3477,7 @@ T.de['inc_cake'] = 'Kuchen & Leckereien';
 T.en['inc_music_full'] = 'Music & Fun';
 T.de['inc_music_full'] = 'Musik & Spaß';
 T.en['p_contact_us'] = 'Contact us for availability & packages';
-T.de['p_contact_us'] = 'Kontaktieren Sie uns für Verfügbarkeit & Pakete';
+T.de['p_contact_us'] = 'Kontaktiere uns für Verfügbarkeit & Pakete';
 T.en['eq_h2'] = 'Equipment';
 T.de['eq_h2'] = 'Ausrüstung';
 T.en['about_h2'] = 'About Us';
@@ -3488,6 +3486,59 @@ T.en['co_h2'] = 'Contact';
 T.de['co_h2'] = 'Kontakt';
 T.en['padel_h2'] = 'Padel → What is it?';
 T.de['padel_h2'] = 'Padel → Was ist das?';
+
+/* ---- DE informal (du) alignment + grammar fixes ---- */
+T.de['about_ft']    = 'WAS DU HIER FINDEST';
+T.de['coach_h1_1']  = 'Entdecke';
+T.de['coach_q']     = '«Frag uns alles über den Sport — wir helfen dir, richtig zu starten.»';
+T.de['coach_lvl']   = 'DEIN NIVEAU';
+T.de['g_sub']       = 'Erlebe das Leben bei North Padel durch die Fotos';
+T.de['padel_wt']    = 'WARUM DU ES LIEBEN WIRST';
+T.de['p_cta_t']     = 'BUCHE HEUTE DEINE PARTY!';
+T.de['padel_cd']    = 'Buch jetzt einen Platz und starte das Erlebnis!';
+T.de['combo_free_d']= 'bei Platznutzung — täglich 08:00–14:00';
+T.de['form_hint_late'] = 'Nach 21:00 Uhr ist nur die 4-Spieler-Option verfügbar.';
+T.de['padel_c3']    = '<span class="em">🌱</span> Kunstrasenbelag';
+T.de['level_opt_3'] = '🥈 Regelmäßig — Ich spiele regelmäßig';
+T.de['coach_l3']    = '<span class="em">🏆</span> <strong>Fortgeschritten</strong> — Du suchst Mitspieler auf Wettkampf-Niveau';
+T.de['sess_morning']= '☀️ MORGEN';
+T.de['padel_p1']    = 'Das Wort <strong>"padel"</strong> bedeutet auf Spanisch <em>Paddel</em> — nach der Form des Schlägers. Entstanden 1969 in Mexiko und in Spanien weiterentwickelt. Heute zählt es <strong>über 25 Millionen Spieler</strong> in 90 Ländern.';
+
+/* ---- DE currency format (44 € statt €44) ---- */
+T.de['form_4p']        = '4-Spieler · 44 €';
+T.de['form_2p']        = '2-Spieler · 30 €';
+T.de['form_rackets_h'] = '(+2 € je Stück)';
+T.de['form_balls_h']   = '(+8 € gesamt)';
+T.de['eq_no_d']        = 'Schläger zur Miete verfügbar · 2 € pro Stück<br>Premium-Bälle · 8 € pro Dose';
+T.de['cancel_inline']  = '📋 <b>Stornierungsrichtlinie:</b> Kostenlos <b>&gt;48h</b> vorher im Profil · <b>24-48h</b> nur telefonisch (693 439 1978 / 695 178 4471) · <b>&lt;24h oder No-Show</b> zahlst du den Platzpreis (44 € für 4 Spieler, 30 € für 2).';
+
+/* ---- EN grammar polish ---- */
+T.en['form_hint_late'] = 'After 21:00 only the 4-player option is available.';
+T.en['form_2p_note']   = 'The 2-player option is available only through the 19:30–21:00 session.';
+T.en['sess_noon']      = '🍽️ MIDDAY';
+T.en['cancel_inline']  = '📋 <b>Cancellation policy:</b> Free <b>&gt;48h</b> in advance, from your profile · <b>24-48h</b> by phone only (693 439 1978 / 695 178 4471) · <b>&lt;24h or no-show</b> you\'re charged the full court fee (€44 for 4 players, €30 for 2).';
+
+/* ---- New placeholder / aria-label keys ---- */
+T.en['form_name_ph'] = 'Your name';
+T.de['form_name_ph'] = 'Dein Name';
+T.en['aria_back']    = 'Back';
+T.de['aria_back']    = 'Zurück';
+T.en['aria_close']   = 'Close';
+T.de['aria_close']   = 'Schließen';
+T.en['aria_menu']    = 'Menu';
+T.de['aria_menu']    = 'Menü';
+T.en['aria_prev_month'] = 'Previous month';
+T.de['aria_prev_month'] = 'Vorheriger Monat';
+T.en['aria_next_month'] = 'Next month';
+T.de['aria_next_month'] = 'Nächster Monat';
+T.en['aria_reviews'] = 'See the reviews';
+T.de['aria_reviews'] = 'Bewertungen ansehen';
+T.en['aria_show_pw'] = 'Show password';
+T.de['aria_show_pw'] = 'Passwort anzeigen';
+T.en['aria_goto_c2'] = 'Go to Court 2';
+T.de['aria_goto_c2'] = 'Zum Platz 2';
+T.en['aria_login_player'] = 'Player login';
+T.de['aria_login_player'] = 'Spieler-Login';
 
 /* ============ Auth panel — extra keys ============ */
 T.en['auth_login_btn'] = 'LOG IN';
@@ -3598,6 +3649,21 @@ T.de['wd_sun'] = 'S';
       } else if (T[lang] && T[lang][key]) {
         el.innerHTML = T[lang][key];
       }
+    });
+    // Placeholders / aria-labels / titles
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      const key = el.dataset.i18nPh;
+      if (!originalTexts.has(el)) originalTexts.set(el, el.placeholder || '');
+      if (lang === 'el') el.placeholder = originalTexts.get(el);
+      else if (T[lang] && T[lang][key]) el.placeholder = T[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+      const key = el.dataset.i18nAria;
+      const cur = el.getAttribute('aria-label') || '';
+      const map = originalTexts.get(el+'|aria') || cur;
+      if (!originalTexts.has(el+'|aria')) originalTexts.set(el+'|aria', cur);
+      if (lang === 'el') el.setAttribute('aria-label', originalTexts.get(el+'|aria'));
+      else if (T[lang] && T[lang][key]) el.setAttribute('aria-label', T[lang][key]);
     });
     // Update HTML lang attribute
     document.documentElement.lang = lang;
