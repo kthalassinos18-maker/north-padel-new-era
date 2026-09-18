@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1929">
 <title data-i18n="kicker_np">North Padel</title>
+<!-- Cloudflare Turnstile: anti-bot widget for guest bookings.
+     Owner must replace SITE_KEY_HERE with the site key from Cloudflare dashboard
+     (Turnstile → Add widget). Also set TURNSTILE_SECRET_KEY as an env var in
+     Cloudflare Pages Settings for the /api/verify-turnstile function. -->
+<meta name="turnstile-sitekey" content="SITE_KEY_HERE">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -981,6 +987,8 @@
       <div class="total-amount" id="totalAmount">€44</div>
     </div>
     <p class="cancel-inline" data-i18n-html="cancel_inline">📋 <b>Πολιτική ακύρωσης:</b> Δωρεάν <b>&gt;48h</b> πριν από το προφίλ σου · <b>24-48h</b> μόνο τηλεφωνικά (693 439 1978 / 695 178 4471) · <b>&lt;24h ή no-show</b> οφείλεις την τιμή του γηπέδου (44€ για 4άδα, 30€ για 2άδα).</p>
+    <!-- Turnstile widget — rendered only for guest bookings (see wiring in JS). -->
+    <div id="turnstileGuest" style="display:none;margin:12px 0"></div>
     <button type="submit" class="submit-btn" data-i18n="form_submit">ΕΠΙΒΕΒΑΙΩΣΗ ΚΡΑΤΗΣΗΣ</button>
   </form>
 </section>
@@ -1962,6 +1970,40 @@
     // Show/hide the guest-booking hint on the booking form
     const gn = document.getElementById('guestNote');
     if (gn) gn.style.display = u ? 'none' : 'block';
+    // Show/hide + render Turnstile widget for the guest booking path.
+    const tsBox = document.getElementById('turnstileGuest');
+    if (tsBox){
+      if (u){
+        tsBox.style.display = 'none';
+        tsBox.innerHTML = '';
+        window.__npTurnstileToken = null;
+      } else {
+        tsBox.style.display = 'block';
+        renderTurnstile(tsBox);
+      }
+    }
+  }
+
+  // Lazy Turnstile renderer. Called every time the guest path is shown.
+  // Bails silently if the site key is still the placeholder — that way
+  // the site keeps working before Turnstile is provisioned in Cloudflare.
+  function renderTurnstile(container){
+    const meta = document.querySelector('meta[name="turnstile-sitekey"]');
+    const siteKey = meta ? (meta.getAttribute('content')||'').trim() : '';
+    if (!siteKey || siteKey === 'SITE_KEY_HERE') return; // not configured yet
+    // Wait for the Turnstile script to load
+    if (!window.turnstile){ setTimeout(() => renderTurnstile(container), 300); return; }
+    // Avoid double-render
+    if (container.dataset.rendered === '1') return;
+    container.dataset.rendered = '1';
+    container.innerHTML = '';
+    window.turnstile.render(container, {
+      sitekey: siteKey,
+      theme: 'dark',
+      callback: (token) => { window.__npTurnstileToken = token; },
+      'error-callback': () => { window.__npTurnstileToken = null; },
+      'expired-callback': () => { window.__npTurnstileToken = null; },
+    });
   }
 
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -2978,6 +3020,34 @@
     let bookerUid = u ? u.uid : null;
     let bookerEmail = u ? u.email : null;
     if (isGuest){
+      // Turnstile gate: verify the bot-check token before doing anything.
+      // If Turnstile isn't provisioned yet (site key is placeholder), skip.
+      const meta = document.querySelector('meta[name="turnstile-sitekey"]');
+      const siteKey = meta ? (meta.getAttribute('content')||'').trim() : '';
+      if (siteKey && siteKey !== 'SITE_KEY_HERE'){
+        const token = window.__npTurnstileToken;
+        if (!token){
+          alert('Ολοκλήρωσε τον έλεγχο ασφαλείας στο check-box πριν την κράτηση.');
+          return;
+        }
+        try {
+          const r = await fetch('/api/verify-turnstile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok || !j.success){
+            alert('Απέτυχε ο έλεγχος ασφαλείας. Δοκίμασε ξανά.');
+            try { window.turnstile && window.turnstile.reset(); } catch(_){}
+            window.__npTurnstileToken = null;
+            return;
+          }
+        } catch(err){
+          alert('Δεν ήταν δυνατή η επαλήθευση ασφαλείας: ' + err.message);
+          return;
+        }
+      }
       try {
         const anon = await window.npFB.ensureGuestAuth();
         bookerUid = anon.uid;
