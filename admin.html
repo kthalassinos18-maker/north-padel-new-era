@@ -179,6 +179,7 @@
   .gift-status{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:0.14em;font-weight:600;padding:3px 8px;border-radius:5px;flex-shrink:0}
   .gift-status.on{background:rgba(183,255,74,0.18);color:#b7ff4a;border:1px solid rgba(183,255,74,0.4)}
   .gift-status.off{background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3)}
+  .gift-status.stale{background:rgba(255,180,60,0.15);color:#ffb43c;border:1px solid rgba(255,180,60,0.35);cursor:help}
   .gift-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0}
   .gift-stepper .btn{padding:5px 10px;font-size:13px;min-width:32px}
   .gift-stepper .gift-val{min-width:44px;text-align:center;font-size:14px;color:#f4f9ff}
@@ -950,13 +951,22 @@ function renderBookings(){
 // Short one-line summary of a member's currently-active gifts, used at
 // the top of the Δώρα cell so the admin can see what the member gets
 // without decoding three separate rows.
+//
+// welcomeCoupon only counts when bookingsCount === 0 — the site's own
+// discount logic won't apply it after the first booking, so showing it
+// here would be misleading. If the toggle is on but bookings exist, we
+// note it separately as "already used".
 function giftSummary(m){
   const parts = [];
-  if (m.welcomeCoupon) parts.push('🎁 −10% καλωσόρισμα');
+  const bookings = +m.bookingsCount || 0;
+  const welcomeUsable = m.welcomeCoupon && bookings === 0;
+  if (welcomeUsable) parts.push('🎁 −10% καλωσόρισμα');
   if ((+m.freeCourts||0) > 0) parts.push('🎾 ' + m.freeCourts + ' δωρεάν γήπεδ' + (m.freeCourts===1?'ο':'α'));
   if ((+m.couponPct||0) > 0)  parts.push('🎫 −' + m.couponPct + '% κουπόνι');
-  if (!parts.length) return '<span class="gifts-none">Χωρίς ενεργά δώρα</span>';
-  return '<span class="gifts-active">' + parts.join(' · ') + '</span>';
+  if (parts.length) return '<span class="gifts-active">' + parts.join(' · ') + '</span>';
+  if (m.welcomeCoupon && bookings > 0)
+    return '<span class="gifts-none">Χωρίς ενεργά δώρα <small style="opacity:0.7">(το καλωσόρισμα δεν εφαρμόζεται πια — έχει ήδη κάνει κρατήσεις)</small></span>';
+  return '<span class="gifts-none">Χωρίς ενεργά δώρα</span>';
 }
 
 function renderMembers(){
@@ -1021,9 +1031,9 @@ function renderMembers(){
         <div class="gifts-cell">
           <div class="gifts-summary">${giftSummary(m)}</div>
           <div class="gift-row">
-            <span class="gift-label"><span class="gift-ico">🎁</span>Καλωσόρισμα −10% <small>(μία φορά)</small></span>
+            <span class="gift-label"><span class="gift-ico">🎁</span>Καλωσόρισμα −10% <small>(μία φορά, μόνο πρώτη κράτηση)</small></span>
             <label class="sw"><input type="checkbox" class="gift-toggle" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" ${m.welcomeCoupon?'checked':''}><span class="sw-slider"></span></label>
-            <span class="gift-status ${m.welcomeCoupon?'on':'off'}">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</span>
+            <span class="gift-status ${m.welcomeCoupon ? ((+m.bookingsCount||0) > 0 ? 'stale' : 'on') : 'off'}" title="${m.welcomeCoupon && (+m.bookingsCount||0) > 0 ? 'Έχει ήδη ' + m.bookingsCount + ' κρατήσ' + ((+m.bookingsCount||0)===1?'η':'εις') + ', το καλωσόρισμα δεν εφαρμόζεται πια.' : ''}">${m.welcomeCoupon ? ((+m.bookingsCount||0) > 0 ? 'ΧΩΡΙΣ ΙΣΧΥ' : 'ΕΝΕΡΓΟ') : 'ΑΝΕΝΕΡΓΟ'}</span>
           </div>
           <div class="gift-row">
             <span class="gift-label"><span class="gift-ico">🎾</span>Δωρεάν γήπεδα</span>
@@ -1093,14 +1103,11 @@ function renderMembers(){
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
       await setDoc(doc(window.npFB.db, 'users', uid), { welcomeCoupon: next }, { merge: true });
-      // Update the ΕΝΕΡΓΟ/ΑΝΕΝΕΡΓΟ label next to the slider
-      const txt = inp.closest('.gift-row').querySelector('.gift-toggle-txt');
-      if (txt){
-        txt.textContent = next ? 'ΕΝΕΡΓΟ' : 'ΑΝΕΝΕΡΓΟ';
-        txt.style.color = next ? '#b7ff4a' : '#ff6b6b';
-      }
       const u = CACHE.users.find(x => x.uid === uid);
       if (u) u.welcomeCoupon = next;
+      // Re-render the whole members table so the summary chip + status pill
+      // (which depends on both welcomeCoupon and bookingsCount) update together.
+      renderMembers();
     } catch(e){
       alert('Αποτυχία: '+e.message);
       inp.checked = !next; // revert
