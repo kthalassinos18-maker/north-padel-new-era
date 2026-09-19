@@ -151,6 +151,48 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    // /threads/{uid} — 1-on-1 chat between a member and the admin.
+    //   One document per user, keyed by their auth uid. The doc itself
+    //   holds thread metadata (last message preview, unread flags,
+    //   denormalized name/phone for the admin's inbox list). Actual
+    //   messages live in the /messages subcollection.
+    //
+    //   Only verified members participate (anonymous / guest bookings
+    //   cannot open a thread — this keeps drive-by spam out of the
+    //   admin's inbox).
+    match /threads/{uid} {
+      allow read:   if isAdmin() || isOwner(uid);
+
+      allow create: if isAdmin() || (
+        isVerified() && isOwner(uid)
+        && request.resource.data.userName is string
+      );
+      // Owner may only touch the small whitelist of fields their own UI
+      // writes. Admin bypasses everything.
+      allow update: if isAdmin() || (
+        isVerified() && isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['userName','userEmail','userPhone',
+                       'lastMessage','lastMessageAt','lastMessageFrom',
+                       'unreadForAdmin','unreadForUser','updatedAt'])
+      );
+      allow delete: if isAdmin();
+
+      match /messages/{mid} {
+        allow read:   if isAdmin() || isOwner(uid);
+
+        allow create: if isAdmin() || (
+          isVerified() && isOwner(uid)
+          && request.resource.data.from == 'user'
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 1000
+        );
+        // Members can't rewrite history; admin can moderate if needed.
+        allow update, delete: if isAdmin();
+      }
+    }
+
     // /public_profiles/{uid} — Match-making snapshot.
     //   Owner writes/deletes. Any signed-in user reads (so Find a Player
     //   works). Only fields the user opted to share are stored here.

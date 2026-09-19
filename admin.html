@@ -166,6 +166,40 @@
     .gate-field input{font-size:16px}
     .gate-btn{padding:14px;font-size:14px;min-height:48px}
   }
+
+  /* ============ MESSAGES ============ */
+  .msg-layout{display:grid;grid-template-columns:280px 1fr;gap:0;padding:0;overflow:hidden;height:calc(100vh - 200px);min-height:520px}
+  .msg-list-pane{border-right:1px solid rgba(255,255,255,0.08);overflow-y:auto}
+  .msg-list-pane h3{padding:14px 16px;margin:0;font-size:12px;letter-spacing:0.18em;color:rgba(244,249,255,0.5);font-weight:600;border-bottom:1px solid rgba(255,255,255,0.06)}
+  .msg-thread-list{display:flex;flex-direction:column}
+  .msg-thread{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;position:relative;transition:background .15s}
+  .msg-thread:hover{background:rgba(255,255,255,0.03)}
+  .msg-thread.selected{background:rgba(183,255,74,0.09)}
+  .msg-thread-name{font-weight:600;color:#f4f9ff;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .msg-thread-name .msg-unread{width:9px;height:9px;background:#ff4a6b;border-radius:50%;flex-shrink:0}
+  .msg-thread-preview{font-size:12px;color:rgba(244,249,255,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .msg-thread-time{font-size:10px;color:rgba(244,249,255,0.4);margin-top:3px}
+  .msg-chat-pane{display:flex;flex-direction:column;height:100%;min-height:0}
+  .msg-chat-empty{margin:auto;text-align:center;color:rgba(244,249,255,0.4);padding:32px}
+  .msg-chat-hdr{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(10,25,41,0.5)}
+  .msg-chat-hdr strong{display:block;color:#f4f9ff;font-size:15px}
+  .msg-chat-hdr small{display:block;color:rgba(244,249,255,0.5);font-size:12px;margin-top:2px}
+  .msg-chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;min-height:0}
+  .msg-bubble{max-width:75%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.42;word-wrap:break-word;white-space:pre-wrap}
+  .msg-bubble.admin{align-self:flex-end;background:#b7ff4a;color:#0a1929;border-bottom-right-radius:4px}
+  .msg-bubble.user{align-self:flex-start;background:rgba(255,255,255,0.09);color:#f4f9ff;border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:4px}
+  .msg-time{font-size:10px;margin-top:2px;opacity:0.65}
+  .msg-chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,0.08);align-items:flex-end;background:rgba(10,25,41,0.5)}
+  .msg-chat-input-row textarea{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:#f4f9ff;padding:10px 12px;font-family:inherit;font-size:14px;resize:none;max-height:140px;min-height:42px}
+  .msg-chat-input-row textarea:focus{outline:none;border-color:rgba(183,255,74,0.5)}
+  .msg-chat-input-row .btn{width:44px;height:44px;padding:0;font-size:18px;border-radius:50%}
+  @media (max-width:900px){
+    .msg-layout{grid-template-columns:1fr;height:calc(100vh - 220px)}
+    .msg-list-pane{display:block}
+    .msg-list-pane.hide-on-mobile{display:none}
+    .msg-chat-pane.hide-on-mobile{display:none}
+    #msgBackBtn{display:inline-flex!important}
+  }
 </style>
 </head>
 <body>
@@ -202,6 +236,7 @@
     <button class="nav-item" data-section="members"><span class="nav-ico">👥</span><span>Μέλη</span><span class="nav-badge" id="memNavBadge" style="display:none">0</span></button>
     <button class="nav-item" data-section="prices"><span class="nav-ico">💶</span><span>Τιμές</span></button>
     <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Sessions</span></button>
+    <button class="nav-item" data-section="messages"><span class="nav-ico">💬</span><span>Μηνύματα</span><span class="nav-badge" id="msgNavBadge" style="display:none">0</span></button>
     <div class="sidebar-foot">
       <button class="logout" id="logout">ΑΠΟΣΥΝΔΕΣΗ</button>
     </div>
@@ -414,6 +449,38 @@
         <p id="bulkMsg" style="text-align:center;font-size:13px;margin-top:10px;min-height:16px"></p>
       </div>
     </section>
+
+    <!-- =========== MESSAGES =========== -->
+    <section class="section" id="sec-messages">
+      <div class="card msg-layout">
+        <div class="msg-list-pane">
+          <h3>ΣΥΝΟΜΙΛΙΕΣ</h3>
+          <div id="msgThreadList" class="msg-thread-list">
+            <div style="padding:14px;color:rgba(244,249,255,0.5);font-size:13px">Φόρτωση...</div>
+          </div>
+        </div>
+        <div class="msg-chat-pane">
+          <div id="msgChatEmpty" class="msg-chat-empty">
+            <div style="font-size:44px;margin-bottom:10px">💬</div>
+            <p>Διάλεξε μια συνομιλία για να δεις τα μηνύματα.</p>
+          </div>
+          <div id="msgChatActive" style="display:none;flex-direction:column;height:100%">
+            <div class="msg-chat-hdr">
+              <div>
+                <strong id="msgChatName">—</strong>
+                <small id="msgChatMeta">—</small>
+              </div>
+              <button type="button" class="btn" id="msgBackBtn" style="display:none">← ΠΙΣΩ</button>
+            </div>
+            <div id="msgChatBody" class="msg-chat-body"></div>
+            <div class="msg-chat-input-row">
+              <textarea id="msgChatInput" rows="1" maxlength="1000" placeholder="Γράψε απάντηση..."></textarea>
+              <button type="button" class="btn primary" id="msgChatSend">➤</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -470,7 +537,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit, getDocs, writeBatch, onSnapshot, serverTimestamp, addDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyAnn6RtsAqfJxeWesN3WF1jVv_egCDb21k",
@@ -524,6 +591,53 @@
       return snap.exists() ? snap.data() : null;
     },
     setConfig: (name, data) => setDoc(doc(db, 'config', name), data),
+
+    // ---- Messaging (admin side) ----
+    // Subscribe to all threads (inbox list). Returns unsubscribe fn.
+    subscribeThreads: (cb) => {
+      const q = query(collection(db, 'threads'), orderBy('lastMessageAt', 'desc'), limit(100));
+      return onSnapshot(q, snap => {
+        cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, err => console.warn('threads sub', err));
+    },
+    // Subscribe to messages within one thread. Returns unsubscribe fn.
+    subscribeThreadMessages: (threadId, cb) => {
+      const q = query(collection(doc(db, 'threads', threadId), 'messages'), orderBy('createdAt', 'asc'));
+      return onSnapshot(q, snap => {
+        cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, err => console.warn('thread msgs sub', err));
+    },
+    // Admin replies to a user.
+    sendAdminMessage: async (threadId, text) => {
+      const clean = String(text||'').trim().slice(0, 4000);
+      if (!clean) throw new Error('Κενό μήνυμα.');
+      const threadRef = doc(db, 'threads', threadId);
+      const msgRef = doc(collection(threadRef, 'messages'));
+      const batch = writeBatch(db);
+      batch.set(threadRef, {
+        lastMessage:     clean.slice(0, 140),
+        lastMessageAt:   serverTimestamp(),
+        lastMessageFrom: 'admin',
+        unreadForUser:   true,
+        unreadForAdmin:  false,
+        updatedAt:       serverTimestamp(),
+      }, { merge: true });
+      batch.set(msgRef, {
+        from: 'admin',
+        text: clean,
+        createdAt: serverTimestamp(),
+      });
+      await batch.commit();
+    },
+    // Mark the thread as read from the admin's side.
+    markAdminRead: async (threadId) => {
+      try {
+        await updateDoc(doc(db, 'threads', threadId), {
+          unreadForAdmin: false,
+          updatedAt: serverTimestamp(),
+        });
+      } catch(_){ /* ok */ }
+    },
   };
   window.dispatchEvent(new Event('npFBReady'));
 </script>
@@ -601,12 +715,14 @@ const titles = {
   members:   ['Μέλη', 'Έγκριση, απόρριψη και διαχείριση μελών'],
   prices:    ['Τιμές', 'Τιμοκατάλογος γηπέδων και combo'],
   hours:     ['Sessions', 'Ενεργοποίηση/απενεργοποίηση slot κράτησης'],
+  messages:  ['Μηνύματα', 'Απευθείας επικοινωνία με τα μέλη'],
 };
 function showSection(name){
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === name));
   document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === 'sec-'+name));
   document.getElementById('pageTitle').textContent = titles[name][0];
   document.getElementById('pageSub').textContent = titles[name][1];
+  if (name === 'messages') openMessagesTab();
 }
 document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => showSection(n.dataset.section)));
 
@@ -1273,6 +1389,7 @@ async function refreshAll(){
   renderUpcomingClosures();
   bulkPopulateSlots();
   refreshManualTimeSlots();
+  if (typeof startMessagesInboxWatcher === 'function') startMessagesInboxWatcher();
 }
 
 // Populate the manual-booking time <select> with the active season's slots
@@ -1395,6 +1512,147 @@ document.getElementById('bkFilterClear').addEventListener('click', () => {
   renderBookings();
 });
 window.showSection = showSection;
+
+/* ============ MESSAGES (admin ↔ member) ============ */
+// State: current thread list, currently-selected thread id, listener handles.
+let MSG_THREADS = [];
+let MSG_SELECTED = null;
+let MSG_UNSUB_LIST = null;
+let MSG_UNSUB_CHAT = null;
+// Kicked off at boot so the sidebar unread badge lives even when the tab
+// is on Dashboard / Bookings / etc.
+async function startMessagesInboxWatcher(){
+  await waitFB();
+  if (MSG_UNSUB_LIST) return;
+  MSG_UNSUB_LIST = window.npFB.subscribeThreads(threads => {
+    MSG_THREADS = threads;
+    renderMsgThreadList();
+    updateMsgNavBadge();
+  });
+}
+function updateMsgNavBadge(){
+  const badge = document.getElementById('msgNavBadge');
+  if (!badge) return;
+  const unread = MSG_THREADS.filter(t => t.unreadForAdmin).length;
+  if (unread > 0){
+    badge.textContent = unread > 99 ? '99+' : String(unread);
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+function fmtRelTime(ts){
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const now = Date.now();
+  const diff = now - d.getTime();
+  if (diff < 60000)   return 'μόλις τώρα';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'λ πριν';
+  const sameDay = d.toDateString() === new Date().toDateString();
+  if (sameDay) return d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'});
+}
+function renderMsgThreadList(){
+  const list = document.getElementById('msgThreadList');
+  if (!list) return;
+  if (!MSG_THREADS.length){
+    list.innerHTML = '<div style="padding:22px;color:rgba(244,249,255,0.4);font-size:13px;text-align:center">Δεν υπάρχουν συνομιλίες ακόμα.</div>';
+    return;
+  }
+  list.innerHTML = MSG_THREADS.map(t => {
+    const sel = t.id === MSG_SELECTED ? 'selected' : '';
+    const unread = t.unreadForAdmin ? '<span class="msg-unread" title="Μη διαβασμένο"></span>' : '';
+    const name = esc(t.userName || t.userEmail || t.id);
+    const phone = t.userPhone ? esc(t.userPhone) : '';
+    const preview = esc((t.lastMessage || '').slice(0, 60));
+    const time = fmtRelTime(t.lastMessageAt);
+    const fromLabel = t.lastMessageFrom === 'admin' ? 'Εσύ: ' : '';
+    return `<div class="msg-thread ${sel}" data-thread="${esc(t.id)}">
+      <div class="msg-thread-name">${name} ${unread}</div>
+      <div class="msg-thread-preview">${fromLabel}${preview}</div>
+      <div class="msg-thread-time">${phone ? '📞 ' + phone + ' · ' : ''}${time}</div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('[data-thread]').forEach(el => {
+    el.addEventListener('click', () => selectMsgThread(el.dataset.thread));
+  });
+}
+function openMessagesTab(){
+  startMessagesInboxWatcher();
+  // If nothing is currently selected on desktop, prompt with the empty state.
+  if (!MSG_SELECTED){
+    document.getElementById('msgChatEmpty').style.display = '';
+    document.getElementById('msgChatActive').style.display = 'none';
+  }
+}
+async function selectMsgThread(id){
+  MSG_SELECTED = id;
+  renderMsgThreadList();
+  document.getElementById('msgChatEmpty').style.display = 'none';
+  document.getElementById('msgChatActive').style.display = 'flex';
+  const t = MSG_THREADS.find(x => x.id === id);
+  if (t){
+    document.getElementById('msgChatName').textContent = t.userName || t.userEmail || id;
+    document.getElementById('msgChatMeta').textContent = [t.userEmail, t.userPhone].filter(Boolean).join(' · ') || '—';
+  }
+  // Mobile: hide the list pane once a thread is opened
+  document.querySelector('.msg-list-pane')?.classList.add('hide-on-mobile');
+  document.querySelector('.msg-chat-pane')?.classList.remove('hide-on-mobile');
+  // Live message subscription
+  if (MSG_UNSUB_CHAT) { try { MSG_UNSUB_CHAT(); } catch(_){} }
+  MSG_UNSUB_CHAT = window.npFB.subscribeThreadMessages(id, renderMsgChat);
+  // Mark as read on our side
+  window.npFB.markAdminRead(id).catch(()=>{});
+}
+function renderMsgChat(messages){
+  const body = document.getElementById('msgChatBody');
+  if (!body) return;
+  if (!messages.length){
+    body.innerHTML = '<div style="margin:auto;color:rgba(244,249,255,0.4);padding:20px;text-align:center">Δεν υπάρχουν μηνύματα.</div>';
+    return;
+  }
+  body.innerHTML = messages.map(m => {
+    const cls = m.from === 'admin' ? 'admin' : 'user';
+    const time = fmtRelTime(m.createdAt);
+    return `<div class="msg-bubble ${cls}">${esc(m.text)}<div class="msg-time">${time}</div></div>`;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+async function doAdminSend(){
+  const input = document.getElementById('msgChatInput');
+  const btn = document.getElementById('msgChatSend');
+  if (!input || !MSG_SELECTED) return;
+  const text = input.value.trim();
+  if (!text) return;
+  btn.disabled = true;
+  try {
+    await window.npFB.sendAdminMessage(MSG_SELECTED, text);
+    input.value = '';
+    input.style.height = 'auto';
+  } catch(e){
+    alert('Αποτυχία αποστολής: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+document.getElementById('msgChatSend')?.addEventListener('click', doAdminSend);
+document.getElementById('msgChatInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey){ e.preventDefault(); doAdminSend(); }
+});
+document.getElementById('msgChatInput')?.addEventListener('input', (e) => {
+  e.target.style.height = 'auto';
+  e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px';
+});
+document.getElementById('msgBackBtn')?.addEventListener('click', () => {
+  document.querySelector('.msg-list-pane')?.classList.remove('hide-on-mobile');
+  document.querySelector('.msg-chat-pane')?.classList.add('hide-on-mobile');
+});
+// Boot the inbox watcher after auth is confirmed (so the sidebar unread
+// badge starts counting the moment admin lands on any tab).
+window.addEventListener('load', () => {
+  // startMessagesInboxWatcher(); — will be triggered by refreshAll() flow too
+});
 </script>
 
 </body>
