@@ -152,6 +152,7 @@
   .chat-input:focus{outline:none;border-color:rgba(183,255,74,0.5)}
   .chat-send{background:#b7ff4a;color:#0a1929;border:0;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
   .chat-send:disabled{opacity:0.4;cursor:not-allowed}
+  .menu-chat-badge{display:inline-flex;align-items:center;justify-content:center;background:#ff4a6b;color:#fff;font-size:12px;font-weight:700;border-radius:999px;min-width:20px;height:20px;padding:0 6px;letter-spacing:0;margin-left:6px;vertical-align:middle;font-family:'Inter',sans-serif}
   .pf-save-btn:hover{background:#a3ec36}
   .pf-save-msg{text-align:center;color:#b7ff4a;font-size:13px;min-height:16px;margin-top:8px}
 
@@ -877,6 +878,7 @@
     </div>
     <button type="button" class="mnu-item" data-menu-item data-open-section="equipment" data-i18n="menu_equipment">Εξοπλισμός</button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="find-player" data-i18n="menu_find">Βρες παίκτη</button>
+    <button type="button" class="mnu-item mnu-item-chat" id="menuChatItem" data-menu-item data-open-section="chat" style="display:none">💬 <span data-i18n="menu_chat">Μηνύματα με τον διαχειριστή</span> <span class="menu-chat-badge" id="menuChatBadge" style="display:none">1</span></button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="what-is-padel" data-i18n="menu_what">Padel → Τι είναι?</button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="gallery" data-i18n="menu_gallery">Gallery</button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="about" data-i18n="menu_about">Σχετικά με εμάς</button>
@@ -1732,6 +1734,7 @@
   async function sendUserMessage(text){
     const user = auth.currentUser;
     if (!user) throw new Error('Δεν είσαι συνδεδεμένος.');
+    if (!user.emailVerified) throw new Error('Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.');
     if (!text || !text.trim()) throw new Error('Το μήνυμα είναι κενό.');
     const clean = text.trim().slice(0, 1000);
     // Denormalise a bit of profile info so the admin's inbox list can
@@ -2111,6 +2114,14 @@
       loginF.style.display = 'flex';
       signupF.style.display = 'none';
     }
+    // Show/hide the "Μηνύματα με τον διαχειριστή" item in the burger menu.
+    // Only signed-in users can chat (guests + anon are locked out at the
+    // Firestore rule layer anyway).
+    const chatMenuItem = document.getElementById('menuChatItem');
+    if (chatMenuItem) chatMenuItem.style.display = u ? '' : 'none';
+    // Also (re)wire the live unread badge on the menu item so it works
+    // even before the visitor opens their profile.
+    wireGlobalChatBadge(u);
     // Show/hide the guest-booking hint on the booking form
     const gn = document.getElementById('guestNote');
     if (gn) gn.style.display = u ? 'none' : 'block';
@@ -2484,6 +2495,20 @@
   }
 
   /* ============ 1-ON-1 CHAT (member ↔ admin) ============ */
+  // Global unread badge on the burger-menu chat item. Runs whenever
+  // renderAuth() fires (login / logout / profile refresh) so it stays
+  // accurate even before the visitor opens their profile.
+  let CHAT_UNSUB_GLOBAL_META = null;
+  function wireGlobalChatBadge(u){
+    if (CHAT_UNSUB_GLOBAL_META) { try { CHAT_UNSUB_GLOBAL_META(); } catch(_){} CHAT_UNSUB_GLOBAL_META = null; }
+    const badge = document.getElementById('menuChatBadge');
+    if (!badge) return;
+    if (!u){ badge.style.display = 'none'; return; }
+    CHAT_UNSUB_GLOBAL_META = window.npFB.subscribeUserThreadMeta((meta) => {
+      badge.style.display = (meta && meta.unreadForUser) ? 'inline-flex' : 'none';
+    });
+  }
+
   // Real-time chat with the admin. Uses onSnapshot listeners; we keep two
   // unsubscribe handles so leaving the profile (or opening the chat with a
   // different account) tears everything down cleanly.
@@ -2527,8 +2552,16 @@
   window.wireProfileChat = wireProfileChat;
 
   function openChatModal(){
-    if (!currentUser()){
+    const u = currentUser();
+    if (!u){
       alert(L('chat_need_login','Πρέπει να είσαι συνδεδεμένος για να στείλεις μήνυμα.'));
+      // Open the auth panel so the user knows what to do next.
+      authPanel.classList.add('open');
+      authPanel.setAttribute('aria-hidden','false');
+      return;
+    }
+    if (u && !u.emailVerified){
+      alert(L('chat_need_verify','Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.'));
       return;
     }
     chatModal.classList.add('open');
@@ -2931,6 +2964,11 @@
       if (target === 'find-player'){
         closeMenu();
         setTimeout(() => { stepFindPlayer.dataset.openedFrom = 'menu'; renderFindPlayer(); slideTo(null, stepFindPlayer); }, 300);
+        return;
+      }
+      if (target === 'chat'){
+        closeMenu();
+        setTimeout(() => openChatModal(), 300);
         return;
       }
       const modalMap = {
@@ -4075,6 +4113,9 @@ T.en['chat_sub']       = 'You\'ll get a reply as soon as we see the message.'; T
 T.en['chat_empty']     = 'No messages yet. Say hi!';                           T.de['chat_empty']     = 'Noch keine Nachrichten. Schreib uns!';
 T.en['chat_input_ph']  = 'Type a message...';                                  T.de['chat_input_ph']  = 'Nachricht eingeben...';
 T.en['chat_need_login']= 'You need to be signed in to send a message.';        T.de['chat_need_login']= 'Du musst angemeldet sein, um eine Nachricht zu senden.';
+T.en['chat_need_verify']= 'You need to verify your email first. Check your inbox or tap "Resend email" in your profile.';
+T.de['chat_need_verify']= 'Du musst zuerst deine E-Mail bestätigen. Prüfe dein Postfach oder tippe „E-Mail erneut senden" im Profil.';
+T.en['menu_chat']      = 'Messages with the manager';                          T.de['menu_chat']      = 'Nachrichten mit dem Manager';
 T.en['chat_send_fail'] = 'Message not sent';                                   T.de['chat_send_fail'] = 'Nachricht nicht gesendet';
 T.en['aria_send']      = 'Send';                                               T.de['aria_send']      = 'Senden';
 
