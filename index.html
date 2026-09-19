@@ -2646,14 +2646,13 @@
   if (revChip){
     revChip.addEventListener('click', () => openInfoModal('modalReviews'));
   }
+  // Back arrow inside info-modals: just close the modal and reveal whatever
+  // was visible underneath (hero, booking form, etc.). Previously it re-
+  // opened the burger menu, which forced the visitor into an extra step.
   document.querySelectorAll('[data-back-to-menu]').forEach(btn => {
     btn.addEventListener('click', () => {
       if (navigator.vibrate) navigator.vibrate(20);
       closeInfoModal(btn.dataset.backToMenu);
-      setTimeout(() => {
-        menuOverlay.classList.add('open');
-        menuOverlay.setAttribute('aria-hidden','false');
-      }, 200);
     });
   });
 
