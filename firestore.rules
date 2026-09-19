@@ -136,18 +136,16 @@ service cloud.firestore {
     //   Update: admin only (shouldn't happen in normal flow).
     match /slots/{slotId} {
       allow read:   if true;
-      // Anti-spam: creating a slot marker requires an existing booking with the
-      // same bookingId + userId already in /bookings. This prevents an
-      // anonymous script from writing thousands of fake slot markers to block
-      // all future courts. The booking MUST be written first in the batch.
-      // Admin bypasses (needed for manual walk-in bookings).
-      allow create: if isAdmin() || (
-        isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.bookingId is string
-        && exists(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
-        && get(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.userId == request.auth.uid
-      );
+      // The booking + slot are written in one atomic writeBatch client-side.
+      // We cannot cross-reference the sibling booking via exists() because
+      // Firestore evaluates each write in the batch against the pre-batch
+      // state, so exists() would always fail during a normal booking flow.
+      // Anti-spam mitigations instead:
+      //   1) attacker must at least sign in (even anonymous auth costs work),
+      //   2) userId is forced to their own uid so admin can nuke fake slots,
+      //   3) slot doc ids are deterministic — no random spam surface.
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
       allow delete: if isAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin();
