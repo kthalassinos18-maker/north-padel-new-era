@@ -202,9 +202,12 @@
   .msg-chat-hdr strong{display:block;color:#f4f9ff;font-size:15px}
   .msg-chat-hdr small{display:block;color:rgba(244,249,255,0.5);font-size:12px;margin-top:2px}
   .msg-chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;min-height:0}
-  .msg-bubble{max-width:75%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.42;word-wrap:break-word;white-space:pre-wrap}
+  .msg-bubble{max-width:75%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.42;word-wrap:break-word;white-space:pre-wrap;position:relative}
   .msg-bubble.admin{align-self:flex-end;background:#b7ff4a;color:#0a1929;border-bottom-right-radius:4px}
   .msg-bubble.user{align-self:flex-start;background:rgba(255,255,255,0.09);color:#f4f9ff;border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:4px}
+  .msg-del{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#0a1929;color:#ff6b6b;border:1px solid rgba(255,107,107,0.5);cursor:pointer;font-size:14px;line-height:1;padding:0;display:none;align-items:center;justify-content:center}
+  .msg-bubble:hover .msg-del{display:flex}
+  .msg-del:hover{background:#ff6b6b;color:#0a1929}
   .msg-time{font-size:10px;margin-top:2px;opacity:0.65}
   .msg-chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,0.08);align-items:flex-end;background:rgba(10,25,41,0.5)}
   .msg-chat-input-row textarea{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:#f4f9ff;padding:10px 12px;font-family:inherit;font-size:14px;resize:none;max-height:140px;min-height:42px}
@@ -487,7 +490,10 @@
                 <strong id="msgChatName">—</strong>
                 <small id="msgChatMeta">—</small>
               </div>
-              <button type="button" class="btn" id="msgBackBtn" style="display:none">← ΠΙΣΩ</button>
+              <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+                <button type="button" class="btn danger" id="msgDeleteThread" title="Διαγραφή όλης της συνομιλίας">🗑</button>
+                <button type="button" class="btn" id="msgBackBtn" style="display:none">← ΠΙΣΩ</button>
+              </div>
             </div>
             <div id="msgChatBody" class="msg-chat-body"></div>
             <div class="msg-chat-input-row">
@@ -644,6 +650,20 @@
         text: clean,
         createdAt: serverTimestamp(),
       });
+      await batch.commit();
+    },
+    // Delete a single message from a thread.
+    deleteMessage: async (threadId, messageId) => {
+      await deleteDoc(doc(collection(doc(db, 'threads', threadId), 'messages'), messageId));
+    },
+    // Delete an entire thread (metadata + all messages). Rules only allow
+    // admin to delete /threads/{uid}, so we fetch the messages here and
+    // batch them together with the doc.
+    deleteThread: async (threadId) => {
+      const msgs = await getDocs(collection(doc(db, 'threads', threadId), 'messages'));
+      const batch = writeBatch(db);
+      msgs.forEach(m => batch.delete(m.ref));
+      batch.delete(doc(db, 'threads', threadId));
       await batch.commit();
     },
     // Mark the thread as read from the admin's side.
@@ -1693,9 +1713,20 @@ function renderMsgChat(messages){
   body.innerHTML = messages.map(m => {
     const cls = m.from === 'admin' ? 'admin' : 'user';
     const time = fmtRelTime(m.createdAt);
-    return `<div class="msg-bubble ${cls}">${esc(m.text)}<div class="msg-time">${time}</div></div>`;
+    return `<div class="msg-bubble ${cls}" data-mid="${esc(m.id)}">
+      <button class="msg-del" data-del-msg="${esc(m.id)}" title="Διαγραφή μηνύματος">×</button>
+      ${esc(m.text)}<div class="msg-time">${time}</div>
+    </div>`;
   }).join('');
   body.scrollTop = body.scrollHeight;
+  // Wire per-bubble delete buttons (admin only — the rule enforces it too).
+  body.querySelectorAll('[data-del-msg]').forEach(btn => btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!MSG_SELECTED) return;
+    if (!confirm('Διαγραφή αυτού του μηνύματος; Η ενέργεια δεν αναιρείται.')) return;
+    try { await window.npFB.deleteMessage(MSG_SELECTED, btn.dataset.delMsg); }
+    catch(err){ alert('Αποτυχία: ' + err.message); }
+  }));
 }
 async function doAdminSend(){
   const input = document.getElementById('msgChatInput');
@@ -1726,6 +1757,22 @@ document.getElementById('msgChatInput')?.addEventListener('input', (e) => {
 document.getElementById('msgBackBtn')?.addEventListener('click', () => {
   document.querySelector('.msg-list-pane')?.classList.remove('hide-on-mobile');
   document.querySelector('.msg-chat-pane')?.classList.add('hide-on-mobile');
+});
+document.getElementById('msgDeleteThread')?.addEventListener('click', async () => {
+  if (!MSG_SELECTED) return;
+  const t = MSG_THREADS.find(x => x.id === MSG_SELECTED);
+  const name = t ? (t.userName || t.userEmail || MSG_SELECTED) : MSG_SELECTED;
+  if (!confirm('Διαγραφή ΟΛΗΣ της συνομιλίας με ' + name + ';\n\nΘα σβήσουν όλα τα μηνύματα και δεν αναιρείται.')) return;
+  try {
+    await window.npFB.deleteThread(MSG_SELECTED);
+    // Tear down the live listener + go back to the empty right-pane state.
+    if (MSG_UNSUB_CHAT) { try { MSG_UNSUB_CHAT(); } catch(_){} MSG_UNSUB_CHAT = null; }
+    MSG_SELECTED = null;
+    document.getElementById('msgChatEmpty').style.display = '';
+    document.getElementById('msgChatActive').style.display = 'none';
+    document.querySelector('.msg-list-pane')?.classList.remove('hide-on-mobile');
+    document.querySelector('.msg-chat-pane')?.classList.add('hide-on-mobile');
+  } catch(e){ alert('Αποτυχία διαγραφής: ' + e.message); }
 });
 // Boot the inbox watcher after auth is confirmed (so the sidebar unread
 // badge starts counting the moment admin lands on any tab).
