@@ -827,7 +827,7 @@ function renderDashboard(){
   document.getElementById('stCashMonth').innerHTML = monthBk.filter(b=>b.payMethod==='cash').reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
   document.getElementById('stCardMonth').innerHTML = monthBk.filter(b=>b.payMethod==='card').reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
   document.getElementById('stMembers').textContent = users.length;
-  const pendingCount = users.filter(m => !m.welcomeCoupon && !(m.bookingsCount > 0) && !((window.npFB.ADMIN_EMAILS||[]).includes((m.email||'').toLowerCase()))).length;
+  const pendingCount = users.filter(m => !m.welcomeCoupon && !(m.bookingsCount > 0) && !m.couponReviewed && !((window.npFB.ADMIN_EMAILS||[]).includes((m.email||'').toLowerCase()))).length;
   document.getElementById('stPending').textContent = pendingCount;
   const badge = document.getElementById('memNavBadge');
   if (badge){
@@ -981,8 +981,9 @@ function renderMembers(){
     const bt = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
     return bt - at;
   });
-  // Pending = new signups with no bookings yet AND welcome coupon still off
-  const pending = users.filter(m => !isAdminEmail(m.email) && !m.welcomeCoupon && !(m.bookingsCount > 0));
+  // Pending = new signups with no bookings yet, welcome coupon still off,
+  // AND admin hasn't already reviewed (approved or rejected) them.
+  const pending = users.filter(m => !isAdminEmail(m.email) && !m.welcomeCoupon && !(m.bookingsCount > 0) && !m.couponReviewed);
   const pendingPanel = document.getElementById('pendingPanel');
   document.getElementById('pendingCount').textContent = pending.length;
   if (pendingPanel) pendingPanel.style.display = pending.length ? '' : 'none';
@@ -998,6 +999,7 @@ function renderMembers(){
       <td>${esc(created)}</td>
       <td style="text-align:right;white-space:nowrap">
         <button class="btn solid" data-approve-mem="${esc(m.uid)}" style="margin-right:4px">✓ ΕΝΕΡΓΟΠΟΙΗΣΗ −10%</button>
+        <button class="btn danger" data-reject-mem="${esc(m.uid)}" title="Απομακρύνει από την εκκρεμότητα χωρίς να δώσει έκπτωση. Ο λογαριασμός παραμένει.">✗ ΑΠΟΡΡΙΨΗ</button>
       </td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία εκκρεμότητα ✓</td></tr>';
@@ -1006,10 +1008,23 @@ function renderMembers(){
     btn.disabled = true; btn.textContent = 'Ενεργοποίηση...';
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
-      await setDoc(doc(window.npFB.db, 'users', uid), { welcomeCoupon: true }, { merge: true });
-      const u = CACHE.users.find(x => x.uid === uid); if (u) u.welcomeCoupon = true;
+      // Approve → grant welcome coupon AND mark as reviewed so a manual
+      // toggle-off later doesn't push them back into pending.
+      await setDoc(doc(window.npFB.db, 'users', uid), { welcomeCoupon: true, couponReviewed: true }, { merge: true });
+      const u = CACHE.users.find(x => x.uid === uid); if (u){ u.welcomeCoupon = true; u.couponReviewed = true; }
       renderMembers();
     } catch(e){ alert('Αποτυχία: '+e.message); btn.disabled = false; btn.textContent = '✓ ΕΝΕΡΓΟΠΟΙΗΣΗ −10%'; }
+  }));
+  document.querySelectorAll('[data-reject-mem]').forEach(btn => btn.addEventListener('click', async () => {
+    const uid = btn.dataset.rejectMem;
+    if (!confirm('Απόρριψη κουπονιού;\n\nΤο μέλος ΔΕΝ διαγράφεται — απλά δεν λαμβάνει το −10% καλωσόρισμα και βγαίνει από την εκκρεμότητα.')) return;
+    btn.disabled = true; btn.textContent = 'Απόρριψη...';
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+      await setDoc(doc(window.npFB.db, 'users', uid), { welcomeCoupon: false, couponReviewed: true }, { merge: true });
+      const u = CACHE.users.find(x => x.uid === uid); if (u){ u.welcomeCoupon = false; u.couponReviewed = true; }
+      renderMembers();
+    } catch(e){ alert('Αποτυχία: '+e.message); btn.disabled = false; btn.textContent = '✗ ΑΠΟΡΡΙΨΗ'; }
   }));
   const LEVEL_ICONS = ['🔰','🥉','🥈','🥇','🏆'];
   const LEVEL_NAMES = ['Beginner','Amateur','Regular','Pro','Champion'];
