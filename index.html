@@ -2553,8 +2553,10 @@
       alert(L('chat_need_verify','Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.'));
       return;
     }
-    // Slide the chat step-panel in like the other step-panels do.
-    stepChat.dataset.openedFrom = 'menu';
+    // Slide the chat step-panel in. Back arrow returns straight to the
+    // hero — the visitor came here from the floating support button, not
+    // from the burger menu, so there's no menu to reopen behind them.
+    stepChat.dataset.openedFrom = '';
     slideTo(null, stepChat);
     if (CHAT_UNSUB_MSGS) { try { CHAT_UNSUB_MSGS(); } catch(_){} }
     CHAT_UNSUB_MSGS = window.npFB.subscribeUserMessages(renderChatMessages);
