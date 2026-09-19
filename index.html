@@ -26,6 +26,11 @@
   .menu-btn:hover{background:rgba(15,37,64,0.85);transform:scale(1.05)}
   .menu-btn:active{transform:scale(0.95)}
   .player-btn{position:absolute;top:18px;right:18px;z-index:10;background:rgba(15,37,64,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(183,255,74,0.3);border-radius:14px;padding:8px;cursor:pointer;width:56px;height:52px;display:flex;align-items:center;justify-content:center;transition:transform .2s,background .2s}
+  .support-btn{position:absolute;top:18px;right:84px;z-index:10;background:rgba(15,37,64,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(183,255,74,0.3);border-radius:14px;cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;transition:transform .2s,background .2s}
+  .support-btn:hover{background:rgba(15,37,64,0.85);transform:scale(1.05)}
+  .support-btn:active{transform:scale(0.95)}
+  .support-icon{width:28px;height:28px;display:block}
+  .support-badge{position:absolute;top:-4px;right:-4px;background:#ff4a6b;color:#fff;font-size:11px;font-weight:700;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:flex;align-items:center;justify-content:center;letter-spacing:0;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.35);border:2px solid #0a1929}
   .player-btn:hover{background:rgba(15,37,64,0.85);transform:scale(1.05)}
   .player-btn:active{transform:scale(0.95)}
   .player-icon{width:38px;height:38px;display:block;overflow:visible}
@@ -144,7 +149,6 @@
   .chat-input:focus{outline:none;border-color:rgba(183,255,74,0.5)}
   .chat-send{background:#b7ff4a;color:#0a1929;border:0;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
   .chat-send:disabled{opacity:0.4;cursor:not-allowed}
-  .menu-chat-badge{display:inline-flex;align-items:center;justify-content:center;background:#ff4a6b;color:#fff;font-size:12px;font-weight:700;border-radius:999px;min-width:20px;height:20px;padding:0 6px;letter-spacing:0;margin-left:6px;vertical-align:middle;font-family:'Inter',sans-serif}
   .pf-save-btn:hover{background:#a3ec36}
   .pf-save-msg{text-align:center;color:#b7ff4a;font-size:13px;min-height:16px;margin-top:8px}
 
@@ -586,6 +590,14 @@
     </svg>
   </button>
 
+  <!-- Support / chat button — appears only for signed-in members; toggled by renderAuth() -->
+  <button class="support-btn" id="supportBtn" type="button" aria-label="Υποστήριξη" data-i18n-aria="aria_support" style="display:none">
+    <svg viewBox="0 0 24 24" class="support-icon" aria-hidden="true">
+      <path d="M12 3a8 8 0 0 0-8 8v4a3 3 0 0 0 3 3h1a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H6.06A6 6 0 0 1 12 5a6 6 0 0 1 5.94 6H16a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1.5A2.5 2.5 0 0 1 15 20.5h-2a1 1 0 0 0 0 2h2A4.5 4.5 0 0 0 19.47 18H17a3 3 0 0 0 3-3v-4a8 8 0 0 0-8-8z" fill="#b7ff4a"/>
+    </svg>
+    <span class="support-badge" id="supportBadge" style="display:none">1</span>
+  </button>
+
   <button class="door-hotspot" id="doorHotspot" type="button" aria-label="Πήγαινε στο Γήπεδο 2" data-i18n-aria="aria_goto_c2">
     <span class="door-label">
       <span class="door-label-row">
@@ -870,7 +882,6 @@
     </div>
     <button type="button" class="mnu-item" data-menu-item data-open-section="equipment" data-i18n="menu_equipment">Εξοπλισμός</button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="find-player" data-i18n="menu_find">Βρες παίκτη</button>
-    <button type="button" class="mnu-item mnu-item-chat" id="menuChatItem" data-menu-item data-open-section="chat" style="display:none">💬 <span data-i18n="menu_chat">Μηνύματα με τον διαχειριστή</span> <span class="menu-chat-badge" id="menuChatBadge" style="display:none">1</span></button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="what-is-padel" data-i18n="menu_what">Padel → Τι είναι?</button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="gallery" data-i18n="menu_gallery">Gallery</button>
     <button type="button" class="mnu-item" data-menu-item data-open-section="about" data-i18n="menu_about">Σχετικά με εμάς</button>
@@ -2109,13 +2120,13 @@
       loginF.style.display = 'flex';
       signupF.style.display = 'none';
     }
-    // Show/hide the "Μηνύματα με τον διαχειριστή" item in the burger menu.
-    // Only signed-in users can chat (guests + anon are locked out at the
-    // Firestore rule layer anyway).
-    const chatMenuItem = document.getElementById('menuChatItem');
-    if (chatMenuItem) chatMenuItem.style.display = u ? '' : 'none';
-    // Also (re)wire the live unread badge on the menu item so it works
-    // even before the visitor opens their profile.
+    // Show / hide the floating support button next to the player icon.
+    // Only signed-in members can chat (guests + anon are locked out at
+    // the Firestore rule layer anyway).
+    const supportBtn = document.getElementById('supportBtn');
+    if (supportBtn) supportBtn.style.display = u ? 'flex' : 'none';
+    // (Re)wire the live unread badge so it lights up the instant the
+    // admin replies, without needing to open the panel first.
     wireGlobalChatBadge(u);
     // Show/hide the guest-booking hint on the booking form
     const gn = document.getElementById('guestNote');
@@ -2489,13 +2500,18 @@
   let CHAT_UNSUB_GLOBAL_META = null;
   function wireGlobalChatBadge(u){
     if (CHAT_UNSUB_GLOBAL_META) { try { CHAT_UNSUB_GLOBAL_META(); } catch(_){} CHAT_UNSUB_GLOBAL_META = null; }
-    const badge = document.getElementById('menuChatBadge');
+    const badge = document.getElementById('supportBadge');
     if (!badge) return;
     if (!u){ badge.style.display = 'none'; return; }
     CHAT_UNSUB_GLOBAL_META = window.npFB.subscribeUserThreadMeta((meta) => {
-      badge.style.display = (meta && meta.unreadForUser) ? 'inline-flex' : 'none';
+      badge.style.display = (meta && meta.unreadForUser) ? 'flex' : 'none';
     });
   }
+  // Support button next to the profile icon → open the chat step-panel.
+  document.getElementById('supportBtn')?.addEventListener('click', () => {
+    if (navigator.vibrate) navigator.vibrate(20);
+    openChatModal();
+  });
 
   // Real-time chat with the admin. Uses onSnapshot listeners; we keep two
   // unsubscribe handles so leaving the profile (or opening the chat with a
@@ -4088,6 +4104,7 @@ T.en['chat_need_verify']= 'You need to verify your email first. Check your inbox
 T.de['chat_need_verify']= 'Du musst zuerst deine E-Mail bestätigen. Prüfe dein Postfach oder tippe „E-Mail erneut senden" im Profil.';
 T.en['menu_chat']      = 'Messages with the manager';                          T.de['menu_chat']      = 'Nachrichten mit dem Manager';
 T.en['chat_crumb']     = '💬 CHAT';                                            T.de['chat_crumb']     = '💬 CHAT';
+T.en['aria_support']   = 'Support / chat with the manager';                    T.de['aria_support']   = 'Support / Chat mit dem Manager';
 T.en['chat_send_fail'] = 'Message not sent';                                   T.de['chat_send_fail'] = 'Nachricht nicht gesendet';
 T.en['aria_send']      = 'Send';                                               T.de['aria_send']      = 'Senden';
 
