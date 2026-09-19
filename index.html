@@ -1602,12 +1602,32 @@
     return bookingRef.id;
   }
   async function cancelBookingDoc(id, date, court, time){
+    // Grab booking details BEFORE the batch so we can craft the WhatsApp
+    // notice with the actual member name / phone / players etc.
+    let details = null;
+    try {
+      const snap = await getDoc(doc(db, 'bookings', id));
+      if (snap.exists()) details = snap.data();
+    } catch(_){}
     const batch = writeBatch(db);
     batch.update(doc(db, 'bookings', id), { status: 'cancelled', cancelledAt: serverTimestamp() });
     if (date && court && time){
+      // Deleting the /slots marker re-opens the time to online bookings.
       batch.delete(doc(db, 'slots', slotId(date, court, time)));
     }
     await batch.commit();
+    // Notify every admin so whoever's on shift can react quickly.
+    try {
+      const who = details ? ((details.name||'') + (details.phone ? ' · ' + details.phone : '')) : '(άγνωστος)';
+      const players = details && details.players ? details.players + 'άδα' : '';
+      notifyAdminWhatsApp(
+        '❌ Ακύρωση κράτησης North Padel\n' +
+        '📛 ' + (who||'—') + '\n' +
+        '📅 ' + (date||'—') + ' · ' + (time||'—') + '\n' +
+        '🎾 ' + (court||'—') + (players ? ' · ' + players : '') + '\n\n' +
+        '✅ Η θέση είναι ξανά διαθέσιμη online.'
+      );
+    } catch(e){ console.warn('cancel wa', e); }
   }
   // Phone verification helpers. We link a phone credential to the user's
   // existing email/password account so the account gets a verified phone

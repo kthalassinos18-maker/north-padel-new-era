@@ -167,6 +167,22 @@
     .gate-btn{padding:14px;font-size:14px;min-height:48px}
   }
 
+  /* ============ GIFTS CELL ============ */
+  .gifts-cell{display:flex;flex-direction:column;gap:8px;min-width:280px}
+  .gifts-summary{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:12px;line-height:1.3}
+  .gifts-active{color:#b7ff4a;font-weight:600}
+  .gifts-none{color:rgba(244,249,255,0.35);font-style:italic}
+  .gift-row{display:flex;align-items:center;gap:10px;padding:4px 0}
+  .gift-label{flex:1;font-size:12px;color:rgba(244,249,255,0.8);display:flex;align-items:center;gap:6px;min-width:0}
+  .gift-label small{color:rgba(244,249,255,0.4);font-size:10px;font-weight:400}
+  .gift-ico{font-size:15px;flex-shrink:0}
+  .gift-status{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:0.14em;font-weight:600;padding:3px 8px;border-radius:5px;flex-shrink:0}
+  .gift-status.on{background:rgba(183,255,74,0.18);color:#b7ff4a;border:1px solid rgba(183,255,74,0.4)}
+  .gift-status.off{background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3)}
+  .gift-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .gift-stepper .btn{padding:5px 10px;font-size:13px;min-width:32px}
+  .gift-stepper .gift-val{min-width:44px;text-align:center;font-size:14px;color:#f4f9ff}
+
   /* ============ MESSAGES ============ */
   .msg-layout{display:grid;grid-template-columns:280px 1fr;gap:0;padding:0;overflow:hidden;height:calc(100vh - 200px);min-height:520px}
   .msg-list-pane{border-right:1px solid rgba(255,255,255,0.08);overflow-y:auto}
@@ -931,6 +947,18 @@ function renderBookings(){
   }));
 }
 
+// Short one-line summary of a member's currently-active gifts, used at
+// the top of the Δώρα cell so the admin can see what the member gets
+// without decoding three separate rows.
+function giftSummary(m){
+  const parts = [];
+  if (m.welcomeCoupon) parts.push('🎁 −10% καλωσόρισμα');
+  if ((+m.freeCourts||0) > 0) parts.push('🎾 ' + m.freeCourts + ' δωρεάν γήπεδ' + (m.freeCourts===1?'ο':'α'));
+  if ((+m.couponPct||0) > 0)  parts.push('🎫 −' + m.couponPct + '% κουπόνι');
+  if (!parts.length) return '<span class="gifts-none">Χωρίς ενεργά δώρα</span>';
+  return '<span class="gifts-active">' + parts.join(' · ') + '</span>';
+}
+
 function renderMembers(){
   const users = [...CACHE.users];
   // Sort: admin emails first, then by createdAt (newest first)
@@ -990,27 +1018,33 @@ function renderMembers(){
       <td>${marketing}</td>
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
       <td>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="gift-row" style="display:flex;align-items:center;gap:10px">
-            <span title="Καλωσόρισμα -10% (μία μόνο κράτηση)" style="min-width:22px;font-size:16px">🎁</span>
+        <div class="gifts-cell">
+          <div class="gifts-summary">${giftSummary(m)}</div>
+          <div class="gift-row">
+            <span class="gift-label"><span class="gift-ico">🎁</span>Καλωσόρισμα −10% <small>(μία φορά)</small></span>
             <label class="sw"><input type="checkbox" class="gift-toggle" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" ${m.welcomeCoupon?'checked':''}><span class="sw-slider"></span></label>
-            <span class="gift-toggle-txt" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.12em;color:${m.welcomeCoupon?'#b7ff4a':'#ff6b6b'}">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</span>
+            <span class="gift-status ${m.welcomeCoupon?'on':'off'}">${m.welcomeCoupon?'ΕΝΕΡΓΟ':'ΑΝΕΝΕΡΓΟ'}</span>
           </div>
-          <div class="gift-row" style="display:flex;align-items:center;gap:8px">
-            <span title="Δωρεάν γήπεδα" style="min-width:22px;font-size:16px">🎾</span>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="-1" style="padding:6px 12px;font-size:14px;min-width:34px">−</button>
-            <b class="gift-val" style="min-width:32px;text-align:center;font-size:15px">${+m.freeCourts||0}</b>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="+1" style="padding:6px 12px;font-size:14px;min-width:34px">+</button>
+          <div class="gift-row">
+            <span class="gift-label"><span class="gift-ico">🎾</span>Δωρεάν γήπεδα</span>
+            <div class="gift-stepper">
+              <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="-1">−</button>
+              <b class="gift-val">${+m.freeCourts||0}</b>
+              <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="+1">+</button>
+            </div>
           </div>
-          <div class="gift-row" style="display:flex;align-items:center;gap:8px">
-            <span title="Κουπόνι έκπτωσης %" style="min-width:22px;font-size:16px">🎫</span>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="-5" style="padding:6px 10px;font-size:13px;min-width:38px">−5</button>
-            <b class="gift-val" style="min-width:48px;text-align:center;font-size:15px">${+m.couponPct||0}%</b>
-            <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="+5" style="padding:6px 10px;font-size:13px;min-width:38px">+5</button>
+          <div class="gift-row">
+            <span class="gift-label"><span class="gift-ico">🎫</span>Κουπόνι έκπτωσης</span>
+            <div class="gift-stepper">
+              <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="-5">−5</button>
+              <b class="gift-val">${+m.couponPct||0}%</b>
+              <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="+5">+5</button>
+            </div>
           </div>
         </div>
       </td>
       <td style="text-align:right;white-space:nowrap">
+        <button class="btn" data-msg-mem="${esc(m.uid)}" style="margin-right:4px" title="Στείλε μήνυμα">💬</button>
         <button class="btn" data-edit-mem="${esc(m.uid)}" style="margin-right:4px">✎ Edit</button>
         <button class="btn danger" data-del-mem="${esc(m.uid)}">Διαγραφή</button>
       </td>
@@ -1029,6 +1063,29 @@ function renderMembers(){
     const m = CACHE.users.find(x => x.uid === uid);
     if (!m) return;
     openMemberEditor(m);
+  }));
+  // Admin-initiated message: open the messages tab focused on this user.
+  // If no thread exists yet, we seed the metadata doc so it appears in
+  // the inbox list; the actual first message is whatever admin types.
+  document.querySelectorAll('[data-msg-mem]').forEach(btn => btn.addEventListener('click', async () => {
+    const uid = btn.dataset.msgMem;
+    const m = CACHE.users.find(x => x.uid === uid);
+    if (!m) return;
+    // Seed / update the thread metadata so the inbox shows this contact
+    // even before any messages exist.
+    try {
+      const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+      await setDoc(doc(window.npFB.db, 'threads', uid), {
+        userName:  ((m.name||'') + ' ' + (m.surname||'')).trim() || m.email || 'Παίκτης',
+        userEmail: m.email || '',
+        userPhone: m.phone || '',
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    } catch(e){ console.warn('seed thread', e); }
+    // Navigate to the Messages tab and focus this thread.
+    showSection('messages');
+    // Wait a tick so the inbox listener has time to include the new thread
+    setTimeout(() => selectMsgThread(uid), 400);
   }));
   document.querySelectorAll('.gift-toggle').forEach(inp => inp.addEventListener('change', async () => {
     const uid = inp.dataset.uid;
