@@ -274,7 +274,7 @@
         <h3>ΝΕΑ ΚΡΑΤΗΣΗ (ΧΕΙΡΟΚΙΝΗΤΗ) <span class="actions"><button class="btn solid" id="addBookingBtn2">+ ΠΡΟΣΘΗΚΗ</button></span></h3>
         <div class="form-grid">
           <div class="field"><label>ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="bkDate2"></div>
-          <div class="field"><label>ΩΡΑ (24h)</label><input type="text" inputmode="numeric" pattern="[0-9]{1,2}:[0-9]{2}" maxlength="5" id="bkTime2" value="19:30" placeholder="HH:MM"></div>
+          <div class="field"><label>ΩΡΑ</label><select id="bkTime2"><option value="">— Επίλεξε ημερομηνία πρώτα —</option></select></div>
           <div class="field"><label>ΓΗΠΕΔΟ</label><select id="bkCourt2"><option>Γήπεδο 1</option><option>Γήπεδο 2</option></select></div>
           <div class="field"><label>ΠΑΙΚΤΕΣ</label><select id="bkPlayers2"><option value="4">4άδα · 44€</option><option value="2">2άδα · 30€</option></select></div>
           <div class="field"><label>ΟΝΟΜΑ ΠΑΙΚΤΗ</label><input type="text" id="bkName2" placeholder="π.χ. Γιάννης Παπαδόπουλος"></div>
@@ -1025,7 +1025,7 @@ async function doManualBooking(suffix){
   const players = +document.getElementById('bkPlayers'+suffix).value;
   const name = document.getElementById('bkName'+suffix).value.trim();
   const phone = document.getElementById('bkPhone'+suffix).value.trim();
-  if (!date || !name || !phone){ alert('Συμπλήρωσε ημερομηνία, όνομα και τηλέφωνο.'); return; }
+  if (!date || !time || !name || !phone){ alert('Συμπλήρωσε ημερομηνία, ώρα, όνομα και τηλέφωνο.'); return; }
   const total = players === 4 ? CACHE.prices.p4 : CACHE.prices.p2;
   try {
     const { collection, doc, writeBatch, getDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
@@ -1272,7 +1272,58 @@ async function refreshAll(){
   renderDashboard(); renderBookings(); renderMembers(); renderSessions(); renderPrices();
   renderUpcomingClosures();
   bulkPopulateSlots();
+  refreshManualTimeSlots();
 }
+
+// Populate the manual-booking time <select> with the active season's slots
+// for the picked date + court, greying out ones that are booked / closed.
+// Called on refresh and whenever date/court changes.
+function refreshManualTimeSlots(){
+  const sel = document.getElementById('bkTime2');
+  if (!sel) return;
+  const dateEl = document.getElementById('bkDate2');
+  const courtEl = document.getElementById('bkCourt2');
+  const date = dateEl ? dateEl.value : '';
+  const court = courtEl ? courtEl.value : '';
+  if (!date){
+    sel.innerHTML = '<option value="">— Επίλεξε ημερομηνία πρώτα —</option>';
+    return;
+  }
+  const season = (CACHE.schedule && CACHE.schedule.activeSeason) || 'summer';
+  const allSlots = ((CACHE.schedule && CACHE.schedule[season]) || []).filter(s => s.enabled !== false);
+  const bookedTimes = new Set(
+    (CACHE.bookings || [])
+      .filter(b => b.status !== 'cancelled' && b.date === date && b.court === court)
+      .map(b => b.time)
+  );
+  const closedTimes = new Set(closuresCache[date] || []);
+  const prev = sel.value;
+  sel.innerHTML = '';
+  if (!allSlots.length){
+    sel.innerHTML = '<option value="">— Καμία ώρα στο πρόγραμμα —</option>';
+    return;
+  }
+  let firstFree = '';
+  for (const s of allSlots){
+    const time = `${s.start}-${s.end}`;
+    const endLabel = s.end === '24:00' ? '00:00' : s.end;
+    let label = `${s.start} – ${endLabel}`;
+    if (s.period) label += ` · ${s.period}`;
+    let disabled = false;
+    if (bookedTimes.has(time)){ label += ' — ΚΡΑΤΗΜΕΝΟ'; disabled = true; }
+    else if (closedTimes.has(time)){ label += ' — ΚΛΕΙΣΤΟ'; disabled = true; }
+    else if (!firstFree){ firstFree = time; }
+    const opt = document.createElement('option');
+    opt.value = time; opt.textContent = label; opt.disabled = disabled;
+    sel.appendChild(opt);
+  }
+  // Keep the admin's previous pick if it's still free, else pick first free slot.
+  if (prev && [...sel.options].some(o => o.value === prev && !o.disabled)) sel.value = prev;
+  else if (firstFree) sel.value = firstFree;
+}
+// Wire live updates: whenever the admin changes date or court the list re-filters.
+document.getElementById('bkDate2')?.addEventListener('change', refreshManualTimeSlots);
+document.getElementById('bkCourt2')?.addEventListener('change', refreshManualTimeSlots);
 /* ============ MEMBER EDIT MODAL ============ */
 let EDITING_UID = null;
 const memModal = document.getElementById('memModal');
