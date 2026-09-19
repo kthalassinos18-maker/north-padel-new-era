@@ -1439,9 +1439,9 @@
     });
     // Send verification email — non-blocking; failure shouldn't block signup
     try { await sendEmailVerification(cred.user); } catch(e){ console.warn('verify email', e); }
-    // Notify admin(s) via WhatsApp that a new member is waiting for coupon approval
+    // Notify OWNER only (Κώστας) — signup coupon approvals are the owner's call.
     try {
-      notifyAdminWhatsApp(
+      notifyOwnerWhatsApp(
         '👤 Νέα εγγραφή North Padel!\n' +
         '📛 ' + (name||'') + ' ' + (surname||'') + '\n' +
         '📧 ' + email + '\n' +
@@ -1503,15 +1503,19 @@
   // ---- WhatsApp notification to admin(s) via CallMeBot ----
   // Fire-and-forget; failures never block the booking. Each recipient
   // must register their own phone with CallMeBot to get an apikey.
+  const KOSTAS = { phone: '306951784471', apikey: '7073800' };
+  // Bookings ping every admin so anyone on duty sees a new booking.
   const CALLMEBOT_RECIPIENTS = [
-    { phone: '306951784471', apikey: '7073800' }, // Κώστας
+    KOSTAS,
     { phone: '306984519796', apikey: '8270557' },
     { phone: '306934391978', apikey: '6394858' }, // Ανδρέας
   ];
-  async function notifyAdminWhatsApp(text){
+  // Signups only ping the owner (Κώστας) — coupon approvals are the
+  // owner's call, no need to spam every co-admin.
+  const OWNER_ONLY_RECIPIENTS = [KOSTAS];
+  function sendWhatsApp(recipients, text){
     const encoded = encodeURIComponent(text);
-    // Fire all requests in parallel — no await on the results.
-    for (const r of CALLMEBOT_RECIPIENTS){
+    for (const r of recipients){
       const url = 'https://api.callmebot.com/whatsapp.php'
         + '?phone=' + encodeURIComponent(r.phone)
         + '&apikey=' + encodeURIComponent(r.apikey)
@@ -1519,6 +1523,8 @@
       fetch(url, { mode: 'no-cors' }).catch(e => console.warn('callmebot', r.phone, e));
     }
   }
+  async function notifyAdminWhatsApp(text){ sendWhatsApp(CALLMEBOT_RECIPIENTS, text); }
+  async function notifyOwnerWhatsApp(text){ sendWhatsApp(OWNER_ONLY_RECIPIENTS, text); }
 
   function slotId(date, court, time){
     return (date + '_' + court + '_' + time).replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -1662,7 +1668,7 @@
     onAuth: (cb) => onAuthStateChanged(auth, cb),
     fetchProfile, updateProfile, ensureProfile, createBookingDoc, listUserBookings,
     resetPassword, changePassword, getConfig, resendVerification, findBooking, listBookingsOnDate,
-    notifyAdminWhatsApp, cancelBookingDoc, ensureGuestAuth,
+    notifyAdminWhatsApp, notifyOwnerWhatsApp, cancelBookingDoc, ensureGuestAuth,
     startPhoneVerification, confirmPhoneOTP,
     createBookingWithSlot, listOccupiedTimes, listOccupiedMonth, isSlotFree,
     upsertPublicProfile, removePublicProfile, listLookingForGame,
