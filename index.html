@@ -128,26 +128,18 @@
   .sw input:checked + .sw-slider{background:rgba(183,255,74,0.55)}
   .sw input:checked + .sw-slider::before{transform:translateX(22px);background:#0a1929}
   .pf-save-btn{background:#b7ff4a;color:#0a1929;padding:14px;border-radius:11px;border:0;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;cursor:pointer;width:100%}
-  .pf-chat-btn{position:relative;background:rgba(183,255,74,0.08);border:1px solid rgba(183,255,74,0.35);color:#f4f9ff;padding:14px;border-radius:11px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.08em;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;transition:background .2s}
-  .pf-chat-btn:hover{background:rgba(183,255,74,0.15)}
-  .pf-chat-ico{font-size:18px}
-  .pf-chat-badge{background:#ff4a6b;color:#fff;font-size:11px;font-weight:700;border-radius:999px;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;letter-spacing:0}
-  /* Chat modal — sits on top of everything, WhatsApp-style bubbles */
-  .chat-modal{position:fixed;inset:0;background:rgba(4,12,22,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:2000;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s ease;pointer-events:none}
-  .chat-modal.open{transform:translateY(0);pointer-events:auto}
-  .chat-hdr{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(10,25,41,0.7)}
-  .chat-hdr .chat-back{width:40px;height:40px;border-radius:50%;background:rgba(183,255,74,0.12);border:1px solid rgba(183,255,74,0.3);color:#b7ff4a;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .chat-hdr .chat-title{flex:1;min-width:0}
-  .chat-hdr .chat-title strong{display:block;font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:0.06em;color:#f4f9ff}
-  .chat-hdr .chat-title small{color:rgba(244,249,255,0.5);font-size:12px}
-  .chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+  /* Chat step-panel — matches the site's step-panel design (Combos,
+     Find a Player, Calendar). WhatsApp-style bubbles. */
+  .chat-panel{max-width:640px;margin:0 auto;display:flex;flex-direction:column;height:calc(100dvh - 120px);width:100%}
+  .chat-sub{color:rgba(244,249,255,0.55);font-size:13px;padding:0 4px 10px;margin:0}
+  .chat-body{flex:1;overflow-y:auto;padding:14px 4px;display:flex;flex-direction:column;gap:8px;min-height:0;background:rgba(0,0,0,0.15);border-radius:14px}
   .chat-empty{margin:auto;text-align:center;color:rgba(244,249,255,0.4);font-size:13px;padding:24px}
   .chat-bubble{max-width:82%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.42;word-wrap:break-word;white-space:pre-wrap}
-  .chat-bubble.you{align-self:flex-end;background:#b7ff4a;color:#0a1929;border-bottom-right-radius:4px}
-  .chat-bubble.them{align-self:flex-start;background:rgba(255,255,255,0.09);color:#f4f9ff;border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:4px}
+  .chat-bubble.you{align-self:flex-end;background:#b7ff4a;color:#0a1929;border-bottom-right-radius:4px;margin-right:6px}
+  .chat-bubble.them{align-self:flex-start;background:rgba(255,255,255,0.09);color:#f4f9ff;border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:4px;margin-left:6px}
   .chat-time{font-size:10px;color:rgba(0,0,0,0.55);margin-top:2px;text-align:right}
   .chat-bubble.them .chat-time{color:rgba(244,249,255,0.4);text-align:left}
-  .chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(10,25,41,0.9);align-items:flex-end}
+  .chat-input-row{display:flex;gap:8px;padding:10px 0 0;align-items:flex-end;flex-shrink:0}
   .chat-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;color:#f4f9ff;padding:12px 14px;font-family:'Inter',sans-serif;font-size:14px;resize:none;max-height:120px;min-height:44px}
   .chat-input:focus{outline:none;border-color:rgba(183,255,74,0.5)}
   .chat-send{background:#b7ff4a;color:#0a1929;border:0;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
@@ -1427,25 +1419,28 @@
   </div>
 </div>
 
-<!-- ============ 1-ON-1 CHAT MODAL (member ↔ admin) ============ -->
-<div class="chat-modal" id="chatModal" aria-hidden="true">
-  <div class="chat-hdr">
-    <button class="chat-back" id="chatCloseBtn" type="button" aria-label="Κλείσιμο" data-i18n-aria="aria_close">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<!-- ============ 1-ON-1 CHAT (member ↔ admin) — step-panel ============ -->
+<section class="step-panel" id="stepChat" aria-hidden="true">
+  <header class="step-header">
+    <button class="step-back" data-back="hero" type="button" aria-label="Πίσω" data-i18n-aria="aria_back">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
-    <div class="chat-title">
-      <strong data-i18n="chat_title">Επικοινωνία με τον διαχειριστή</strong>
-      <small data-i18n="chat_sub">Θα σου απαντήσει μόλις δει το μήνυμα.</small>
+    <div class="step-title-block">
+      <span class="step-crumb" data-i18n="chat_crumb">💬 CHAT</span>
+      <h2 data-i18n="chat_title">Επικοινωνία με τον διαχειριστή</h2>
+    </div>
+  </header>
+  <div class="chat-panel">
+    <p class="chat-sub" data-i18n="chat_sub">Θα σου απαντήσει μόλις δει το μήνυμα.</p>
+    <div class="chat-body" id="chatBody">
+      <div class="chat-empty" data-i18n="chat_empty" id="chatEmpty">Δεν υπάρχουν μηνύματα ακόμα. Γράψε το πρώτο!</div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" maxlength="1000" placeholder="Γράψε ένα μήνυμα..." data-i18n-ph="chat_input_ph"></textarea>
+      <button class="chat-send" id="chatSendBtn" type="button" aria-label="Αποστολή" data-i18n-aria="aria_send">➤</button>
     </div>
   </div>
-  <div class="chat-body" id="chatBody">
-    <div class="chat-empty" data-i18n="chat_empty" id="chatEmpty">Δεν υπάρχουν μηνύματα ακόμα. Γράψε το πρώτο!</div>
-  </div>
-  <div class="chat-input-row">
-    <textarea class="chat-input" id="chatInput" rows="1" maxlength="1000" placeholder="Γράψε ένα μήνυμα..." data-i18n-ph="chat_input_ph"></textarea>
-    <button class="chat-send" id="chatSendBtn" type="button" aria-label="Αποστολή" data-i18n-aria="aria_send">➤</button>
-  </div>
-</div>
+</section>
 
 <!-- Invisible reCAPTCHA host for Firebase Phone Auth -->
 <div id="recaptcha-container" style="position:fixed;bottom:-9999px;left:-9999px"></div>
@@ -2426,18 +2421,11 @@
         </div>
       </div>
 
-      <button type="button" class="pf-chat-btn" id="openChatBtn">
-        <span class="pf-chat-ico">💬</span>
-        <span>${L('chat_open_btn','Στείλε μήνυμα στον διαχειριστή')}</span>
-        <span class="pf-chat-badge" id="pfChatBadge" style="display:none">1</span>
-      </button>
-
       <button type="button" class="pf-save-btn" id="saveProfileBtn">${L('pf_save','ΑΠΟΘΗΚΕΥΣΗ')}</button>
       <div class="pf-save-msg" id="saveProfileMsg"></div>
     `;
 
     renderMyBookings(u);
-    wireProfileChat(u);
 
     // Chip toggles
     document.querySelectorAll('#profileFull .pf-chip').forEach(c => {
@@ -2514,7 +2502,7 @@
   // different account) tears everything down cleanly.
   let CHAT_UNSUB_MSGS = null;
   let CHAT_UNSUB_META = null;
-  const chatModal = document.getElementById('chatModal');
+  const stepChat = document.getElementById('stepChat');
 
   function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
   function formatChatTime(ts){
@@ -2536,26 +2524,11 @@
     body.scrollTop = body.scrollHeight;
   }
 
-  function wireProfileChat(u){
-    const btn = document.getElementById('openChatBtn');
-    if (!btn) return;
-    btn.addEventListener('click', () => openChatModal());
-    // Subscribe to thread metadata so we can show a red unread badge on
-    // the profile chat button. Detach any previous subscription first.
-    if (CHAT_UNSUB_META) { try { CHAT_UNSUB_META(); } catch(_){} CHAT_UNSUB_META = null; }
-    CHAT_UNSUB_META = window.npFB.subscribeUserThreadMeta((meta) => {
-      const badge = document.getElementById('pfChatBadge');
-      if (!badge) return;
-      badge.style.display = (meta && meta.unreadForUser) ? 'inline-flex' : 'none';
-    });
-  }
-  window.wireProfileChat = wireProfileChat;
 
   function openChatModal(){
     const u = currentUser();
     if (!u){
       alert(L('chat_need_login','Πρέπει να είσαι συνδεδεμένος για να στείλεις μήνυμα.'));
-      // Open the auth panel so the user knows what to do next.
       authPanel.classList.add('open');
       authPanel.setAttribute('aria-hidden','false');
       return;
@@ -2564,24 +2537,22 @@
       alert(L('chat_need_verify','Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.'));
       return;
     }
-    chatModal.classList.add('open');
-    chatModal.setAttribute('aria-hidden','false');
-    document.body.style.overflow = 'hidden';
-    // Subscribe to live messages
+    // Slide the chat step-panel in like the other step-panels do.
+    stepChat.dataset.openedFrom = 'menu';
+    slideTo(null, stepChat);
     if (CHAT_UNSUB_MSGS) { try { CHAT_UNSUB_MSGS(); } catch(_){} }
     CHAT_UNSUB_MSGS = window.npFB.subscribeUserMessages(renderChatMessages);
-    // Mark admin messages as read
     window.npFB.markUserRead().catch(()=>{});
-    // Focus input on next tick
     setTimeout(() => { document.getElementById('chatInput')?.focus(); }, 400);
   }
-  function closeChatModal(){
-    chatModal.classList.remove('open');
-    chatModal.setAttribute('aria-hidden','true');
-    document.body.style.overflow = '';
+  // Tear down the live message listener when the chat panel closes so we
+  // aren't holding an idle Firestore listener open.
+  function detachChatListener(){
     if (CHAT_UNSUB_MSGS) { try { CHAT_UNSUB_MSGS(); } catch(_){} CHAT_UNSUB_MSGS = null; }
   }
-  document.getElementById('chatCloseBtn')?.addEventListener('click', closeChatModal);
+  // The step-back handler already runs slideBack — hook in to detach when
+  // the user leaves the chat panel.
+  document.querySelector('#stepChat .step-back')?.addEventListener('click', detachChatListener);
 
   async function doSendChat(){
     const input = document.getElementById('chatInput');
@@ -4116,6 +4087,7 @@ T.en['chat_need_login']= 'You need to be signed in to send a message.';        T
 T.en['chat_need_verify']= 'You need to verify your email first. Check your inbox or tap "Resend email" in your profile.';
 T.de['chat_need_verify']= 'Du musst zuerst deine E-Mail bestätigen. Prüfe dein Postfach oder tippe „E-Mail erneut senden" im Profil.';
 T.en['menu_chat']      = 'Messages with the manager';                          T.de['menu_chat']      = 'Nachrichten mit dem Manager';
+T.en['chat_crumb']     = '💬 CHAT';                                            T.de['chat_crumb']     = '💬 CHAT';
 T.en['chat_send_fail'] = 'Message not sent';                                   T.de['chat_send_fail'] = 'Nachricht nicht gesendet';
 T.en['aria_send']      = 'Send';                                               T.de['aria_send']      = 'Senden';
 
