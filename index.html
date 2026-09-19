@@ -2623,10 +2623,17 @@
   }
   menuClose.addEventListener('click', closeMenu);
 
-  // Info modals
-  function openInfoModal(id){
+  // Info modals — track WHERE each modal was opened from so the back arrow
+  // returns to that exact source (menu, another modal, or plain hero) instead
+  // of dumping the visitor at the top of the site.
+  //   source values:
+  //     'menu'         — burger menu was open when this modal was launched
+  //     'modalXxx'     — chained from another info modal, reopen it on back
+  //     null / other   — from the hero (no re-open needed on back)
+  function openInfoModal(id, source){
     const m = document.getElementById(id);
     if (!m) return;
+    if (source !== undefined) m.dataset.openedFrom = source || '';
     m.classList.add('open');
     m.setAttribute('aria-hidden','false');
     document.body.style.overflow='hidden';
@@ -2641,18 +2648,29 @@
   document.querySelectorAll('[data-close-modal]').forEach(btn => {
     btn.addEventListener('click', () => closeInfoModal(btn.dataset.closeModal));
   });
-  // Reviews chip opens the reviews info-modal
+  // Reviews chip opens the reviews info-modal from the hero directly.
   const revChip = document.getElementById('revChip');
   if (revChip){
-    revChip.addEventListener('click', () => openInfoModal('modalReviews'));
+    revChip.addEventListener('click', () => openInfoModal('modalReviews', 'hero'));
   }
-  // Back arrow inside info-modals: just close the modal and reveal whatever
-  // was visible underneath (hero, booking form, etc.). Previously it re-
-  // opened the burger menu, which forced the visitor into an extra step.
+  // Back arrow inside info-modals: return to whichever surface opened it.
   document.querySelectorAll('[data-back-to-menu]').forEach(btn => {
     btn.addEventListener('click', () => {
       if (navigator.vibrate) navigator.vibrate(20);
-      closeInfoModal(btn.dataset.backToMenu);
+      const modalId = btn.dataset.backToMenu;
+      const m = document.getElementById(modalId);
+      const src = m ? (m.dataset.openedFrom || '') : '';
+      closeInfoModal(modalId);
+      setTimeout(() => {
+        if (src === 'menu'){
+          menuOverlay.classList.add('open');
+          menuOverlay.setAttribute('aria-hidden','false');
+        } else if (src && src.indexOf('modal') === 0){
+          // Chained from another modal — reopen it (preserve its own source too).
+          openInfoModal(src);
+        }
+        // 'hero' or empty → nothing to reopen, hero is already underneath.
+      }, 200);
     });
   });
 
@@ -2667,12 +2685,12 @@
       const target = link.dataset.openSection;
       if (target === 'combos'){
         closeMenu();
-        setTimeout(() => slideTo(null, stepCombos), 300);
+        setTimeout(() => { stepCombos.dataset.openedFrom = 'menu'; slideTo(null, stepCombos); }, 300);
         return;
       }
       if (target === 'find-player'){
         closeMenu();
-        setTimeout(() => { renderFindPlayer(); slideTo(null, stepFindPlayer); }, 300);
+        setTimeout(() => { stepFindPlayer.dataset.openedFrom = 'menu'; renderFindPlayer(); slideTo(null, stepFindPlayer); }, 300);
         return;
       }
       const modalMap = {
@@ -2685,7 +2703,7 @@
       };
       if (modalMap[target]){
         closeMenu();
-        setTimeout(() => openInfoModal(modalMap[target]), 300);
+        setTimeout(() => openInfoModal(modalMap[target], 'menu'), 300);
         return;
       }
       alert('"' + link.textContent + '" — ' + L('coming_soon','σύντομα!'));
@@ -2710,12 +2728,12 @@
         const target = a.dataset.openSection;
         if (target === 'parties'){
           closeMenu();
-          setTimeout(() => openInfoModal('modalParties'), 300);
+          setTimeout(() => openInfoModal('modalParties', 'menu'), 300);
           return;
         }
         if (target === 'coaching'){
           closeMenu();
-          setTimeout(() => openInfoModal('modalCoaching'), 300);
+          setTimeout(() => openInfoModal('modalCoaching', 'menu'), 300);
           return;
         }
         alert('"' + a.textContent + '" — ' + L('coming_soon','σύντομα!'));
@@ -2860,7 +2878,19 @@
         }, 1500);
         return;
       }
+      // If this "root" step was opened from the burger menu (Offers, Find
+      // Player, etc.), the back arrow should reopen the menu instead of
+      // dumping the visitor at the hero. slideBack handles the panel exit
+      // exactly the same either way.
+      const openedFrom = currentStep && currentStep.dataset.openedFrom;
       slideBack(currentStep, back);
+      if (back === 'hero' && openedFrom === 'menu'){
+        currentStep.dataset.openedFrom = ''; // consumed
+        setTimeout(() => {
+          menuOverlay.classList.add('open');
+          menuOverlay.setAttribute('aria-hidden','false');
+        }, 200);
+      }
     });
   });
 
