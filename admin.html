@@ -317,6 +317,15 @@
         </table></div>
       </div>
 
+      <div class="panel" id="unpaidPanel" style="display:none;border:1px solid rgba(255,180,60,0.4);background:rgba(255,180,60,0.05)">
+        <h3 style="color:#ffb43c">⚠️ ΕΚΚΡΕΜΟΤΗΤΕΣ ΠΛΗΡΩΜΗΣ <span class="actions"><span class="pill" style="background:rgba(255,180,60,0.2);color:#ffb43c" id="unpaidCount">0</span></span></h3>
+        <p style="color:rgba(244,249,255,0.55);font-size:12px;margin:0 0 10px">Παλιές κρατήσεις που δεν έχει καταχωρηθεί τρόπος πληρωμής. Δεν μπαίνουν στο ιστορικό μέχρι να τις κλείσεις.</p>
+        <div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Πληρωμή</th><th>Κατάσταση</th><th></th></tr></thead>
+          <tbody id="tblUnpaid"></tbody>
+        </table></div>
+      </div>
+
       <div class="panel" id="pastPanel" style="opacity:0.9">
         <h3 style="color:rgba(244,249,255,0.7)">🕓 ΠΑΛΙΕΣ ΚΡΑΤΗΣΕΙΣ <span class="actions"><span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)" id="pastCount">0</span></span></h3>
         <div class="tbl-scroll"><table class="tbl">
@@ -882,6 +891,15 @@ function renderBookings(){
     if (futurePanel) futurePanel.style.display = '';
     if (pastPanel)   pastPanel.style.display   = '';
   }
+  // Split past into "needs a payment method" (blocking) and "clean history".
+  // Only past bookings still in status 'ok' count as pending payment —
+  // cancelled ones don't need money logged.
+  const unpaidList = pastList.filter(b => b.status === 'ok' && (!b.payMethod || b.payMethod === 'pending'));
+  pastList = pastList.filter(b => !(b.status === 'ok' && (!b.payMethod || b.payMethod === 'pending')));
+  const unpaidPanel = document.getElementById('unpaidPanel');
+  const unpaidCountEl = document.getElementById('unpaidCount');
+  if (unpaidPanel) unpaidPanel.style.display = (BOOKINGS_FILTER_DATE || !unpaidList.length) ? 'none' : '';
+  if (unpaidCountEl) unpaidCountEl.textContent = unpaidList.length;
   const futureCount = document.getElementById('futureCount');
   const pastCount   = document.getElementById('pastCount');
   if (futureCount) futureCount.textContent = futureList.length;
@@ -892,13 +910,19 @@ function renderBookings(){
   const tblToday = document.getElementById('tblToday');
   const todayCount = document.getElementById('todayCount');
   if (todayCount) todayCount.textContent = todayList.length;
+  // Helpers defined below in the same function scope
+  const _todayCellName = (b) => `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${b.adminNote ? ' 📝' : ''}`;
+  const _todayCellActions = (b) => `<div style="display:flex;gap:4px;justify-content:flex-end">
+      <button class="btn" data-note-bk="${esc(b.id)}" title="Σχόλιο${b.adminNote ? ': ' + esc(b.adminNote) : ''}" style="padding:5px 8px">📝</button>
+      <button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button>
+    </div>`;
   if (tblToday){
     tblToday.innerHTML = todayList.length ? todayList.map(b => {
       const pay = b.payMethod || 'pending';
       return `<tr style="background:rgba(183,255,74,0.06)">
         <td><b>${esc(b.time||'')}</b></td>
         <td>${esc(b.court||'')}</td>
-        <td>${esc(b.name||'')}</td>
+        <td>${_todayCellName(b)}</td>
         <td>${esc(b.phone||'')}</td>
         <td>${+b.players||0}άδα</td>
         <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
@@ -910,17 +934,27 @@ function renderBookings(){
           </select>
         </td>
         <td>${pillFor(b.status)}</td>
-        <td style="text-align:right"><button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button></td>
+        <td style="text-align:right">${_todayCellActions(b)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν υπάρχει κράτηση για σήμερα.</td></tr>';
   }
   const PAY_LABELS = { cash:'💵 Μετρητά', card:'💳 Κάρτα', pending:'⏳ Εκκρεμεί' };
+  function nameCellHtml(b){
+    const noteMark = b.adminNote ? ' 📝' : '';
+    return `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${noteMark}`;
+  }
+  function actionCellHtml(b){
+    return `<div style="display:flex;gap:4px;justify-content:flex-end">
+      <button class="btn" data-note-bk="${esc(b.id)}" title="Σχόλιο${b.adminNote ? ': ' + esc(b.adminNote) : ''}" style="padding:5px 8px">📝</button>
+      <button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button>
+    </div>`;
+  }
   function rowHtml(b, faded){
     const pay = b.payMethod || 'pending';
     const rowStyle = faded ? ' style="opacity:0.75"' : '';
     return `<tr${rowStyle}>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
-      <td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td>
+      <td>${nameCellHtml(b)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td>
       <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
       <td>
         <select data-pay="${esc(b.id)}" class="pay-sel" style="padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(10,25,41,0.6);color:${pay==='cash'?'#b7ff4a':pay==='card'?'#4a9fff':'#ffc14a'};font-size:12px;font-family:inherit;cursor:pointer">
@@ -930,11 +964,13 @@ function renderBookings(){
         </select>
       </td>
       <td>${pillFor(b.status)}</td>
-      <td style="text-align:right"><button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button></td>
+      <td style="text-align:right">${actionCellHtml(b)}</td>
     </tr>`;
   }
+  const tblUnpaid = document.getElementById('tblUnpaid');
   const tblFuture = document.getElementById('tblFuture');
   const tblPast   = document.getElementById('tblPast');
+  if (tblUnpaid) tblUnpaid.innerHTML = unpaidList.map(b => rowHtml(b, false)).join('');
   if (tblFuture) tblFuture.innerHTML = futureList.map(b => rowHtml(b, false)).join('') || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία μελλοντική κράτηση.</td></tr>';
   if (tblPast)   tblPast.innerHTML   = pastList.map(b => rowHtml(b, true)).join('')   || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία παλιά κράτηση.</td></tr>';
   document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', async () => {
@@ -964,6 +1000,35 @@ function renderBookings(){
     try {
       await window.npFB.updateBooking(btn.dataset.editPrice, { total: n });
       await refreshAll();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  // Edit booking's customer name (click anywhere on the name text).
+  document.querySelectorAll('[data-edit-name]').forEach(el => el.addEventListener('click', async () => {
+    const id = el.dataset.editName;
+    const b = CACHE.bookings.find(x => x.id === id);
+    if (!b) return;
+    const ans = prompt('Όνομα πελάτη:', b.name || '');
+    if (ans === null) return;
+    const clean = ans.trim();
+    if (!clean){ alert('Το όνομα δεν μπορεί να είναι κενό.'); return; }
+    try {
+      await window.npFB.updateBooking(id, { name: clean });
+      b.name = clean;
+      renderBookings();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  // Admin-only note per booking (private, internal reminder).
+  document.querySelectorAll('[data-note-bk]').forEach(btn => btn.addEventListener('click', async () => {
+    const id = btn.dataset.noteBk;
+    const b = CACHE.bookings.find(x => x.id === id);
+    if (!b) return;
+    const ans = prompt('📝 Σχόλιο για αυτή την κράτηση (μόνο εσύ το βλέπεις). Άδειο = διαγραφή σχολίου.', b.adminNote || '');
+    if (ans === null) return; // cancelled
+    const clean = ans.trim().slice(0, 500);
+    try {
+      await window.npFB.updateBooking(id, { adminNote: clean });
+      b.adminNote = clean;
+      renderBookings();
     } catch(e){ alert('Αποτυχία: '+e.message); }
   }));
 }
