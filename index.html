@@ -1008,6 +1008,10 @@
         <span><span data-i18n="form_premium_balls">Premium μπαλάκια</span> <em class="label-hint" data-i18n="form_balls_h">(+€8 σύνολο)</em></span>
       </label>
     </div>
+    <div class="form-field">
+      <label data-i18n="form_note">ΚΩΔΙΚΟΣ / ΣΧΟΛΙΟ <span class="label-hint" data-i18n="form_note_h">(προαιρετικό)</span></label>
+      <input type="text" id="fNote" maxlength="200" placeholder="π.χ. VILLA15" data-i18n-ph="form_note_ph">
+    </div>
     <div class="total-box">
       <div>
         <span class="total-label" data-i18n="form_total">ΣΥΝΟΛΟ</span>
@@ -3282,6 +3286,7 @@
     e.preventDefault();
     const name = document.getElementById('fName').value.trim();
     const phone = document.getElementById('fPhone').value.trim();
+    const customerNote = document.getElementById('fNote').value.trim().slice(0, 200);
     if (!name || !phone){ alert(L('need_name_phone','Συμπλήρωσε όνομα και τηλέφωνο.')); return; }
     if (!selectedDate || !selectedSession){
       alert(L('need_date_time','Επίλεξε πρώτα ημερομηνία και ώρα.'));
@@ -3386,6 +3391,7 @@
       gross,
       discountKind,
       name, phone,
+      ...(customerNote ? { customerNote } : {}),
       status: 'ok',
       userId: bookerUid,
       userEmail: bookerEmail,
@@ -3920,6 +3926,12 @@ T.en['cancel_inline']  = '📋 <b>Cancellation policy:</b> Free <b>&gt;48h</b> i
 /* ---- New placeholder / aria-label keys ---- */
 T.en['form_name_ph'] = 'Your name';
 T.de['form_name_ph'] = 'Dein Name';
+T.en['form_note']    = 'CODE / NOTE';
+T.de['form_note']    = 'CODE / NOTIZ';
+T.en['form_note_h']  = '(optional)';
+T.de['form_note_h']  = '(optional)';
+T.en['form_note_ph'] = 'e.g. VILLA15';
+T.de['form_note_ph'] = 'z. B. VILLA15';
 T.en['aria_back']    = 'Back';
 T.de['aria_back']    = 'Zurück';
 T.en['aria_close']   = 'Close';

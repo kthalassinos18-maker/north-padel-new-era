@@ -92,6 +92,13 @@ service cloud.firestore {
         && request.resource.data.name.size() > 0
         && request.resource.data.phone is string
         && request.resource.data.phone.size() > 0
+        // Optional free-text note the customer can leave at booking time
+        // (e.g. a partner discount code like "VILLA15") — admin reviews
+        // it manually and applies the discount by hand, nothing here
+        // auto-grants anything.
+        && (!('customerNote' in request.resource.data)
+            || (request.resource.data.customerNote is string
+                && request.resource.data.customerNote.size() <= 200))
         // Registered-user path: verified email required.
         // Guest path: must set guest==true and be anonymous auth.
         && (

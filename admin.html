@@ -1011,7 +1011,15 @@ function renderBookings(){
   const todayCount = document.getElementById('todayCount');
   if (todayCount) todayCount.textContent = todayList.length;
   // Helpers defined below in the same function scope
-  const _todayCellName = (b) => `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${b.adminNote ? ' 📝' : ''}`;
+  // Customer-submitted note/code (e.g. a partner discount code like
+  // "VILLA15") — shown as a small tag under the name so admin sees it
+  // without opening anything, then verifies it against Συνεργάτες and
+  // applies the discount manually via the price button.
+  function customerNoteTag(b){
+    if (!b.customerNote) return '';
+    return `<div style="font-size:11px;color:#ffc14a;margin-top:2px" title="Κωδικός/σχόλιο πελάτη">🏷️ ${esc(b.customerNote)}</div>`;
+  }
+  const _todayCellName = (b) => `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${b.adminNote ? ' 📝' : ''}${customerNoteTag(b)}`;
   const _todayCellActions = (b) => `<div style="display:flex;gap:4px;justify-content:flex-end">
       <button class="btn" data-note-bk="${esc(b.id)}" title="Σχόλιο${b.adminNote ? ': ' + esc(b.adminNote) : ''}" style="padding:5px 8px">📝</button>
       <button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button>
@@ -1041,7 +1049,7 @@ function renderBookings(){
   const PAY_LABELS = { cash:'💵 Μετρητά', card:'💳 Κάρτα', pending:'⏳ Εκκρεμεί' };
   function nameCellHtml(b){
     const noteMark = b.adminNote ? ' 📝' : '';
-    return `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${noteMark}`;
+    return `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${noteMark}${customerNoteTag(b)}`;
   }
   function actionCellHtml(b){
     return `<div style="display:flex;gap:4px;justify-content:flex-end">
