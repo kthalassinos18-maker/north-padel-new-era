@@ -871,6 +871,26 @@ function renderDashboard(){
 }
 
 let BOOKINGS_FILTER_DATE = '';
+// A booking "has ended" once its session end time is in the past — even
+// if its `date` is still today. Used to pull finished today's courts out
+// of ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ and into the payment-pending / past flow the
+// moment they're over, instead of waiting for midnight.
+function bookingHasEnded(b){
+  if (!b.date || !b.time) return false;
+  const endStr = String(b.time).split('-')[1];
+  if (!endStr) return false;
+  let endDate = b.date;
+  let end = endStr.trim();
+  if (end === '24:00'){
+    // Session crosses midnight — end time is 00:00 on the NEXT day.
+    const d = new Date(b.date + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    endDate = d.toISOString().slice(0,10);
+    end = '00:00';
+  }
+  return new Date(endDate + 'T' + end + ':00').getTime() <= Date.now();
+}
+
 function renderBookings(){
   const todayISO = new Date().toISOString().slice(0,10);
   const all = [...CACHE.bookings];
@@ -884,9 +904,12 @@ function renderBookings(){
     if (todayPanel) todayPanel.style.display = 'none';
     if (pastPanel)  pastPanel.style.display  = 'none';
   } else {
-    todayList  = all.filter(b => b.date === todayISO).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+    // "Today" now only holds courts still ongoing/upcoming today. Ones
+    // whose time has already passed fall through to the past bucket
+    // below (and from there, into ΕΚΚΡΕΜΟΤΗΤΕΣ ΠΛΗΡΩΜΗΣ if unpaid).
+    todayList  = all.filter(b => b.date === todayISO && !bookingHasEnded(b)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
     futureList = all.filter(b => (b.date||'') > todayISO).sort((a,b) => (a.date||'').localeCompare(b.date||'') || (a.time||'').localeCompare(b.time||''));
-    pastList   = all.filter(b => (b.date||'') < todayISO).sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.time||'').localeCompare(a.time||''));
+    pastList   = all.filter(b => (b.date||'') < todayISO || (b.date === todayISO && bookingHasEnded(b))).sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.time||'').localeCompare(a.time||''));
     if (todayPanel)  todayPanel.style.display  = '';
     if (futurePanel) futurePanel.style.display = '';
     if (pastPanel)   pastPanel.style.display   = '';
@@ -1555,6 +1578,12 @@ async function refreshAll(){
   refreshManualTimeSlots();
   if (typeof startMessagesInboxWatcher === 'function') startMessagesInboxWatcher();
 }
+
+// Re-render just the bookings tables every minute (no network fetch) so a
+// court that finishes while the admin has the tab open moves itself from
+// ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ into ΕΚΚΡΕΜΟΤΗΤΕΣ ΠΛΗΡΩΜΗΣ / ΠΑΛΙΕΣ without needing a
+// manual refresh.
+setInterval(() => { if (appEl.classList.contains('show')) renderBookings(); }, 60000);
 
 // Populate the manual-booking time <select> with the active season's slots
 // for the picked date + court, greying out ones that are booked / closed.
