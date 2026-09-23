@@ -2816,16 +2816,35 @@
   // Load the admin's chosen schedule at boot
   loadSchedule();
   let OCCUPIED_SLOTS = new Set();
+  // Once the selected day is TODAY, any session whose start time has
+  // already passed gets crossed out too — you can't book 09:00-10:30
+  // at 9pm. Only applies when selectedDate is today; future dates are
+  // untouched. Uses selectedDate's own local Y/M/D so this can't drift
+  // with timezone the way toISOString() would.
+  function isSlotPastToday(time){
+    if (!selectedDate || !time) return false;
+    const now = new Date();
+    const isToday = selectedDate.getFullYear() === now.getFullYear()
+      && selectedDate.getMonth() === now.getMonth()
+      && selectedDate.getDate() === now.getDate();
+    if (!isToday) return false;
+    const startStr = time.split('-')[0];
+    const [hh, mm] = startStr.split(':').map(Number);
+    if (isNaN(hh) || isNaN(mm)) return false;
+    const slotStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hh, mm, 0);
+    return slotStart.getTime() <= now.getTime();
+  }
   function applyDisabledSessions(){
     document.querySelectorAll('.session-slot').forEach(btn => {
       const t = btn.dataset.time;
       const globallyOff = DISABLED_SESSIONS.has(t);
       const occupied   = OCCUPIED_SLOTS.has(t);
-      if (globallyOff || occupied){
+      const pastToday  = isSlotPastToday(t);
+      if (globallyOff || occupied || pastToday){
         btn.classList.add('taken');
         btn.disabled = true;
         btn.setAttribute('aria-disabled','true');
-        btn.title = occupied ? 'Κρατημένο ήδη' : 'Δεν είναι διαθέσιμο';
+        btn.title = pastToday ? 'Η ώρα έχει περάσει' : (occupied ? 'Κρατημένο ήδη' : 'Δεν είναι διαθέσιμο');
       } else {
         btn.classList.remove('taken');
         btn.disabled = false;
@@ -2858,6 +2877,10 @@
   }
   window.refreshSessionsForDate = refreshSessionsForDate;
   loadDisabledSessions();
+  // Keep "today" up to date live: if a visitor lingers on the sessions
+  // step across a slot's start time, it crosses itself out without
+  // needing a re-tap on the date.
+  setInterval(() => { if (stepSessions && stepSessions.classList.contains('open')) applyDisabledSessions(); }, 60000);
   // Refresh disabled state each time sessions step opens (in case admin
   // just toggled something in the other tab).
   ctaBtn.addEventListener('click', () => setTimeout(loadDisabledSessions, 100));
