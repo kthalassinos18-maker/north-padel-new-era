@@ -205,6 +205,14 @@ service cloud.firestore {
       }
     }
 
+    // /partners/{id} — Admin's private CRM for business partners
+    //   (villas, agencies, concierge services, coaches, suppliers, etc.)
+    //   Contact details + deal notes ("−15% κωδικός, 2 δωρεάν κρατήσεις").
+    //   Nothing here is ever read by the public site — admin-only, full stop.
+    match /partners/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // /public_profiles/{uid} — Match-making snapshot.
     //   Owner writes/deletes. Any signed-in user reads (so Find a Player
     //   works). Only fields the user opted to share are stored here.

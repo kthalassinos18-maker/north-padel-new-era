@@ -257,6 +257,7 @@
     <button class="nav-item" data-section="prices"><span class="nav-ico">💶</span><span>Τιμές</span></button>
     <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Sessions</span></button>
     <button class="nav-item" data-section="messages"><span class="nav-ico">💬</span><span>Μηνύματα</span><span class="nav-badge" id="msgNavBadge" style="display:none">0</span></button>
+    <button class="nav-item" data-section="partners"><span class="nav-ico">🤝</span><span>Συνεργάτες</span></button>
     <div class="sidebar-foot">
       <button class="logout" id="logout">ΑΠΟΣΥΝΔΕΣΗ</button>
     </div>
@@ -513,7 +514,62 @@
         </div>
       </div>
     </section>
+
+    <!-- =========== PARTNERS (private CRM) =========== -->
+    <section class="section" id="sec-partners">
+      <div class="panel">
+        <h3>🤝 ΣΥΝΕΡΓΑΤΕΣ <span class="actions">
+          <span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)" id="partnersCount">0</span>
+          <button type="button" class="btn solid" id="addPartnerBtn">+ ΝΕΟΣ ΣΥΝΕΡΓΑΤΗΣ</button>
+        </span></h3>
+        <p style="color:rgba(244,249,255,0.5);font-size:12px;margin:0 0 14px">Ιδιωτικές επαφές — villas, agencies, concierge, προπονητές, προμηθευτές. Μόνο εσύ βλέπεις αυτή τη λίστα.</p>
+        <div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th>Όνομα</th><th>Τύπος</th><th>Επαφή</th><th>Συμφωνία</th><th>Σημειώσεις</th><th></th></tr></thead>
+          <tbody id="tblPartners"><tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Φόρτωση...</td></tr></tbody>
+        </table></div>
+      </div>
+    </section>
   </main>
+</div>
+
+<!-- ============ PARTNER EDIT MODAL ============ -->
+<div class="mem-modal" id="partnerModal" aria-hidden="true">
+  <div class="mem-card">
+    <button class="mem-close" id="partnerClose" type="button" aria-label="Κλείσιμο">×</button>
+    <h2 class="mem-title" id="partnerModalTitle">Νέος Συνεργάτης</h2>
+    <div class="mem-body">
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>ΟΝΟΜΑ / ΕΠΩΝΥΜΙΑ *</label><input type="text" id="pt_name" placeholder="π.χ. Halkidiki Villas, Villa Sabbia, Γιώργος (coach)"></div>
+        <div class="field"><label>ΤΥΠΟΣ</label>
+          <select id="pt_type">
+            <option value="villa">🏡 Villa</option>
+            <option value="agency">🏢 Villa Agency</option>
+            <option value="concierge">🛎 Concierge</option>
+            <option value="hotel">🏨 Ξενοδοχείο</option>
+            <option value="coach">🎾 Προπονητής</option>
+            <option value="supplier">📦 Προμηθευτής</option>
+            <option value="other">✨ Άλλο</option>
+          </select>
+        </div>
+        <div class="field"><label>ΥΠΕΥΘΥΝΟΣ ΕΠΑΦΗΣ</label><input type="text" id="pt_contact"></div>
+        <div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input type="tel" id="pt_phone"></div>
+        <div class="field"><label>EMAIL</label><input type="email" id="pt_email"></div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>🎁 ΣΥΜΦΩΝΙΑ / ΠΟΣΟΣΤΟ / ΔΩΡΑ <span style="color:rgba(244,249,255,0.4);font-weight:400">(π.χ. κωδικός −15% στους πελάτες τους, 2 δωρεάν κρατήσεις/χρόνο σε εκείνους)</span></label>
+        <textarea id="pt_deal" rows="2" placeholder="π.χ. Κωδικός VILLA15 → -15% στους επισκέπτες τους. Σε αντάλλαγμα: 2 δωρεάν κρατήσεις/έτος για τον ιδιοκτήτη." style="padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;resize:vertical;min-width:100%;max-width:100%"></textarea>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>📝 ΣΗΜΕΙΩΣΕΙΣ <span style="color:rgba(244,249,255,0.4);font-weight:400">(μόνο εσύ βλέπεις)</span></label>
+        <textarea id="pt_notes" rows="3" placeholder="οτιδήποτε άλλο θες να θυμάσαι..." style="padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;resize:vertical;min-width:100%;max-width:100%"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button type="button" class="btn solid" id="partnerSaveBtn" style="flex:1;padding:12px">💾 ΑΠΟΘΗΚΕΥΣΗ</button>
+      <button type="button" class="btn" id="partnerCancelBtn" style="padding:12px 18px">Ακύρωση</button>
+    </div>
+    <div class="mem-msg" id="partnerMsg" style="text-align:center;font-size:13px;min-height:16px;margin-top:8px"></div>
+  </div>
 </div>
 
 <!-- ============ MEMBER EDIT MODAL ============ -->
@@ -675,6 +731,21 @@
       batch.delete(doc(db, 'threads', threadId));
       await batch.commit();
     },
+    // ---- Partners CRM (villas, agencies, coaches, suppliers, etc.) ----
+    listPartners: async () => {
+      const snap = await getDocs(query(collection(db, 'partners'), orderBy('name')));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    },
+    savePartner: async (id, data) => {
+      if (id){
+        await updateDoc(doc(db, 'partners', id), { ...data, updatedAt: serverTimestamp() });
+        return id;
+      }
+      const ref = await addDoc(collection(db, 'partners'), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      return ref.id;
+    },
+    deletePartner: (id) => deleteDoc(doc(db, 'partners', id)),
+
     // Mark the thread as read from the admin's side.
     markAdminRead: async (threadId) => {
       try {
@@ -762,6 +833,7 @@ const titles = {
   prices:    ['Τιμές', 'Τιμοκατάλογος γηπέδων και combo'],
   hours:     ['Sessions', 'Ενεργοποίηση/απενεργοποίηση slot κράτησης'],
   messages:  ['Μηνύματα', 'Απευθείας επικοινωνία με τα μέλη'],
+  partners:  ['Συνεργάτες', 'Ιδιωτικές επαφές και συμφωνίες — villas, agencies, coaches, προμηθευτές'],
 };
 function showSection(name){
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === name));
@@ -769,6 +841,7 @@ function showSection(name){
   document.getElementById('pageTitle').textContent = titles[name][0];
   document.getElementById('pageSub').textContent = titles[name][1];
   if (name === 'messages') openMessagesTab();
+  if (name === 'partners') renderPartners();
 }
 document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => showSection(n.dataset.section)));
 
@@ -1709,6 +1782,96 @@ document.getElementById('bkFilterClear').addEventListener('click', () => {
   renderBookings();
 });
 window.showSection = showSection;
+
+/* ============ PARTNERS (private CRM) ============ */
+const PARTNER_TYPE_LABELS = {
+  villa: '🏡 Villa', agency: '🏢 Agency', concierge: '🛎 Concierge',
+  hotel: '🏨 Ξενοδοχείο', coach: '🎾 Προπονητής', supplier: '📦 Προμηθευτής', other: '✨ Άλλο',
+};
+let PARTNERS_CACHE = [];
+let EDITING_PARTNER_ID = null;
+const partnerModal = document.getElementById('partnerModal');
+
+async function renderPartners(){
+  const tbody = document.getElementById('tblPartners');
+  if (!tbody) return;
+  await waitFB();
+  try {
+    PARTNERS_CACHE = await window.npFB.listPartners();
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ff6b6b;padding:20px">Αποτυχία φόρτωσης: ${esc(e.message)}</td></tr>`;
+    return;
+  }
+  document.getElementById('partnersCount').textContent = PARTNERS_CACHE.length;
+  tbody.innerHTML = PARTNERS_CACHE.length ? PARTNERS_CACHE.map(p => `
+    <tr>
+      <td><b>${esc(p.name||'—')}</b></td>
+      <td>${esc(PARTNER_TYPE_LABELS[p.type] || p.type || '—')}</td>
+      <td>${[esc(p.contactPerson||''), esc(p.phone||''), esc(p.email||'')].filter(Boolean).join('<br>') || '—'}</td>
+      <td style="max-width:220px;white-space:pre-wrap">${esc(p.dealNotes||'') || '<span style="color:rgba(244,249,255,0.35)">—</span>'}</td>
+      <td style="max-width:180px;white-space:pre-wrap;color:rgba(244,249,255,0.6)">${esc(p.notes||'') || '—'}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn" data-edit-partner="${esc(p.id)}" style="margin-right:4px">✎ Edit</button>
+        <button class="btn danger" data-del-partner="${esc(p.id)}">Διαγραφή</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν έχεις προσθέσει συνεργάτες ακόμα.</td></tr>';
+  document.querySelectorAll('[data-edit-partner]').forEach(btn => btn.addEventListener('click', () => {
+    const p = PARTNERS_CACHE.find(x => x.id === btn.dataset.editPartner);
+    if (p) openPartnerEditor(p);
+  }));
+  document.querySelectorAll('[data-del-partner]').forEach(btn => btn.addEventListener('click', async () => {
+    const p = PARTNERS_CACHE.find(x => x.id === btn.dataset.delPartner);
+    if (!confirm('Διαγραφή συνεργάτη "' + (p ? p.name : '') + '";')) return;
+    try {
+      await window.npFB.deletePartner(btn.dataset.delPartner);
+      await renderPartners();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+}
+
+function openPartnerEditor(p){
+  EDITING_PARTNER_ID = p ? p.id : null;
+  document.getElementById('partnerModalTitle').textContent = p ? 'Επεξεργασία Συνεργάτη' : 'Νέος Συνεργάτης';
+  document.getElementById('pt_name').value    = p ? (p.name||'') : '';
+  document.getElementById('pt_type').value    = p ? (p.type||'villa') : 'villa';
+  document.getElementById('pt_contact').value = p ? (p.contactPerson||'') : '';
+  document.getElementById('pt_phone').value   = p ? (p.phone||'') : '';
+  document.getElementById('pt_email').value   = p ? (p.email||'') : '';
+  document.getElementById('pt_deal').value    = p ? (p.dealNotes||'') : '';
+  document.getElementById('pt_notes').value   = p ? (p.notes||'') : '';
+  document.getElementById('partnerMsg').textContent = '';
+  partnerModal.classList.add('open');
+  partnerModal.setAttribute('aria-hidden','false');
+}
+function closePartnerEditor(){
+  partnerModal.classList.remove('open');
+  partnerModal.setAttribute('aria-hidden','true');
+  EDITING_PARTNER_ID = null;
+}
+document.getElementById('addPartnerBtn')?.addEventListener('click', () => openPartnerEditor(null));
+document.getElementById('partnerClose')?.addEventListener('click', closePartnerEditor);
+document.getElementById('partnerCancelBtn')?.addEventListener('click', closePartnerEditor);
+partnerModal?.addEventListener('click', (e) => { if (e.target === partnerModal) closePartnerEditor(); });
+document.getElementById('partnerSaveBtn')?.addEventListener('click', async () => {
+  const msg = document.getElementById('partnerMsg');
+  const name = document.getElementById('pt_name').value.trim();
+  if (!name){ msg.style.color = '#ff6b6b'; msg.textContent = 'Το όνομα είναι υποχρεωτικό.'; return; }
+  msg.style.color = 'rgba(244,249,255,0.6)'; msg.textContent = 'Αποθήκευση...';
+  const patch = {
+    name,
+    type:          document.getElementById('pt_type').value,
+    contactPerson: document.getElementById('pt_contact').value.trim(),
+    phone:         document.getElementById('pt_phone').value.trim(),
+    email:         document.getElementById('pt_email').value.trim(),
+    dealNotes:     document.getElementById('pt_deal').value.trim().slice(0, 1000),
+    notes:         document.getElementById('pt_notes').value.trim().slice(0, 1000),
+  };
+  try {
+    await window.npFB.savePartner(EDITING_PARTNER_ID, patch);
+    closePartnerEditor();
+    await renderPartners();
+  } catch(e){ msg.style.color = '#ff6b6b'; msg.textContent = 'Αποτυχία: ' + e.message; }
+});
 
 /* ============ MESSAGES (admin ↔ member) ============ */
 // State: current thread list, currently-selected thread id, listener handles.
