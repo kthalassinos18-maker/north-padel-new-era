@@ -2513,11 +2513,9 @@
     openChatModal();
   });
 
-  // Real-time chat with the admin. Uses onSnapshot listeners; we keep two
-  // unsubscribe handles so leaving the profile (or opening the chat with a
-  // different account) tears everything down cleanly.
+  // Real-time chat with the admin. Uses onSnapshot listeners; unsubscribed
+  // on close/logout so we don't leak idle Firestore listeners.
   let CHAT_UNSUB_MSGS = null;
-  let CHAT_UNSUB_META = null;
   const stepChat = document.getElementById('stepChat');
 
   function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
@@ -4096,7 +4094,6 @@ T.en['fp_default_name']       = 'Player';                                      T
 T.en['fp_load_fail']          = 'Could not load players';                      T.de['fp_load_fail']          = 'Spieler konnten nicht geladen werden';
 
 // Chat (member ↔ admin)
-T.en['chat_open_btn']  = 'Message the manager';                                T.de['chat_open_btn']  = 'Nachricht an den Manager';
 T.en['chat_title']     = 'Chat with the manager';                              T.de['chat_title']     = 'Chat mit dem Manager';
 T.en['chat_sub']       = 'You\'ll get a reply as soon as we see the message.'; T.de['chat_sub']       = 'Du erhältst eine Antwort, sobald wir die Nachricht sehen.';
 T.en['chat_empty']     = 'No messages yet. Say hi!';                           T.de['chat_empty']     = 'Noch keine Nachrichten. Schreib uns!';

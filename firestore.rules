@@ -167,14 +167,26 @@ service cloud.firestore {
         isVerified() && isOwner(uid)
         && request.resource.data.userName is string
       );
-      // Owner may only touch the small whitelist of fields their own UI
-      // writes. Admin bypasses everything.
+      // Owner may only perform the exact two writes their own UI makes:
+      // (A) markUserRead() — flips unreadForUser to false after reading
+      //     the admin's replies, touches nothing else;
+      // (B) sendUserMessage() — bumps the preview + flags to the fixed
+      //     values that call always uses. This blocks a user from calling
+      //     the SDK directly to forge lastMessageFrom:'admin', someone
+      //     else's userEmail, or a fake unreadForAdmin:false to hide their
+      //     own message from the admin's inbox. Admin bypasses everything.
       allow update: if isAdmin() || (
-        isVerified() && isOwner(uid)
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['userName','userEmail','userPhone',
-                       'lastMessage','lastMessageAt','lastMessageFrom',
-                       'unreadForAdmin','unreadForUser','updatedAt'])
+        isVerified() && isOwner(uid) && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unreadForUser','updatedAt'])
+            && request.resource.data.unreadForUser == false)
+          ||
+          (request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['userName','userEmail','userPhone','lastMessage','lastMessageAt','lastMessageFrom','unreadForAdmin','unreadForUser','updatedAt'])
+            && request.resource.data.userEmail == request.auth.token.email
+            && request.resource.data.lastMessageFrom == 'user'
+            && request.resource.data.unreadForAdmin == true
+            && request.resource.data.unreadForUser == false)
+        )
       );
       allow delete: if isAdmin();
 
