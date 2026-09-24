@@ -582,6 +582,34 @@
   </div>
 </div>
 
+<!-- ============ RESCHEDULE BOOKING MODAL ============ -->
+<div class="mem-modal" id="rescheduleModal" aria-hidden="true">
+  <div class="mem-card" style="max-width:420px">
+    <button class="mem-close" id="rescheduleClose" type="button" aria-label="Κλείσιμο">×</button>
+    <h2 class="mem-title">🔁 Αλλαγή Ημέρας/Ώρας</h2>
+    <p id="rescheduleInfo" style="color:rgba(244,249,255,0.6);font-size:13px;margin-bottom:14px">—</p>
+    <div class="mem-body">
+      <div class="form-grid">
+        <div class="field"><label>ΝΕΑ ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="rs_date"></div>
+        <div class="field"><label>ΓΗΠΕΔΟ</label>
+          <select id="rs_court">
+            <option>Γήπεδο 1</option>
+            <option>Γήπεδο 2</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:1/-1"><label>ΩΡΑ</label>
+          <select id="rs_time"><option value="">— Επίλεξε ημερομηνία —</option></select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button type="button" class="btn solid" id="rescheduleSaveBtn" style="flex:1;padding:12px">💾 ΑΠΟΘΗΚΕΥΣΗ</button>
+      <button type="button" class="btn" id="rescheduleCancelBtn" style="padding:12px 18px">Ακύρωση</button>
+    </div>
+    <div class="mem-msg" id="rescheduleMsg" style="text-align:center;font-size:13px;min-height:16px;margin-top:8px"></div>
+  </div>
+</div>
+
 <!-- ============ MEMBER EDIT MODAL ============ -->
 <div class="mem-modal" id="memModal" aria-hidden="true">
   <div class="mem-card">
@@ -616,6 +644,34 @@
       <div class="field" style="margin-top:14px">
         <label>📝 ΣΗΜΕΙΩΣΗ ΔΙΑΧΕΙΡΙΣΤΗ <span style="color:rgba(244,249,255,0.4);font-weight:400">(μόνο εσύ βλέπεις)</span></label>
         <textarea id="me_note" rows="3" placeholder="π.χ. VIP · φίλος · έχει πρόβλημα στην πλάτη · δωρεάν καφές" style="padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;resize:vertical;min-width:100%;max-width:100%"></textarea>
+      </div>
+
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08)">
+        <label style="font-size:11px;letter-spacing:0.18em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:10px">👋 ΠΡΟΦΙΛ "ΒΡΕΣ ΠΑΙΚΤΗ" (ό,τι θα ρύθμιζε ο ίδιος)</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <label class="sw"><input type="checkbox" id="me_lfg"><span class="sw-slider"></span></label>
+          <span style="font-size:13px;color:rgba(244,249,255,0.75)">Εμφανίζεται στο "Βρες Παίκτη"</span>
+        </div>
+        <div class="field" style="margin-top:8px">
+          <label>ΛΙΓΑ ΛΟΓΙΑ (Bio)</label>
+          <textarea id="me_bio" rows="2" maxlength="280" placeholder="π.χ. Παίζω 3 χρόνια, ψάχνω παρέα για Σαββατοκύριακα." style="padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;resize:vertical;min-width:100%;max-width:100%"></textarea>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>ΠΩΣ ΝΑ ΤΟΝ/ΤΗΝ ΒΡΟΥΝ</label>
+          <select id="me_contact">
+            <option value="whatsapp">WhatsApp</option>
+            <option value="phone">Κλήση</option>
+            <option value="hidden">Κρυφό — μόνο εμφάνιση</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>ΔΙΑΘΕΣΙΜΕΣ ΗΜΕΡΕΣ</label>
+          <div id="me_days" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>ΔΙΑΘΕΣΙΜΕΣ ΩΡΕΣ</label>
+          <div id="me_times" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
       </div>
       <div style="display:flex;gap:16px;margin-top:14px;padding:10px 12px;background:rgba(10,25,41,0.4);border-radius:9px;font-size:12px;color:rgba(244,249,255,0.7)">
         <div>📊 <b style="color:#b7ff4a">Κρατήσεις:</b> <span id="me_bookings">0</span></div>
@@ -683,7 +739,47 @@
       await batch.commit();
     },
     updateBooking: (id, patch) => updateDoc(doc(db, 'bookings', id), patch),
+    // Move a booking to a different date/court/time: swaps the /slots
+    // occupancy marker atomically and recomputes startsAt/cancellableUntil
+    // so the member's own 48h-cancellation window stays correct.
+    rescheduleBooking: async (booking, next) => {
+      const slotIdOf = (date, court, time) => (date + '_' + court + '_' + time).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const oldSlotId = (booking.date && booking.court && booking.time) ? slotIdOf(booking.date, booking.court, booking.time) : null;
+      const newSlotId = slotIdOf(next.date, next.court, next.time);
+      if (oldSlotId !== newSlotId){
+        const newSlotSnap = await getDoc(doc(db, 'slots', newSlotId));
+        if (newSlotSnap.exists()) throw new Error('Αυτή η ώρα/γήπεδο είναι ήδη κρατημένη.');
+      }
+      const startTime = String(next.time).split('-')[0];
+      const startsAt = new Date(next.date + 'T' + startTime + ':00').getTime();
+      const cancellableUntil = startsAt - 48 * 3600 * 1000;
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'bookings', booking.id), {
+        date: next.date, court: next.court, time: next.time,
+        startsAt, cancellableUntil,
+      });
+      if (oldSlotId && oldSlotId !== newSlotId){
+        batch.delete(doc(db, 'slots', oldSlotId));
+      }
+      if (oldSlotId !== newSlotId){
+        // Preserve the ORIGINAL owner on the new slot (not the admin doing
+        // the move) so the member can still cancel it themselves later.
+        // Falls back to the admin's own uid for guest/manual bookings that
+        // never had a real owner uid — matches the manual-booking flow.
+        batch.set(doc(db, 'slots', newSlotId), {
+          date: next.date, court: next.court, time: next.time,
+          userId: booking.userId || window.npFB.auth.currentUser.uid,
+          bookingId: booking.id,
+          createdAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+    },
     deleteUser:    (uid) => deleteDoc(doc(db, 'users', uid)),
+    // Keeps a member's Find-a-Player public snapshot in sync when admin
+    // edits their availability/bio/contact from the Members editor.
+    upsertPublicProfile: (uid, data) => setDoc(doc(db, 'public_profiles', uid), data, { merge: true }),
+    removePublicProfile: (uid) => deleteDoc(doc(db, 'public_profiles', uid)),
     getConfig: async (name) => {
       const snap = await getDoc(doc(db, 'config', name));
       return snap.exists() ? snap.data() : null;
@@ -1026,11 +1122,15 @@ function renderBookings(){
   // without opening anything, then verifies it against Συνεργάτες and
   // applies the discount manually via the price button.
   function customerNoteTag(b){
-    if (!b.customerNote) return '';
-    return `<div style="font-size:11px;color:#ffc14a;margin-top:2px" title="Κωδικός/σχόλιο πελάτη">🏷️ ${esc(b.customerNote)}</div>`;
+    if (!b.customerNote) return `<div data-edit-cnote="${esc(b.id)}" style="font-size:11px;color:rgba(244,249,255,0.3);margin-top:2px;cursor:pointer" title="Κλικ για προσθήκη κωδικού/σχολίου">+ κωδικός</div>`;
+    return `<div data-edit-cnote="${esc(b.id)}" style="font-size:11px;color:#ffc14a;margin-top:2px;cursor:pointer;border-bottom:1px dashed rgba(255,193,60,0.4);display:inline-block" title="Κλικ για επεξεργασία">🏷️ ${esc(b.customerNote)}</div>`;
+  }
+  function phoneCellHtml(b){
+    return `<span data-edit-phone="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.phone||'—')}</span>`;
   }
   const _todayCellName = (b) => `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${b.adminNote ? ' 📝' : ''}${customerNoteTag(b)}`;
   const _todayCellActions = (b) => `<div style="display:flex;gap:4px;justify-content:flex-end">
+      <button class="btn" data-reschedule-bk="${esc(b.id)}" title="Αλλαγή ημέρας/ώρας/γηπέδου" style="padding:5px 8px">🔁</button>
       <button class="btn" data-note-bk="${esc(b.id)}" title="Σχόλιο${b.adminNote ? ': ' + esc(b.adminNote) : ''}" style="padding:5px 8px">📝</button>
       <button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button>
     </div>`;
@@ -1041,7 +1141,7 @@ function renderBookings(){
         <td><b>${esc(b.time||'')}</b></td>
         <td>${esc(b.court||'')}</td>
         <td>${_todayCellName(b)}</td>
-        <td>${esc(b.phone||'')}</td>
+        <td>${phoneCellHtml(b)}</td>
         <td>${+b.players||0}άδα</td>
         <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
         <td>
@@ -1063,6 +1163,7 @@ function renderBookings(){
   }
   function actionCellHtml(b){
     return `<div style="display:flex;gap:4px;justify-content:flex-end">
+      <button class="btn" data-reschedule-bk="${esc(b.id)}" title="Αλλαγή ημέρας/ώρας/γηπέδου" style="padding:5px 8px">🔁</button>
       <button class="btn" data-note-bk="${esc(b.id)}" title="Σχόλιο${b.adminNote ? ': ' + esc(b.adminNote) : ''}" style="padding:5px 8px">📝</button>
       <button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button>
     </div>`;
@@ -1072,7 +1173,7 @@ function renderBookings(){
     const rowStyle = faded ? ' style="opacity:0.75"' : '';
     return `<tr${rowStyle}>
       <td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td>
-      <td>${nameCellHtml(b)}</td><td>${esc(b.phone)}</td><td>${+b.players}άδα</td>
+      <td>${nameCellHtml(b)}</td><td>${phoneCellHtml(b)}</td><td>${+b.players}άδα</td>
       <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
       <td>
         <select data-pay="${esc(b.id)}" class="pay-sel" style="padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(10,25,41,0.6);color:${pay==='cash'?'#b7ff4a':pay==='card'?'#4a9fff':'#ffc14a'};font-size:12px;font-family:inherit;cursor:pointer">
@@ -1148,6 +1249,45 @@ function renderBookings(){
       b.adminNote = clean;
       renderBookings();
     } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  // Edit booking's phone number.
+  document.querySelectorAll('[data-edit-phone]').forEach(el => el.addEventListener('click', async () => {
+    const id = el.dataset.editPhone;
+    const b = CACHE.bookings.find(x => x.id === id);
+    if (!b) return;
+    const ans = prompt('Τηλέφωνο πελάτη:', b.phone || '');
+    if (ans === null) return;
+    const clean = ans.trim();
+    if (!clean){ alert('Το τηλέφωνο δεν μπορεί να είναι κενό.'); return; }
+    try {
+      await window.npFB.updateBooking(id, { phone: clean });
+      b.phone = clean;
+      renderBookings();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  // Edit the customer-submitted note/partner code (the 🏷️ tag) — admin
+  // can correct a typo (e.g. "vila15" -> "VILLA15") or clear it once the
+  // discount has been applied and verified.
+  document.querySelectorAll('[data-edit-cnote]').forEach(el => el.addEventListener('click', async () => {
+    const id = el.dataset.editCnote;
+    const b = CACHE.bookings.find(x => x.id === id);
+    if (!b) return;
+    const ans = prompt('🏷️ Κωδικός / σχόλιο πελάτη. Άδειο = διαγραφή.', b.customerNote || '');
+    if (ans === null) return;
+    const clean = ans.trim().slice(0, 200);
+    try {
+      await window.npFB.updateBooking(id, { customerNote: clean });
+      b.customerNote = clean;
+      renderBookings();
+    } catch(e){ alert('Αποτυχία: '+e.message); }
+  }));
+  // Reschedule: change date / time / court for an existing booking,
+  // keeping the /slots occupancy marker consistent (delete the old one,
+  // create the new one) so the public calendar stays accurate.
+  document.querySelectorAll('[data-reschedule-bk]').forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.dataset.rescheduleBk;
+    const b = CACHE.bookings.find(x => x.id === id);
+    if (b) openRescheduleModal(b);
   }));
 }
 
@@ -1729,9 +1869,100 @@ function refreshManualTimeSlots(){
 // Wire live updates: whenever the admin changes date or court the list re-filters.
 document.getElementById('bkDate2')?.addEventListener('change', refreshManualTimeSlots);
 document.getElementById('bkCourt2')?.addEventListener('change', refreshManualTimeSlots);
+
+/* ============ RESCHEDULE BOOKING MODAL ============ */
+let RESCHEDULING_BOOKING = null;
+const rescheduleModal = document.getElementById('rescheduleModal');
+// Same slot-populating logic as refreshManualTimeSlots, but the booking
+// being moved is excluded from "already booked" (it's fine to re-pick its
+// own current slot) so the admin can e.g. only change the court and keep
+// the same time without it showing as taken by itself.
+function refreshRescheduleTimeSlots(){
+  const sel = document.getElementById('rs_time');
+  if (!sel || !RESCHEDULING_BOOKING) return;
+  const date = document.getElementById('rs_date').value;
+  const court = document.getElementById('rs_court').value;
+  if (!date){ sel.innerHTML = '<option value="">— Επίλεξε ημερομηνία —</option>'; return; }
+  const season = (CACHE.schedule && CACHE.schedule.activeSeason) || 'summer';
+  const allSlots = ((CACHE.schedule && CACHE.schedule[season]) || []).filter(s => s.enabled !== false);
+  const bookedTimes = new Set(
+    (CACHE.bookings || [])
+      .filter(b => b.status !== 'cancelled' && b.date === date && b.court === court && b.id !== RESCHEDULING_BOOKING.id)
+      .map(b => b.time)
+  );
+  const closedTimes = new Set(closuresCache[date] || []);
+  sel.innerHTML = '';
+  if (!allSlots.length){ sel.innerHTML = '<option value="">— Καμία ώρα στο πρόγραμμα —</option>'; return; }
+  const keepOwn = RESCHEDULING_BOOKING.date === date && RESCHEDULING_BOOKING.court === court ? RESCHEDULING_BOOKING.time : null;
+  let firstFree = '';
+  for (const s of allSlots){
+    const time = `${s.start}-${s.end}`;
+    const endLabel = s.end === '24:00' ? '00:00' : s.end;
+    let label = `${s.start} – ${endLabel}`;
+    if (s.period) label += ` · ${s.period}`;
+    let disabled = false;
+    if (time === keepOwn){ label += ' — ΤΡΕΧΟΥΣΑ'; }
+    else if (bookedTimes.has(time)){ label += ' — ΚΡΑΤΗΜΕΝΟ'; disabled = true; }
+    else if (closedTimes.has(time)){ label += ' — ΚΛΕΙΣΤΟ'; disabled = true; }
+    else if (!firstFree){ firstFree = time; }
+    const opt = document.createElement('option');
+    opt.value = time; opt.textContent = label; opt.disabled = disabled;
+    sel.appendChild(opt);
+  }
+  if (keepOwn) sel.value = keepOwn;
+  else if (firstFree) sel.value = firstFree;
+}
+function openRescheduleModal(b){
+  RESCHEDULING_BOOKING = b;
+  document.getElementById('rs_date').value = b.date || '';
+  document.getElementById('rs_court').value = b.court || 'Γήπεδο 1';
+  document.getElementById('rescheduleInfo').textContent = (b.name||'—') + ' · τώρα: ' + (b.date||'—') + ' ' + (b.time||'') + ' · ' + (b.court||'');
+  document.getElementById('rescheduleMsg').textContent = '';
+  refreshRescheduleTimeSlots();
+  rescheduleModal.classList.add('open');
+  rescheduleModal.setAttribute('aria-hidden','false');
+}
+function closeRescheduleModal(){
+  rescheduleModal.classList.remove('open');
+  rescheduleModal.setAttribute('aria-hidden','true');
+  RESCHEDULING_BOOKING = null;
+}
+document.getElementById('rs_date')?.addEventListener('change', refreshRescheduleTimeSlots);
+document.getElementById('rs_court')?.addEventListener('change', refreshRescheduleTimeSlots);
+document.getElementById('rescheduleClose')?.addEventListener('click', closeRescheduleModal);
+document.getElementById('rescheduleCancelBtn')?.addEventListener('click', closeRescheduleModal);
+rescheduleModal?.addEventListener('click', (e) => { if (e.target === rescheduleModal) closeRescheduleModal(); });
+document.getElementById('rescheduleSaveBtn')?.addEventListener('click', async () => {
+  if (!RESCHEDULING_BOOKING) return;
+  const b = RESCHEDULING_BOOKING;
+  const newDate  = document.getElementById('rs_date').value;
+  const newCourt = document.getElementById('rs_court').value;
+  const newTime  = document.getElementById('rs_time').value;
+  const msg = document.getElementById('rescheduleMsg');
+  if (!newDate || !newTime){ msg.style.color = '#ff6b6b'; msg.textContent = 'Επίλεξε ημερομηνία και ώρα.'; return; }
+  if (newDate === b.date && newCourt === b.court && newTime === b.time){ closeRescheduleModal(); return; }
+  msg.style.color = 'rgba(244,249,255,0.6)'; msg.textContent = 'Αποθήκευση...';
+  try {
+    await window.npFB.rescheduleBooking(b, { date: newDate, court: newCourt, time: newTime });
+    closeRescheduleModal();
+    await refreshAll();
+  } catch(e){ msg.style.color = '#ff6b6b'; msg.textContent = 'Αποτυχία: ' + e.message; }
+});
+
 /* ============ MEMBER EDIT MODAL ============ */
 let EDITING_UID = null;
 const memModal = document.getElementById('memModal');
+// Mirrors the exact same fields/keys the public site's own profile editor
+// uses (index.html renderFullProfile) so admin edits stay wire-compatible
+// with what a member would set for themselves.
+const ME_DAYS = ['Δευτ','Τρι','Τετ','Πεμ','Παρ','Σαβ','Κυρ'];
+const ME_TIME_PERIODS = [
+  { key:'morning',   label:'☀️ Πρωί' },
+  { key:'noon',      label:'🍽️ Μεσημέρι' },
+  { key:'afternoon', label:'🌤️ Απόγευμα' },
+  { key:'evening',   label:'🌙 Βράδυ' },
+  { key:'late',      label:'🌌 Νύχτα' },
+];
 function openMemberEditor(m){
   EDITING_UID = m.uid;
   document.getElementById('me_name').value     = m.name || '';
@@ -1746,6 +1977,20 @@ function openMemberEditor(m){
   document.getElementById('me_bookings').textContent  = m.bookingsCount || 0;
   document.getElementById('me_marketing').textContent = (m.consent && m.consent.marketing) ? 'ΝΑΙ' : 'ΟΧΙ';
   document.getElementById('me_created').textContent   = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate().toISOString().slice(0,10) : '—';
+  // Find-a-Player fields
+  document.getElementById('me_lfg').checked = !!m.lookingForGame;
+  document.getElementById('me_bio').value = m.bio || '';
+  document.getElementById('me_contact').value = m.contactMethod || 'whatsapp';
+  const availDays  = new Set((m.availability && m.availability.days) || []);
+  const availTimes = new Set((m.availability && m.availability.times) || []);
+  document.getElementById('me_days').innerHTML = ME_DAYS.map((d,i) =>
+    `<button type="button" class="btn${availDays.has(i)?' solid':''}" data-me-day="${i}" style="padding:6px 12px;font-size:12px">${d}</button>`
+  ).join('');
+  document.getElementById('me_times').innerHTML = ME_TIME_PERIODS.map(t =>
+    `<button type="button" class="btn${availTimes.has(t.key)?' solid':''}" data-me-time="${esc(t.key)}" style="padding:6px 12px;font-size:12px">${t.label}</button>`
+  ).join('');
+  document.querySelectorAll('#me_days [data-me-day]').forEach(b => b.addEventListener('click', () => b.classList.toggle('solid')));
+  document.querySelectorAll('#me_times [data-me-time]').forEach(b => b.addEventListener('click', () => b.classList.toggle('solid')));
   document.getElementById('memMsg').textContent = '';
   memModal.classList.add('open');
   memModal.setAttribute('aria-hidden','false');
@@ -1763,6 +2008,8 @@ document.getElementById('memSaveBtn').addEventListener('click', async () => {
   if (!EDITING_UID) return;
   const msg = document.getElementById('memMsg');
   msg.textContent = 'Αποθήκευση...'; msg.style.color = 'rgba(244,249,255,0.6)';
+  const days  = [...document.querySelectorAll('#me_days [data-me-day].solid')].map(b => +b.dataset.meDay);
+  const times = [...document.querySelectorAll('#me_times [data-me-time].solid')].map(b => b.dataset.meTime);
   const patch = {
     name:     document.getElementById('me_name').value.trim(),
     surname:  document.getElementById('me_surname').value.trim(),
@@ -1772,10 +2019,31 @@ document.getElementById('memSaveBtn').addEventListener('click', async () => {
     city:     document.getElementById('me_city').value.trim(),
     level:    +document.getElementById('me_level').value,
     adminNote: document.getElementById('me_note').value.trim().slice(0, 500),
+    lookingForGame: document.getElementById('me_lfg').checked,
+    bio:      document.getElementById('me_bio').value.trim().slice(0, 280),
+    contactMethod: document.getElementById('me_contact').value,
+    availability: { days, times },
   };
   try {
     const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
     await setDoc(doc(window.npFB.db, 'users', EDITING_UID), patch, { merge: true });
+    // Keep the Find-a-Player public snapshot in sync — same logic the
+    // member's own profile save uses on the public site.
+    if (patch.lookingForGame){
+      await window.npFB.upsertPublicProfile(EDITING_UID, {
+        firstName: patch.name || 'Player',
+        level: patch.level,
+        city: patch.city || '',
+        bio: patch.bio || '',
+        availability: patch.availability,
+        contactMethod: patch.contactMethod,
+        phone: patch.phone || '',
+        lookingForGame: true,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      await window.npFB.removePublicProfile(EDITING_UID);
+    }
     const u = CACHE.users.find(x => x.uid === EDITING_UID);
     if (u) Object.assign(u, patch);
     msg.style.color = '#b7ff4a';

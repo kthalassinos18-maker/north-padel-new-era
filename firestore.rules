@@ -151,8 +151,14 @@ service cloud.firestore {
       //   1) attacker must at least sign in (even anonymous auth costs work),
       //   2) userId is forced to their own uid so admin can nuke fake slots,
       //   3) slot doc ids are deterministic — no random spam surface.
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid;
+      // Admin bypasses the userId==auth.uid constraint so a reschedule can
+      // set the new slot's userId to the ORIGINAL booking owner (not the
+      // admin) — otherwise the member could never cancel their own
+      // rescheduled booking later (slot delete checks slot.userId).
+      allow create: if isAdmin() || (
+        isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+      );
       allow delete: if isAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin();
@@ -227,7 +233,9 @@ service cloud.firestore {
       // Only VERIFIED users see Find-a-Player profiles (phones etc.) — this
       // blocks anonymous scraping of member phone numbers.
       allow read:   if isVerified() || isAdmin();
-      allow create, update: if isOwner(uid) && isVerified();
+      // Admin bypass lets the Members editor keep a member's Find-a-Player
+      // listing (bio/contact/availability) in sync when admin edits it.
+      allow create, update: if isAdmin() || (isOwner(uid) && isVerified());
       allow delete: if isOwner(uid) || isAdmin();
     }
   }
