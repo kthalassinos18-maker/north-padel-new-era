@@ -165,6 +165,16 @@
     .gate-card{padding:26px 20px}
     .gate-field input{font-size:16px}
     .gate-btn{padding:14px;font-size:14px;min-height:48px}
+    /* Μέλη: shrink the email/phone columns so they don't force the whole
+       table wide — text wraps onto 2 lines instead of stretching the
+       column. Nothing further right (Δώρα, Ενέργειες) shrinks, so the
+       table still needs its normal horizontal scroll for those — that's
+       expected, this just keeps the contact-info columns from eating
+       extra width they don't need on a narrow screen. */
+    #tblPending td:nth-child(2), #tblMembers td:nth-child(2),
+    #tblPending td:nth-child(3), #tblMembers td:nth-child(3){
+      max-width:88px; white-space:normal; word-break:break-word; font-size:12px;
+    }
   }
 
   /* ============ GIFTS CELL ============ */
