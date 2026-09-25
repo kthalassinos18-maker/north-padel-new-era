@@ -165,24 +165,27 @@
     .gate-card{padding:26px 20px}
     .gate-field input{font-size:16px}
     .gate-btn{padding:14px;font-size:14px;min-height:48px}
-    /* Μέλη: shrink the email/phone columns so they don't force the whole
-       table wide — text wraps onto 2 lines instead of stretching the
-       column. Nothing further right (Δώρα, Ενέργειες) shrinks, so the
-       table still needs its normal horizontal scroll for those — that's
-       expected, this just keeps the contact-info columns from eating
-       extra width they don't need on a narrow screen. */
-    #tblPending td:nth-child(2), #tblMembers td:nth-child(2),
-    #tblPending td:nth-child(3), #tblMembers td:nth-child(3){
+    /* Pending-approval table: shrink the email/phone columns so they
+       don't force the whole table wide — text wraps onto 2 lines instead
+       of stretching the column. (The active-members table below drops
+       Email entirely instead, since it also has the Δώρα cell to fit.) */
+    #tblPending td:nth-child(2), #tblPending td:nth-child(3){
       max-width:88px; white-space:normal; word-break:break-word; font-size:12px;
     }
-    /* Μέλη: drop the least-used columns on mobile (already visible in the
-       Edit modal's stats row) so each row stays short instead of forcing
-       a huge amount of horizontal scroll just to reach Δώρα/Ενέργειες. */
+    /* Μέλη (active members table): keep only Όνομα / Τηλέφωνο / Επίπεδο /
+       Δώρα / Ενέργειες on mobile — Email, Κρατήσεις, Marketing, Εγγραφή
+       are already visible in the Edit modal's stats row, so dropping them
+       here loses nothing but width. Table's forced 600px min-width is
+       also lifted so it actually shrinks to fit instead of guaranteeing
+       a horizontal scrollbar. */
+    #tblMembersTable{min-width:0}
+    #tblMembersTable th:nth-child(2), #tblMembersTable td:nth-child(2),
     #tblMembersTable th:nth-child(5), #tblMembersTable td:nth-child(5),
     #tblMembersTable th:nth-child(6), #tblMembersTable td:nth-child(6),
     #tblMembersTable th:nth-child(7), #tblMembersTable td:nth-child(7){
       display:none;
     }
+    #tblMembersTable td:nth-child(3){ font-size:12px; white-space:nowrap }
     .gift-label-txt{display:none}
   }
 
@@ -204,24 +207,31 @@
   .gift-stepper .gift-val{min-width:44px;text-align:center;font-size:14px;color:#f4f9ff}
 
   @media(max-width:640px){
-    /* Δώρα cell: lay the 3 gift controls out in ONE compact wrapped row
-       (icon + control only — verbose labels are hidden here but still
-       reachable via title= on hover/long-press) instead of 3 stacked
-       full-width blocks. This — plus dropping Κρατήσεις/Marketing/
-       Εγγραφή above — is what was making every member row huge. Placed
-       AFTER the base .gifts-cell/.gift-row/etc. rules above so these
-       same-specificity overrides actually win the cascade on mobile. */
-    .gifts-cell{min-width:0;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px}
-    .gifts-summary{flex-basis:100%;order:-1;font-size:11px;padding:5px 8px}
-    .gift-row{padding:0;gap:4px;width:auto}
+    /* Δώρα cell: squeeze the 3 gift controls onto ONE tight row — icon
+       only (title= tooltip has the label), no summary chip, no status
+       pill text (the switch's own green/red already says on/off; the
+       "no longer valid" warning is still reachable via the switch's
+       title on long-press). Placed AFTER the base .gifts-cell/.gift-row/
+       etc. rules above so these same-specificity overrides actually win
+       the cascade on mobile. */
+    .gifts-cell{min-width:0;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:8px}
+    .gifts-summary{display:none}
+    .gift-row{padding:0;gap:3px;width:auto}
     .gift-label{gap:0}
-    .gift-ico{font-size:15px}
-    .gift-status{font-size:9px;padding:2px 5px;letter-spacing:0.06em}
-    .gifts-cell .sw{width:34px;height:19px}
-    .gifts-cell .sw-slider::before{height:13px;width:13px}
-    .gifts-cell .sw input:checked + .sw-slider::before{transform:translateX(15px)}
-    .gift-stepper .btn{padding:3px 7px;font-size:11px;min-width:24px}
-    .gift-stepper .gift-val{min-width:26px;font-size:12px}
+    .gift-ico{font-size:14px}
+    /* Collapse the ΕΝΕΡΓΟ/ΑΝΕΝΕΡΓΟ/ΧΩΡΙΣ ΙΣΧΥ pill into a plain colored
+       dot — font-size:0 hides the text glyphs without removing the
+       element, so its title= tooltip (esp. the "no longer valid"
+       warning) still works on long-press. */
+    .gift-status{font-size:0;width:7px;height:7px;min-width:0;padding:0;border-radius:50%;border-width:0}
+    .gifts-cell .sw{width:30px;height:17px}
+    .gifts-cell .sw-slider::before{height:11px;width:11px;left:3px;bottom:3px}
+    .gifts-cell .sw input:checked + .sw-slider::before{transform:translateX(13px)}
+    .gift-stepper{gap:3px}
+    .gift-stepper .btn{padding:2px 5px;font-size:10px;min-width:20px}
+    .gift-stepper .gift-val{min-width:18px;font-size:11px}
+    #tblMembersTable td:nth-child(8){padding:6px 4px}
+    #tblMembersTable td:nth-child(1){font-size:12px}
   }
 
   /* ============ MESSAGES ============ */
