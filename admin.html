@@ -175,6 +175,15 @@
     #tblPending td:nth-child(3), #tblMembers td:nth-child(3){
       max-width:88px; white-space:normal; word-break:break-word; font-size:12px;
     }
+    /* Μέλη: drop the least-used columns on mobile (already visible in the
+       Edit modal's stats row) so each row stays short instead of forcing
+       a huge amount of horizontal scroll just to reach Δώρα/Ενέργειες. */
+    #tblMembersTable th:nth-child(5), #tblMembersTable td:nth-child(5),
+    #tblMembersTable th:nth-child(6), #tblMembersTable td:nth-child(6),
+    #tblMembersTable th:nth-child(7), #tblMembersTable td:nth-child(7){
+      display:none;
+    }
+    .gift-label-txt{display:none}
   }
 
   /* ============ GIFTS CELL ============ */
@@ -193,6 +202,27 @@
   .gift-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0}
   .gift-stepper .btn{padding:5px 10px;font-size:13px;min-width:32px}
   .gift-stepper .gift-val{min-width:44px;text-align:center;font-size:14px;color:#f4f9ff}
+
+  @media(max-width:640px){
+    /* Δώρα cell: lay the 3 gift controls out in ONE compact wrapped row
+       (icon + control only — verbose labels are hidden here but still
+       reachable via title= on hover/long-press) instead of 3 stacked
+       full-width blocks. This — plus dropping Κρατήσεις/Marketing/
+       Εγγραφή above — is what was making every member row huge. Placed
+       AFTER the base .gifts-cell/.gift-row/etc. rules above so these
+       same-specificity overrides actually win the cascade on mobile. */
+    .gifts-cell{min-width:0;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px}
+    .gifts-summary{flex-basis:100%;order:-1;font-size:11px;padding:5px 8px}
+    .gift-row{padding:0;gap:4px;width:auto}
+    .gift-label{gap:0}
+    .gift-ico{font-size:15px}
+    .gift-status{font-size:9px;padding:2px 5px;letter-spacing:0.06em}
+    .gifts-cell .sw{width:34px;height:19px}
+    .gifts-cell .sw-slider::before{height:13px;width:13px}
+    .gifts-cell .sw input:checked + .sw-slider::before{transform:translateX(15px)}
+    .gift-stepper .btn{padding:3px 7px;font-size:11px;min-width:24px}
+    .gift-stepper .gift-val{min-width:26px;font-size:12px}
+  }
 
   /* ============ MESSAGES ============ */
   .msg-layout{display:grid;grid-template-columns:280px 1fr;gap:0;padding:0;overflow:hidden;height:calc(100vh - 200px);min-height:520px}
@@ -371,7 +401,7 @@
 
       <div class="panel">
         <h3>ΕΝΕΡΓΑ ΜΕΛΗ</h3>
-        <div class="tbl-scroll"><table class="tbl">
+        <div class="tbl-scroll"><table class="tbl" id="tblMembersTable">
           <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Επίπεδο</th><th>Κρατήσεις</th><th>Marketing</th><th>Εγγραφή</th><th>Δώρα</th><th style="text-align:right">Ενέργειες</th></tr></thead>
           <tbody id="tblMembers"></tbody>
         </table></div>
@@ -1389,12 +1419,12 @@ function renderMembers(){
         <div class="gifts-cell">
           <div class="gifts-summary">${giftSummary(m)}</div>
           <div class="gift-row">
-            <span class="gift-label"><span class="gift-ico">🎁</span>Καλωσόρισμα −10% <small>(μία φορά, μόνο πρώτη κράτηση)</small></span>
+            <span class="gift-label" title="Καλωσόρισμα −10% (μία φορά, μόνο πρώτη κράτηση)"><span class="gift-ico">🎁</span><span class="gift-label-txt">Καλωσόρισμα −10% <small>(μία φορά, μόνο πρώτη κράτηση)</small></span></span>
             <label class="sw"><input type="checkbox" class="gift-toggle" data-uid="${esc(m.uid)}" data-field="welcomeCoupon" ${m.welcomeCoupon?'checked':''}><span class="sw-slider"></span></label>
             <span class="gift-status ${m.welcomeCoupon ? ((+m.bookingsCount||0) > 0 ? 'stale' : 'on') : 'off'}" title="${m.welcomeCoupon && (+m.bookingsCount||0) > 0 ? 'Έχει ήδη ' + m.bookingsCount + ' κρατήσ' + ((+m.bookingsCount||0)===1?'η':'εις') + ', το καλωσόρισμα δεν εφαρμόζεται πια.' : ''}">${m.welcomeCoupon ? ((+m.bookingsCount||0) > 0 ? 'ΧΩΡΙΣ ΙΣΧΥ' : 'ΕΝΕΡΓΟ') : 'ΑΝΕΝΕΡΓΟ'}</span>
           </div>
           <div class="gift-row">
-            <span class="gift-label"><span class="gift-ico">🎾</span>Δωρεάν γήπεδα</span>
+            <span class="gift-label" title="Δωρεάν γήπεδα"><span class="gift-ico">🎾</span><span class="gift-label-txt">Δωρεάν γήπεδα</span></span>
             <div class="gift-stepper">
               <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="freeCourts" data-cur="${+m.freeCourts||0}" data-delta="-1">−</button>
               <b class="gift-val">${+m.freeCourts||0}</b>
@@ -1402,7 +1432,7 @@ function renderMembers(){
             </div>
           </div>
           <div class="gift-row">
-            <span class="gift-label"><span class="gift-ico">🎫</span>Κουπόνι έκπτωσης</span>
+            <span class="gift-label" title="Κουπόνι έκπτωσης"><span class="gift-ico">🎫</span><span class="gift-label-txt">Κουπόνι έκπτωσης</span></span>
             <div class="gift-stepper">
               <button class="btn gift-step" data-uid="${esc(m.uid)}" data-field="couponPct" data-cur="${+m.couponPct||0}" data-delta="-5">−5</button>
               <b class="gift-val">${+m.couponPct||0}%</b>
