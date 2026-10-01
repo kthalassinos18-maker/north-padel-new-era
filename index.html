@@ -19,13 +19,7 @@
   html,body{height:100%;background:#0a1929;color:#f4f9ff;font-family:'Inter',sans-serif;overflow-x:hidden}
   .hero{position:relative;min-height:100svh;background:#0a1929 url('hero-mobile.jpg') center/cover no-repeat;display:flex;align-items:center;justify-content:center;overflow:hidden}
   @media(min-width:700px){.hero{background-image:url('hero-desktop.jpg')}}
-  .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,25,41,0.15) 0%,rgba(10,25,41,0.05) 45%,rgba(10,25,41,0.55) 100%);pointer-events:none;transition:background 1.2s ease}
-  .hero{transition:filter 1.2s ease}
-  /* Night mode (local time >= 18:00): same photo, cooler/darker grade +
-     a deeper gradient so the court reads as "evening" instead of "day",
-     without needing a second photo shoot. */
-  .hero.is-night{filter:brightness(0.62) saturate(0.8) hue-rotate(-6deg) contrast(1.05)}
-  .hero.is-night::after{background:linear-gradient(180deg,rgba(5,10,28,0.38) 0%,rgba(5,10,28,0.22) 40%,rgba(5,10,28,0.78) 100%)}
+  .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,25,41,0.15) 0%,rgba(10,25,41,0.05) 45%,rgba(10,25,41,0.55) 100%);pointer-events:none}
   .cta-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:12px}
   @media(min-width:700px){.cta-wrap{top:44%}}
   .menu-btn{position:absolute;top:18px;left:18px;z-index:10;background:rgba(15,37,64,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:10px 12px;cursor:pointer;transition:transform .2s,background .2s}
@@ -582,16 +576,6 @@
 <body>
 
 <section class="hero">
-  <script>
-    // Applied synchronously, as early as possible (before the hero image
-    // even paints) so there's no flash of the wrong mood. Night = local
-    // clock at/after 18:00, matching exactly what was asked: before 18:00
-    // looks like day at the court, from 18:00 on it looks like evening.
-    (function(){
-      var h = document.querySelector('.hero');
-      if (h && new Date().getHours() >= 18) h.classList.add('is-night');
-    })();
-  </script>
   <button class="menu-btn" id="menuBtn" type="button" aria-label="Μενού" data-i18n-aria="aria_menu">
     <div class="menu-icon-wrap">
       <img class="mb-racket-img" src="menu-racket.png" alt="">
@@ -2897,17 +2881,6 @@
   // step across a slot's start time, it crosses itself out without
   // needing a re-tap on the date.
   setInterval(() => { if (stepSessions && stepSessions.classList.contains('open')) applyDisabledSessions(); }, 60000);
-
-  // Keep the hero's day/night mood in sync live, in case a visitor leaves
-  // the tab open and the clock crosses 18:00 while they're still browsing.
-  // The initial class is already set synchronously in an inline <script>
-  // right inside the hero (so there's no flash on first paint) — this
-  // interval only handles the "stayed open across the boundary" case.
-  setInterval(() => {
-    const hero = document.querySelector('.hero');
-    if (!hero) return;
-    hero.classList.toggle('is-night', new Date().getHours() >= 18);
-  }, 5 * 60000);
   // Refresh disabled state each time sessions step opens (in case admin
   // just toggled something in the other tab).
   ctaBtn.addEventListener('click', () => setTimeout(loadDisabledSessions, 100));
