@@ -1936,19 +1936,31 @@ function refreshRescheduleTimeSlots(){
   if (!allSlots.length){ sel.innerHTML = '<option value="">— Καμία ώρα στο πρόγραμμα —</option>'; return; }
   const keepOwn = RESCHEDULING_BOOKING.date === date && RESCHEDULING_BOOKING.court === court ? RESCHEDULING_BOOKING.time : null;
   let firstFree = '';
+  let keepOwnFound = false;
   for (const s of allSlots){
     const time = `${s.start}-${s.end}`;
     const endLabel = s.end === '24:00' ? '00:00' : s.end;
     let label = `${s.start} – ${endLabel}`;
     if (s.period) label += ` · ${s.period}`;
     let disabled = false;
-    if (time === keepOwn){ label += ' — ΤΡΕΧΟΥΣΑ'; }
+    if (time === keepOwn){ label += ' — ΤΡΕΧΟΥΣΑ'; keepOwnFound = true; }
     else if (bookedTimes.has(time)){ label += ' — ΚΡΑΤΗΜΕΝΟ'; disabled = true; }
     else if (closedTimes.has(time)){ label += ' — ΚΛΕΙΣΤΟ'; disabled = true; }
     else if (!firstFree){ firstFree = time; }
     const opt = document.createElement('option');
     opt.value = time; opt.textContent = label; opt.disabled = disabled;
     sel.appendChild(opt);
+  }
+  // If the booking's current time isn't part of the active season's
+  // schedule anymore (admin switched summer/winter after it was made),
+  // it would otherwise just silently vanish from the list — add it back
+  // explicitly so the admin isn't confused about where it went, and can
+  // still pick it (e.g. to only change the court, keeping the same time).
+  if (keepOwn && !keepOwnFound){
+    const opt = document.createElement('option');
+    opt.value = keepOwn;
+    opt.textContent = `${keepOwn} — ΤΡΕΧΟΥΣΑ (εκτός ενεργού προγράμματος)`;
+    sel.insertBefore(opt, sel.firstChild);
   }
   if (keepOwn) sel.value = keepOwn;
   else if (firstFree) sel.value = firstFree;

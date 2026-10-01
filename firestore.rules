@@ -140,7 +140,7 @@ service cloud.firestore {
     //           create fails if the slot already exists → serves as an
     //           atomic double-booking guard.
     //   Delete: owner of the slot (booking cancel) or admin.
-    //   Update: admin only (shouldn't happen in normal flow).
+    //   Update: nobody, ever (see note below) — this is deliberate.
     match /slots/{slotId} {
       allow read:   if true;
       // The booking + slot are written in one atomic writeBatch client-side.
@@ -154,14 +154,33 @@ service cloud.firestore {
       // Admin bypasses the userId==auth.uid constraint so a reschedule can
       // set the new slot's userId to the ORIGINAL booking owner (not the
       // admin) — otherwise the member could never cancel their own
-      // rescheduled booking later (slot delete checks slot.userId).
-      allow create: if isAdmin() || (
-        isSignedIn()
-        && request.resource.data.userId == request.auth.uid
+      // rescheduled booking later (slot delete checks slot.userId). Basic
+      // shape validation applies to BOTH branches (not just the non-admin
+      // one) so a reschedule can't write a malformed/mismatched slot doc
+      // that would corrupt the public calendar's occupancy display.
+      allow create: if (
+        request.resource.data.date is string
+        && request.resource.data.court is string
+        && request.resource.data.time is string
+        && request.resource.data.userId is string
+        && request.resource.data.bookingId is string
+      ) && (
+        isAdmin() || request.resource.data.userId == request.auth.uid
       );
       allow delete: if isAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow update: if isAdmin();
+      // No update rule at all — not even for admin. A slot doc is either
+      // created fresh or deleted; it's never edited in place anywhere in
+      // the app. This closes a real race: reschedule's "getDoc, then
+      // batch.set() the new slot" is check-then-write, not atomic. If two
+      // reschedules ever raced onto the same new slot, Firestore treats
+      // the second write as an UPDATE (the doc already exists from the
+      // first write) rather than a create. With update wide open to admin
+      // before, that second write would have silently overwritten the
+      // first slot's bookingId/userId — two bookings, one slot, first one
+      // orphaned. With no update permission at all, the second write now
+      // fails outright instead, so the admin sees an error and can retry
+      // the reschedule, rather than silently corrupting the calendar.
     }
 
     // /threads/{uid} — 1-on-1 chat between a member and the admin.
