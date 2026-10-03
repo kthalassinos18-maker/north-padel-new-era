@@ -2289,7 +2289,16 @@
   (async function initAuth(){
     await waitFB();
     window.npFB.onAuth(async (fbUser) => {
-      if (fbUser){
+      // Anonymous auth (created by ensureGuestAuth() the first time someone
+      // books as a guest) is NOT a real account — it exists only so
+      // Firestore's /bookings rule has an auth token to check. Firebase
+      // persists that anonymous session across reloads/restarts, so on a
+      // later visit `fbUser` would be non-null here with no email at all.
+      // Treating it as a real-but-unverified user made the booking flow's
+      // "u && !u.emailVerified" check wrongly fire and block guests with
+      // "verify your email" — for an email they never even entered. Guests
+      // must look logged-out so isGuest resolves correctly next time.
+      if (fbUser && !fbUser.isAnonymous){
         try {
           // Auto-create the profile doc if it's missing (legacy accounts)
           try { await window.npFB.ensureProfile(fbUser); } catch(e){ console.warn('ensureProfile', e); }
