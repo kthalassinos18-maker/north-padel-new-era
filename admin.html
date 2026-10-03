@@ -1169,19 +1169,29 @@ function renderBookings(){
   function phoneCellHtml(b){
     return `<span data-edit-phone="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.phone||'—')}</span>`;
   }
-  const _todayCellName = (b) => `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${b.adminNote ? ' 📝' : ''}${customerNoteTag(b)}`;
-  const _todayCellActions = (b) => `<div style="display:flex;gap:4px;justify-content:flex-end">
+  // Shared by ALL four booking tables (today/future/past/unpaid) so a
+  // change here — like adding the 🔁 reschedule button — only has to
+  // happen once. These used to be duplicated as separate
+  // _todayCellName/_todayCellActions copies, which is exactly how a
+  // past edit (adding reschedule) ended up needing to be made twice.
+  function nameCellHtml(b){
+    const noteMark = b.adminNote ? ' 📝' : '';
+    return `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${noteMark}${customerNoteTag(b)}`;
+  }
+  function actionCellHtml(b){
+    return `<div style="display:flex;gap:4px;justify-content:flex-end">
       <button class="btn" data-reschedule-bk="${esc(b.id)}" title="Αλλαγή ημέρας/ώρας/γηπέδου" style="padding:5px 8px">🔁</button>
       <button class="btn" data-note-bk="${esc(b.id)}" title="Σχόλιο${b.adminNote ? ': ' + esc(b.adminNote) : ''}" style="padding:5px 8px">📝</button>
       <button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button>
     </div>`;
+  }
   if (tblToday){
     tblToday.innerHTML = todayList.length ? todayList.map(b => {
       const pay = b.payMethod || 'pending';
       return `<tr style="background:rgba(183,255,74,0.06)">
         <td><b>${esc(b.time||'')}</b></td>
         <td>${esc(b.court||'')}</td>
-        <td>${_todayCellName(b)}</td>
+        <td>${nameCellHtml(b)}</td>
         <td>${phoneCellHtml(b)}</td>
         <td>${+b.players||0}άδα</td>
         <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
@@ -1193,21 +1203,9 @@ function renderBookings(){
           </select>
         </td>
         <td>${pillFor(b.status)}</td>
-        <td style="text-align:right">${_todayCellActions(b)}</td>
+        <td style="text-align:right">${actionCellHtml(b)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="9" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν υπάρχει κράτηση για σήμερα.</td></tr>';
-  }
-  const PAY_LABELS = { cash:'💵 Μετρητά', card:'💳 Κάρτα', pending:'⏳ Εκκρεμεί' };
-  function nameCellHtml(b){
-    const noteMark = b.adminNote ? ' 📝' : '';
-    return `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${noteMark}${customerNoteTag(b)}`;
-  }
-  function actionCellHtml(b){
-    return `<div style="display:flex;gap:4px;justify-content:flex-end">
-      <button class="btn" data-reschedule-bk="${esc(b.id)}" title="Αλλαγή ημέρας/ώρας/γηπέδου" style="padding:5px 8px">🔁</button>
-      <button class="btn" data-note-bk="${esc(b.id)}" title="Σχόλιο${b.adminNote ? ': ' + esc(b.adminNote) : ''}" style="padding:5px 8px">📝</button>
-      <button class="btn danger" data-del-bk="${esc(b.id)}">Διαγραφή</button>
-    </div>`;
   }
   function rowHtml(b, faded){
     const pay = b.payMethod || 'pending';
