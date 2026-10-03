@@ -1022,7 +1022,7 @@
     <p class="cancel-inline" data-i18n-html="cancel_inline">📋 <b>Πολιτική ακύρωσης:</b> Δωρεάν <b>&gt;48h</b> πριν από το προφίλ σου · <b>24-48h</b> μόνο τηλεφωνικά (693 439 1978 / 695 178 4471) · <b>&lt;24h ή no-show</b> οφείλεις την τιμή του γηπέδου (44€ για 4άδα, 30€ για 2άδα).</p>
     <!-- Turnstile widget — rendered only for guest bookings (see wiring in JS). -->
     <div id="turnstileGuest" style="display:none;margin:12px 0"></div>
-    <button type="submit" class="submit-btn" data-i18n="form_submit">ΕΠΙΒΕΒΑΙΩΣΗ ΚΡΑΤΗΣΗΣ</button>
+    <button type="submit" class="submit-btn" id="bookingSubmitBtn" data-i18n="form_submit">ΕΠΙΒΕΒΑΙΩΣΗ ΚΡΑΤΗΣΗΣ</button>
   </form>
 </section>
 
@@ -1902,8 +1902,21 @@
   }
   ctaBtn.addEventListener('click', () => {
     if (navigator.vibrate) navigator.vibrate([40,30,60]);
-    // Skip the choice if the user is already signed in
-    if (currentUser()) { goToCalendar(); return; }
+    const u = currentUser();
+    // A signed-in member with an UNVERIFIED email used to sail straight
+    // through calendar → sessions → the whole form, only to be blocked at
+    // the very last step (submit) with "verify your email" — wasting their
+    // time on a booking that could never go through. Catch it here instead,
+    // and open the profile (which already has a "resend email" button)
+    // so they can actually act on it right away.
+    if (u && !u.emailVerified){
+      alert(L('need_verify_email','Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.'));
+      authPanel.classList.add('open');
+      authPanel.setAttribute('aria-hidden','false');
+      return;
+    }
+    // Skip the choice if the user is already signed in (and verified)
+    if (u) { goToCalendar(); return; }
     openChoiceModal();
   });
   document.getElementById('choiceClose').addEventListener('click', closeChoiceModal);
@@ -2152,12 +2165,26 @@
   // Lazy Turnstile renderer. Called every time the guest path is shown.
   // Bails silently if the site key is still the placeholder — that way
   // the site keeps working before Turnstile is provisioned in Cloudflare.
-  function renderTurnstile(container){
+  function renderTurnstile(container, attempt){
+    attempt = attempt || 0;
     const meta = document.querySelector('meta[name="turnstile-sitekey"]');
     const siteKey = meta ? (meta.getAttribute('content')||'').trim() : '';
     if (!siteKey || siteKey === 'SITE_KEY_HERE') return; // not configured yet
-    // Wait for the Turnstile script to load
-    if (!window.turnstile){ setTimeout(() => renderTurnstile(container), 300); return; }
+    // Wait for the Turnstile script to load. If an ad-blocker/privacy
+    // extension blocks challenges.cloudflare.com, or the network is just
+    // slow, this used to retry forever with the checkbox staying
+    // invisible — a guest would hit submit, get "complete the security
+    // check" pointing at nothing on the page, and have no way to tell
+    // what was wrong. After ~8s (27 × 300ms) give up retrying silently
+    // and show a visible, actionable message instead.
+    if (!window.turnstile){
+      if (attempt >= 27){
+        container.innerHTML = `<p style="color:#ffc14a;font-size:12px;line-height:1.5;margin:0">⚠️ ${esc(L('ts_load_fail','Ο έλεγχος ασφαλείας δεν φόρτωσε. Δοκίμασε να απενεργοποιήσεις τυχόν ad-blocker/VPN, ή τηλεφώνησέ μας στο 693 439 1978 για να κλείσουμε την κράτηση.'))}</p>`;
+        return;
+      }
+      setTimeout(() => renderTurnstile(container, attempt + 1), 300);
+      return;
+    }
     // Avoid double-render
     if (container.dataset.rendered === '1') return;
     container.dataset.rendered = '1';
@@ -3140,9 +3167,20 @@
         const closedCount = (closuresByDate[iso] || []).length;
         const available = Math.max(0, scheduleSize - occupied - closedCount);
         btn.classList.remove('day-open','day-few','day-full');
-        if (available <= 0)                    btn.classList.add('day-full');
-        else if (occupied > 0 || closedCount > 0) btn.classList.add('day-few');
-        else                                    btn.classList.add('day-open');
+        if (available <= 0){
+          // Fully booked — disable the click too, not just the red dot.
+          // Before this, a visitor could tap a red day, land on the
+          // sessions screen, and find every single slot crossed out with
+          // no explanation ("is the site broken?"). Now the day itself
+          // can't be entered.
+          btn.classList.add('day-full');
+          btn.disabled = true;
+          btn.title = L('cal_day_full','Δεν υπάρχουν διαθέσιμες ώρες αυτή τη μέρα.');
+        } else if (occupied > 0 || closedCount > 0){
+          btn.classList.add('day-few');
+        } else {
+          btn.classList.add('day-open');
+        }
       });
     } catch(e){ console.warn('cal paint', e); }
   }
@@ -3204,9 +3242,16 @@
     if (slot.classList.contains('taken')) return;
     if (navigator.vibrate) navigator.vibrate(40);
     selectedSession = slot.dataset.time;
-    const twoAllowed = ['07:30-09:00','09:00-10:30','10:30-12:00','12:00-13:30','13:30-15:00','15:00-16:30','16:30-18:00','18:00-19:30','19:30-21:00'];
+    // 2-player is only allowed for sessions that START before 21:00. This
+    // used to be a hardcoded list of exact "HH:MM-HH:MM" strings matching
+    // whatever the schedule looked like when it was written — if the admin
+    // ever added/moved a session (e.g. a new early-morning slot), a slot
+    // not in that literal list would silently and confusingly lose 2-player
+    // with no sensible reason shown. Compare against the slot's own start
+    // time instead, so it always tracks whatever the admin has configured.
+    const startTime = selectedSession.split('-')[0];
     const opt2 = document.getElementById('opt2');
-    if (twoAllowed.includes(selectedSession)){
+    if (startTime < '21:00'){
       opt2.disabled = false;
       document.getElementById('playersHint').style.display = 'none';
     } else {
@@ -3332,6 +3377,18 @@
       alert(L('need_verify_email','Πρέπει πρώτα να επιβεβαιώσεις το email σου. Έλεγξε το inbox σου ή πάτα "Ξαναστείλε email" στο προφίλ.'));
       return;
     }
+
+    // Lock the button for the whole async submission — without this, an
+    // impatient tap on a slow connection (Turnstile verify + guest sign-in
+    // + the actual booking write, all awaited in sequence) could fire a
+    // SECOND concurrent submit, racing itself for the same slot and
+    // surfacing a confusing error. Always restored in `finally` below,
+    // whichever path the function exits through.
+    const submitBtn = document.getElementById('bookingSubmitBtn');
+    const submitBtnOrigText = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = L('form_submitting','Γίνεται η κράτηση...'); }
+
+    try {
 
     if (navigator.vibrate) navigator.vibrate([50,40,50]);
 
@@ -3462,10 +3519,53 @@
       const guestNote = isGuest ? '\n\n' + L('booking_guest_note','(Guest κράτηση — για ακύρωση/αλλαγή τηλεφώνησε στο 693 439 1978 ή 695 178 4471)') : '';
       alert('✅ ' + L('booking_ok','Κράτηση καταχωρήθηκε!') + '\n' + name + ' · ' + phone + '\n' + dateISO + ' · ' + selectedSession + '\n' + (players===2?L('unit_2p','2άδα'):L('unit_4p','4άδα')) + ', ' + rackets + ' ' + rktLbl + (premiumBalls?', ' + L('booking_prem_balls','premium μπάλες'):'') + '\n' + L('booking_total','Σύνολο') + ': €' + total + guestNote);
       if (u) renderAuth();
+      resetBookingFormState();
     } catch(err){
-      alert(L('booking_fail','Αποτυχία καταχώρησης') + ': ' + err.message);
+      // A permission-denied here almost always means the deterministic
+      // /slots doc already exists — i.e. someone else's booking landed on
+      // this exact date/court/time a few seconds ago (the atomic
+      // double-booking guard doing its job). Without this check the
+      // visitor would see a raw Firestore SDK string instead of something
+      // they can actually act on.
+      const code = err && err.code;
+      if (code === 'permission-denied' || /permission/i.test(err && err.message || '')){
+        alert(L('slot_taken_meanwhile','Κάποιος άλλος μόλις έκλεισε αυτή την ώρα. Διάλεξε άλλη ώρα ή ημέρα.'));
+        try { await refreshSessionsForDate(); } catch(_){}
+      } else {
+        alert(L('booking_fail','Αποτυχία καταχώρησης') + ': ' + err.message);
+      }
+    }
+    } finally {
+      if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = submitBtnOrigText; }
     }
   });
+
+  // Clears the booking form back to a blank slate after a successful
+  // submit — without this, selectedDate/selectedSession/players/rackets
+  // and the name/phone/note inputs kept showing the JUST-BOOKED slot,
+  // so anyone booking a second time in the same visit (e.g. two
+  // different time slots, or front-desk staff booking for callers) could
+  // easily re-submit the same slot by mistake and get a confusing error.
+  function resetBookingFormState(){
+    selectedDate = null;
+    selectedSession = null;
+    players = 4;
+    rackets = 0;
+    premiumBalls = false;
+    const fName = document.getElementById('fName'); if (fName) fName.value = '';
+    const fPhone = document.getElementById('fPhone'); if (fPhone) fPhone.value = '';
+    const fNote = document.getElementById('fNote'); if (fNote) fNote.value = '';
+    const fRackets = document.getElementById('fRackets'); if (fRackets) fRackets.textContent = '0';
+    const fBalls = document.getElementById('fBalls'); if (fBalls) fBalls.checked = false;
+    document.querySelectorAll('.seg-opt').forEach(o => o.classList.toggle('active', o.dataset.players === '4'));
+    const playersHint = document.getElementById('playersHint'); if (playersHint) playersHint.style.display = 'none';
+    try { updateTotal(); } catch(_){}
+    // Slide all the way back to the hero — removing 'open' from the
+    // currently-visible form step reveals it underneath, same mechanism
+    // every other step-panel close already relies on.
+    stepForm.classList.remove('open');
+    stepForm.setAttribute('aria-hidden','true');
+  }
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape'){
@@ -4063,6 +4163,10 @@ T.en['ts_unreachable']      = 'Could not verify the security check';           T
 T.en['guest_session_fail']  = 'Could not create guest session';                T.de['guest_session_fail']  = 'Guest-Session konnte nicht erstellt werden';
 T.en['booking_ok']          = 'Booking confirmed!';                            T.de['booking_ok']          = 'Buchung bestätigt!';
 T.en['booking_fail']        = 'Booking failed';                                T.de['booking_fail']        = 'Buchung fehlgeschlagen';
+T.en['form_submitting']     = 'Booking...';                                    T.de['form_submitting']     = 'Buchung läuft...';
+T.en['slot_taken_meanwhile']= 'Someone else just booked this time. Please pick another time or day.'; T.de['slot_taken_meanwhile']= 'Jemand anderes hat diese Zeit gerade gebucht. Bitte wähle eine andere Zeit oder einen anderen Tag.';
+T.en['cal_day_full']        = 'No available times on this day.';               T.de['cal_day_full']        = 'An diesem Tag sind keine Zeiten mehr verfügbar.';
+T.en['ts_load_fail']        = 'The security check failed to load. Try disabling any ad-blocker/VPN, or call us at 693 439 1978 to book directly.'; T.de['ts_load_fail']        = 'Die Sicherheitsprüfung konnte nicht geladen werden. Versuche, einen Werbeblocker/VPN zu deaktivieren, oder ruf uns unter 693 439 1978 an, um direkt zu buchen.';
 T.en['booking_prem_balls']  = 'premium balls';                                 T.de['booking_prem_balls']  = 'Premium-Bälle';
 T.en['booking_total']       = 'Total';                                         T.de['booking_total']       = 'Gesamt';
 T.en['booking_guest_note']  = '(Guest booking — to cancel/change call 693 439 1978 or 695 178 4471)'; T.de['booking_guest_note']  = '(Gast-Buchung — für Stornierung/Änderung rufe 693 439 1978 oder 695 178 4471 an)';
