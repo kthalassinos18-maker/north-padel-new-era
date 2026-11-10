@@ -245,6 +245,22 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // /americano_* — Americano tournament manager in the admin panel
+    //   (players roster, tournaments + scores, photos & trophies).
+    //   Admin-only for now; nothing here is read by the public site.
+    match /americano_players/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /americano_tournaments/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /americano_photos/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /americano_photo_full/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // /public_profiles/{uid} — Match-making snapshot.
     //   Owner writes/deletes. Any signed-in user reads (so Find a Player
     //   works). Only fields the user opted to share are stored here.

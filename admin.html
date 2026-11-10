@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="americano.css">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:#0a1929;color:#f4f9ff;font-family:'Inter',sans-serif}
@@ -308,6 +309,7 @@
     <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Sessions</span></button>
     <button class="nav-item" data-section="messages"><span class="nav-ico">💬</span><span>Μηνύματα</span><span class="nav-badge" id="msgNavBadge" style="display:none">0</span></button>
     <button class="nav-item" data-section="partners"><span class="nav-ico">🤝</span><span>Συνεργάτες</span></button>
+    <button class="nav-item" data-section="americano"><span class="nav-ico">🏆</span><span>Americano</span></button>
     <div class="sidebar-foot">
       <button class="logout" id="logout">ΑΠΟΣΥΝΔΕΣΗ</button>
     </div>
@@ -578,6 +580,11 @@
           <tbody id="tblPartners"><tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Φόρτωση...</td></tr></tbody>
         </table></div>
       </div>
+    </section>
+
+    <!-- =========== AMERICANO (logic in americano.js) =========== -->
+    <section class="section" id="sec-americano">
+      <div id="amRoot"></div>
     </section>
   </main>
 </div>
@@ -981,6 +988,7 @@ const titles = {
   hours:     ['Sessions', 'Ενεργοποίηση/απενεργοποίηση slot κράτησης'],
   messages:  ['Μηνύματα', 'Απευθείας επικοινωνία με τα μέλη'],
   partners:  ['Συνεργάτες', 'Ιδιωτικές επαφές και συμφωνίες — villas, agencies, coaches, προμηθευτές'],
+  americano: ['Americano', 'Τουρνουά, παίχτες, σκορ, φωτογραφίες και τρόπαια'],
 };
 function showSection(name){
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === name));
@@ -989,6 +997,7 @@ function showSection(name){
   document.getElementById('pageSub').textContent = titles[name][1];
   if (name === 'messages') openMessagesTab();
   if (name === 'partners') renderPartners();
+  if (name === 'americano' && window.npAmericano) window.npAmericano.open();
 }
 document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => showSection(n.dataset.section)));
 
@@ -2380,6 +2389,7 @@ window.addEventListener('load', () => {
   // startMessagesInboxWatcher(); — will be triggered by refreshAll() flow too
 });
 </script>
+<script type="module" src="americano.js"></script>
 
 </body>
 </html>
