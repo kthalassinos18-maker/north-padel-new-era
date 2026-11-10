@@ -1,7 +1,7 @@
 /* ============ FINANCE (dashboard: monthly income / expenses) ============
- * Monthly overview on the Dashboard: booking revenue (from /bookings) plus
- * manual entries (expenses such as rackets, balls, maintenance — and extra
- * income such as equipment sales) kept in /finance_entries (admin-only).
+ * Monthly overview on the Dashboard: income = booking revenue (from /bookings),
+ * expenses = manual entries (rackets, balls, maintenance...) kept in
+ * /finance_entries (admin-only).
  * Reuses a few .am-* form/chip styles from americano.css.
  */
 import {
@@ -19,10 +19,6 @@ const CATS = {
     ['utilities', '💡 Ρεύμα / Νερό'], ['rent', '🏠 Ενοίκιο'], ['staff', '👷 Προσωπικό'],
     ['marketing', '📣 Διαφήμιση'], ['taxes', '🧾 Φόροι / Λογιστής'], ['bar', '🍺 Κυλικείο / Αναλώσιμα'],
     ['other', '✨ Άλλο'],
-  ],
-  income: [
-    ['equipment', '🎾 Πώληση εξοπλισμού'], ['tournament', '🏆 Τουρνουά'], ['lessons', '🎓 Μαθήματα'],
-    ['sponsor', '🤝 Χορηγίες'], ['bar', '🍺 Κυλικείο'], ['other', '✨ Άλλο'],
   ],
 };
 const catLabel = (kind, c) => ((CATS[kind] || []).find(x => x[0] === c) || [c, c || '—'])[1];
@@ -66,17 +62,20 @@ async function load(){
 }
 
 /* ---------- numbers ---------- */
-function monthData(m){
-  const bk = F.bookings.filter(b => b.status !== 'cancelled' && (b.date || '').startsWith(m));
+// `upto` (YYYY-MM-DD, optional) cuts the month at that day — used to compare a
+// month that is still running with the same days of the previous month.
+function monthData(m, upto){
+  const inM = (d) => (d || '').startsWith(m) && (!upto || d <= upto);
+  const bk = F.bookings.filter(b => b.status !== 'cancelled' && inM(b.date));
   const sum = (arr) => arr.reduce((s, b) => s + (+b.total || 0), 0);
-  const ent = F.entries.filter(e => (e.date || '').startsWith(m));
-  const inc = ent.filter(e => e.kind === 'income'), exp = ent.filter(e => e.kind !== 'income');
+  // Income comes only from court bookings; entries are expenses.
+  const ent = F.entries.filter(e => e.kind !== 'income' && inM(e.date));
+  const exp = ent;
   const byCat = (arr) => {
     const o = {}; arr.forEach(e => { o[e.category] = (o[e.category] || 0) + (+e.amount || 0); });
     return Object.entries(o).sort((a, b) => b[1] - a[1]);
   };
   const bookingRev = sum(bk);
-  const extraInc = inc.reduce((s, e) => s + (+e.amount || 0), 0);
   const expenses = exp.reduce((s, e) => s + (+e.amount || 0), 0);
   return {
     count: bk.length,
@@ -90,26 +89,30 @@ function monthData(m){
     cash: sum(bk.filter(b => b.payMethod === 'cash')),
     card: sum(bk.filter(b => b.payMethod === 'card')),
     pending: sum(bk.filter(b => !b.payMethod || b.payMethod === 'pending')),
-    extraInc, incByCat: byCat(inc),
     expenses, expByCat: byCat(exp),
-    income: bookingRev + extraInc,
-    net: bookingRev + extraInc - expenses,
+    income: bookingRev,
+    net: bookingRev - expenses,
     entries: ent,
   };
 }
-function delta(cur, prev, goodUp){
+function delta(cur, prev, goodUp, label){
   if (!prev && !cur) return '<div class="stat-delta" style="color:rgba(244,249,255,0.4)">—</div>';
   const d = cur - prev;
   const up = d >= 0, good = goodUp ? up : !up;
   const pct = prev ? ' (' + (up ? '+' : '−') + Math.abs(Math.round(d / Math.abs(prev) * 100)) + '%)' : '';
-  return `<div class="stat-delta${d === 0 ? '' : good ? '' : ' neg'}">${up ? '▲ +' : '▼ −'}${eur(Math.abs(d))}${pct} από ${monthShort(shiftMonth(F.month, -1))}</div>`;
+  return `<div class="stat-delta${d === 0 ? '' : good ? '' : ' neg'}">${up ? '▲ +' : '▼ −'}${eur(Math.abs(d))}${pct} από ${label}</div>`;
 }
 
 /* ---------- render ---------- */
 function paint(){
   const r = $('finRoot'); if (!r) return;
-  const m = F.month, D = monthData(m), P = monthData(shiftMonth(m, -1));
+  const m = F.month, D = monthData(m);
   const isNow = m === thisMonth();
+  // Running month: compare 1..today with the same days of last month.
+  const pm = shiftMonth(m, -1);
+  const C = isNow ? monthData(m, localToday()) : D;
+  const P = isNow ? monthData(pm, pm + '-' + localToday().slice(8, 10)) : monthData(pm);
+  const vs = (isNow ? 'ίδιες μέρες ' : '') + monthShort(pm);
   const head = `<div class="fin-head">
       <h3 class="fin-title">💰 ΟΙΚΟΝΟΜΙΚΑ</h3>
       <div class="fin-nav">
@@ -119,19 +122,18 @@ function paint(){
         ${isNow ? '' : '<button class="btn" data-fin="now">Σήμερα</button>'}
       </div>
       <div class="fin-add">
-        <button class="btn" data-fin="add" data-kind="expense">− ΕΞΟΔΟ</button>
-        <button class="btn" data-fin="add" data-kind="income">+ ΕΣΟΔΟ</button>
+        <button class="btn" data-fin="add">+ ΝΕΟ ΕΞΟΔΟ</button>
       </div>
     </div>`;
   const err = F.error ? `<div class="notice" style="margin-bottom:14px"><strong>Έξοδα:</strong> ${esc(F.error)}</div>` : '';
   const kpis = `<div class="stat-grid fin-kpis">
-      <div class="stat"><div class="stat-label">ΕΣΟΔΑ</div><div class="stat-value">${eur(D.income)}</div>${delta(D.income, P.income, true)}</div>
-      <div class="stat"><div class="stat-label">ΕΞΟΔΑ</div><div class="stat-value">${eur(D.expenses)}</div>${delta(D.expenses, P.expenses, false)}</div>
-      <div class="stat"><div class="stat-label">ΚΑΘΑΡΟ</div><div class="stat-value" style="color:${D.net < 0 ? '#ff6b6b' : '#b7ff4a'}">${D.net < 0 ? '−' : ''}${eur(Math.abs(D.net))}</div>${delta(D.net, P.net, true)}</div>
-      <div class="stat"><div class="stat-label">ΚΡΑΤΗΣΕΙΣ</div><div class="stat-value">${D.count}</div><div class="stat-delta" style="color:rgba(244,249,255,0.55)">${D.count - P.count >= 0 ? '+' : ''}${D.count - P.count} από ${monthShort(shiftMonth(m, -1))}</div></div>
+      <div class="stat"><div class="stat-label">ΕΣΟΔΑ</div><div class="stat-value">${eur(D.income)}</div>${delta(C.income, P.income, true, vs)}</div>
+      <div class="stat"><div class="stat-label">ΕΞΟΔΑ</div><div class="stat-value">${eur(D.expenses)}</div>${delta(C.expenses, P.expenses, false, vs)}</div>
+      <div class="stat"><div class="stat-label">ΚΑΘΑΡΟ</div><div class="stat-value" style="color:${D.net < 0 ? '#ff6b6b' : '#b7ff4a'}">${D.net < 0 ? '−' : ''}${eur(Math.abs(D.net))}</div>${delta(C.net, P.net, true, vs)}</div>
+      <div class="stat"><div class="stat-label">ΚΡΑΤΗΣΕΙΣ</div><div class="stat-value">${D.count}</div><div class="stat-delta" style="color:rgba(244,249,255,0.55)">${C.count - P.count >= 0 ? '+' : '−'}${Math.abs(C.count - P.count)} από ${vs}</div></div>
     </div>`;
   const line = (label, val, sub) => `<div class="fin-line"><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><b>${val}</b></div>`;
-  const incomeBox = `<div class="panel fin-box"><h3>ΑΠΟ ΠΟΥ ΗΡΘΑΝ ΤΑ ΕΣΟΔΑ</h3>
+  const incomeBox = `<div class="panel fin-box"><h3>ΕΣΟΔΑ ΑΠΟ ΚΡΑΤΗΣΕΙΣ</h3>
       ${line('📅 Κρατήσεις γηπέδων', eur(D.bookingRev), D.count + ' κρατήσεις · ' + D.four + ' τετράδες · ' + D.two + ' δυάδες')}
       <div class="fin-sub">
         ${line('💵 Μετρητά', eur(D.cash))}
@@ -140,8 +142,6 @@ function paint(){
         ${line('Γήπεδο 1 / Γήπεδο 2', D.court1 + ' / ' + D.court2)}
         ${D.rackets || D.balls ? line('Ενοικίαση ρακετών / premium μπαλάκια', D.rackets + ' / ' + D.balls) : ''}
       </div>
-      ${D.incByCat.map(([c, v]) => line(esc(catLabel('income', c)), eur(v))).join('')}
-      ${line('<b>Σύνολο</b>', eur(D.income))}
     </div>`;
   const maxExp = D.expByCat.length ? D.expByCat[0][1] : 0;
   const expenseBox = `<div class="panel fin-box"><h3>ΠΟΥ ΠΗΓΑΝ ΤΑ ΕΞΟΔΑ</h3>
@@ -150,17 +150,17 @@ function paint(){
           <div class="fin-cat-row"><span>${esc(catLabel('expense', c))}</span><b>${eur(v)} <small>${Math.round(v / D.expenses * 100)}%</small></b></div>
           <div class="fin-bar"><i style="width:${Math.max(2, v / maxExp * 100)}%"></i></div>
         </div>`).join('') + line('<b>Σύνολο</b>', eur(D.expenses))
-      : `<div class="am-empty">Κανένα έξοδο αυτόν τον μήνα.<br><br><button class="btn" data-fin="add" data-kind="expense">− ΠΡΟΣΘΗΚΗ ΕΞΟΔΟΥ</button></div>`}
+      : `<div class="am-empty">Κανένα έξοδο αυτόν τον μήνα.<br><br><button class="btn" data-fin="add">+ ΠΡΟΣΘΗΚΗ ΕΞΟΔΟΥ</button></div>`}
     </div>`;
   const rows = D.entries.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  const list = `<div class="panel"><h3>ΚΙΝΗΣΕΙΣ ${esc(monthName(m).toUpperCase())} <span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)">${rows.length}</span></h3>
+  const list = `<div class="panel"><h3>ΕΞΟΔΑ ${esc(monthName(m).toUpperCase())} <span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)">${rows.length}</span></h3>
       ${rows.length ? '<div class="fin-list">' + rows.map(e => `
         <button class="fin-entry" data-fin="edit" data-id="${esc(e.id)}">
           <span class="fin-date">${esc(fd(e.date))}</span>
-          <span class="fin-desc"><b>${esc(catLabel(e.kind === 'income' ? 'income' : 'expense', e.category))}</b>${e.description ? `<small>${esc(e.description)}</small>` : ''}</span>
-          <span class="fin-amt ${e.kind === 'income' ? 'in' : 'out'}">${e.kind === 'income' ? '+' : '−'}${eur(e.amount)}</span>
+          <span class="fin-desc"><b>${esc(catLabel('expense', e.category))}</b>${e.description ? `<small>${esc(e.description)}</small>` : ''}</span>
+          <span class="fin-amt out">−${eur(e.amount)}</span>
         </button>`).join('') + '</div>'
-      : '<div class="am-empty">Δεν υπάρχουν καταχωρημένα έξοδα ή έξτρα έσοδα για αυτόν τον μήνα.</div>'}
+      : '<div class="am-empty">Δεν υπάρχουν καταχωρημένα έξοδα για αυτόν τον μήνα.</div>'}
     </div>`;
   r.innerHTML = head + err + kpis + `<div class="fin-cols">${incomeBox}${expenseBox}</div>` + chartPanel() + list;
   bindChart();
@@ -223,21 +223,17 @@ function bindChart(){
 }
 
 /* ---------- entry editor ---------- */
-function openEditor(entry, kind){
-  const E = F.edit = entry ? { ...entry } : {
-    id: null, kind: kind || 'expense', category: kind === 'income' ? 'equipment' : 'rackets',
+function openEditor(entry){
+  const E = F.edit = entry ? { ...entry, kind: 'expense' } : {
+    id: null, kind: 'expense', category: 'rackets',
     date: F.month === thisMonth() ? localToday() : F.month + '-01', amount: '', description: '', notes: '',
   };
   const m = document.createElement('div');
   m.className = 'mem-modal open'; m.id = 'finModal';
   m.innerHTML = `<div class="mem-card" style="max-width:520px">
       <button class="mem-close" type="button" data-fin="close" aria-label="Κλείσιμο">×</button>
-      <h2 class="mem-title">${entry ? 'Επεξεργασία κίνησης' : (E.kind === 'income' ? 'Νέο έσοδο' : 'Νέο έξοδο')}</h2>
-      <div class="am-chips" style="margin-bottom:6px">
-        <button class="am-chip txt ${E.kind !== 'income' ? 'on' : ''}" data-fin="kind" data-kind="expense">− Έξοδο</button>
-        <button class="am-chip txt ${E.kind === 'income' ? 'on' : ''}" data-fin="kind" data-kind="income">+ Έσοδο</button>
-      </div>
-      <div class="am-lab">ΚΑΤΗΓΟΡΙΑ</div>
+      <h2 class="mem-title">${entry ? 'Επεξεργασία εξόδου' : 'Νέο έξοδο'}</h2>
+      <div class="am-lab" style="margin-top:0">ΚΑΤΗΓΟΡΙΑ</div>
       <div class="am-chips" id="finCats"></div>
       <div class="form-grid" style="margin-top:16px">
         <div class="field"><label>ΠΟΣΟ (€) *</label><input class="am-in" id="finAmt" inputmode="decimal" placeholder="π.χ. 45,50" value="${E.amount === '' ? '' : esc(String(E.amount).replace('.', ','))}"></div>
@@ -258,7 +254,7 @@ function openEditor(entry, kind){
 }
 function paintCats(){
   const E = F.edit, el = $('finCats'); if (!el) return;
-  const list = CATS[E.kind === 'income' ? 'income' : 'expense'];
+  const list = CATS.expense;
   if (!list.some(c => c[0] === E.category)) E.category = list[0][0];
   el.innerHTML = list.map(([k, l]) => `<button class="am-chip txt ${E.category === k ? 'on' : ''}" data-fin="cat" data-cat="${k}">${esc(l)}</button>`).join('');
 }
@@ -269,7 +265,7 @@ async function saveEntry(btn){
   const date = $('finDate').value;
   if (!(amount > 0)){ err.textContent = 'Γράψε ποσό μεγαλύτερο από 0.'; return; }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)){ err.textContent = 'Διάλεξε ημερομηνία.'; return; }
-  const data = { kind: E.kind === 'income' ? 'income' : 'expense', category: E.category, amount, date,
+  const data = { kind: 'expense', category: E.category, amount, date,
     description: $('finDesc').value.trim(), notes: $('finNotes').value.trim() };
   btn.disabled = true; err.textContent = 'Αποθήκευση...';
   try {
@@ -289,7 +285,7 @@ async function saveEntry(btn){
 }
 async function deleteEntry(){
   const E = F.edit;
-  if (!confirm('Διαγραφή αυτής της κίνησης;')) return;
+  if (!confirm('Διαγραφή αυτού του εξόδου;')) return;
   try {
     await deleteDoc(doc(db(), C_FIN, E.id));
     F.entries = F.entries.filter(x => x.id !== E.id);
@@ -306,9 +302,8 @@ document.addEventListener('click', (e) => {
     case 'prev': F.month = shiftMonth(F.month, -1); paint(); break;
     case 'next': if (F.month < thisMonth()){ F.month = shiftMonth(F.month, 1); paint(); } break;
     case 'now': F.month = thisMonth(); paint(); break;
-    case 'add': openEditor(null, el.dataset.kind); break;
+    case 'add': openEditor(null); break;
     case 'edit': openEditor(F.entries.find(x => x.id === el.dataset.id)); break;
-    case 'kind': F.edit.kind = el.dataset.kind; document.querySelectorAll('#finModal [data-fin="kind"]').forEach(b => b.classList.toggle('on', b === el)); paintCats(); break;
     case 'cat': F.edit.category = el.dataset.cat; paintCats(); break;
     case 'save': saveEntry(el); break;
     case 'delete': deleteEntry(); break;
