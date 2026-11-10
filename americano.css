@@ -98,7 +98,7 @@ textarea.am-in{resize:vertical}
   .am-tbl{font-size:13px}
   .am-gal{grid-template-columns:repeat(3,1fr)}
 }
-.am-stats{grid-template-columns:repeat(3,1fr)}
+.stat-grid.am-stats{grid-template-columns:repeat(3,1fr)}
 @media(max-width:640px){
   .am-stats{gap:8px;margin-bottom:16px}
   .am-stats .stat{padding:10px 12px}

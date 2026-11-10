@@ -245,6 +245,13 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // /finance_entries/{id} — Admin's manual income/expense entries
+    //   (rackets, balls, maintenance, utilities, equipment sales...).
+    //   Shown on the admin Dashboard next to booking revenue. Admin-only.
+    match /finance_entries/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // /americano_* — Americano tournament manager in the admin panel
     //   (players roster, tournaments + scores, photos & trophies).
     //   Admin-only for now; nothing here is read by the public site.

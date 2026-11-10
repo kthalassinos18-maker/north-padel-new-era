@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="americano.css">
+<link rel="stylesheet" href="finance.css">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:#0a1929;color:#f4f9ff;font-family:'Inter',sans-serif}
@@ -327,13 +328,13 @@
 
     <!-- =========== DASHBOARD =========== -->
     <section class="section active" id="sec-dashboard">
+      <!-- Monthly income / expenses (logic in finance.js) -->
+      <div id="finRoot"></div>
+
+      <h3 class="fin-title" style="margin:8px 0 14px">📅 ΣΗΜΕΡΑ</h3>
       <div class="stat-grid">
         <div class="stat"><div class="stat-label">ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ</div><div class="stat-value" id="stTodayBookings">0</div><div class="stat-delta" id="stTodayDelta">+0 από χθες</div></div>
         <div class="stat"><div class="stat-label">ΕΣΟΔΑ ΣΗΜΕΡΑ</div><div class="stat-value" id="stTodayRev">0<span class="unit">€</span></div><div class="stat-delta" id="stRevDelta">+0€ από χθες</div></div>
-        <div class="stat"><div class="stat-label">ΚΡΑΤΗΣΕΙΣ ΜΗΝΑ</div><div class="stat-value" id="stMonthBookings">0</div><div class="stat-delta">Σύνολο</div></div>
-        <div class="stat"><div class="stat-label">ΕΣΟΔΑ ΜΗΝΑ</div><div class="stat-value" id="stMonthRev">0<span class="unit">€</span></div><div class="stat-delta">Σύνολο</div></div>
-        <div class="stat"><div class="stat-label">💵 ΜΕΤΡΗΤΑ ΜΗΝΑ</div><div class="stat-value" id="stCashMonth" style="color:#b7ff4a">0<span class="unit">€</span></div><div class="stat-delta">Πληρωμές cash</div></div>
-        <div class="stat"><div class="stat-label">💳 ΚΑΡΤΑ ΜΗΝΑ</div><div class="stat-value" id="stCardMonth" style="color:#4a9fff">0<span class="unit">€</span></div><div class="stat-delta">Πληρωμές κάρτα</div></div>
         <div class="stat"><div class="stat-label">ΕΝΕΡΓΑ ΜΕΛΗ</div><div class="stat-value" id="stMembers">0</div><div class="stat-delta">Εγγεγραμμένοι</div></div>
         <div class="stat"><div class="stat-label">ΣΕ ΕΓΚΡΙΣΗ</div><div class="stat-value" id="stPending">0</div><div class="stat-delta">Νέες αιτήσεις</div></div>
       </div>
@@ -349,6 +350,9 @@
 
     <!-- =========== BOOKINGS =========== -->
     <section class="section" id="sec-bookings">
+      <!-- Search & stats by month / day / range (logic in bookings-stats.js) -->
+      <div id="bksRoot"></div>
+
       <div class="panel" id="todayPanel" style="border-color:rgba(183,255,74,0.4);background:linear-gradient(180deg,rgba(183,255,74,0.05) 0%,rgba(15,37,64,0) 40%)">
         <h3 style="color:#b7ff4a">🎾 ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ <span class="actions"><span class="pill ok" id="todayCount">0</span></span></h3>
         <div class="tbl-scroll"><table class="tbl">
@@ -1074,16 +1078,22 @@ async function loadAll(){
 function renderDashboard(){
   const bookings = CACHE.bookings;
   const users    = CACHE.users;
-  const today = new Date().toISOString().slice(0,10);
-  const month = today.slice(0,7);
-  const todayBk = bookings.filter(b => (b.date||'') === today);
-  const monthBk = bookings.filter(b => (b.date||'').startsWith(month));
+  // Local (Greek) date, not UTC — toISOString() showed yesterday between 00:00 and 03:00.
+  const ld = (d) => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const now = new Date();
+  const today = ld(now);
+  const yesterday = ld(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  const live = bookings.filter(b => b.status !== 'cancelled');
+  const todayBk = live.filter(b => (b.date||'') === today);
+  const yBk = live.filter(b => (b.date||'') === yesterday);
+  const sumT = (arr) => arr.reduce((s,b)=>s+(+b.total||0),0);
   document.getElementById('stTodayBookings').textContent = todayBk.length;
-  document.getElementById('stTodayRev').innerHTML = todayBk.reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
-  document.getElementById('stMonthBookings').textContent = monthBk.length;
-  document.getElementById('stMonthRev').innerHTML = monthBk.reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
-  document.getElementById('stCashMonth').innerHTML = monthBk.filter(b=>b.payMethod==='cash').reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
-  document.getElementById('stCardMonth').innerHTML = monthBk.filter(b=>b.payMethod==='card').reduce((s,b)=>s+(+b.total||0),0) + '<span class="unit">€</span>';
+  document.getElementById('stTodayRev').innerHTML = sumT(todayBk) + '<span class="unit">€</span>';
+  const dB = todayBk.length - yBk.length, dR = sumT(todayBk) - sumT(yBk);
+  document.getElementById('stTodayDelta').textContent = (dB >= 0 ? '+' : '') + dB + ' από χθες';
+  document.getElementById('stRevDelta').textContent = (dR >= 0 ? '+' : '') + dR + '€ από χθες';
+  window.__finBookings = bookings;
+  if (window.npFinance) window.npFinance.render(bookings);
   document.getElementById('stMembers').textContent = users.length;
   const pendingCount = users.filter(m => !m.welcomeCoupon && !(m.bookingsCount > 0) && !m.couponReviewed && !((window.npFB.ADMIN_EMAILS||[]).includes((m.email||'').toLowerCase()))).length;
   document.getElementById('stPending').textContent = pendingCount;
@@ -1093,7 +1103,8 @@ function renderDashboard(){
     badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
   }
 
-  const upcoming = [...bookings].sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).slice(0,5);
+  // Only bookings from today onwards (it used to list the oldest bookings ever).
+  const upcoming = live.filter(b => (b.date||'') >= today).sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).slice(0,5);
   document.getElementById('tblUpcoming').innerHTML = upcoming.map(b => `
     <tr><td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td><td>${esc(b.name)}</td><td>${+b.players}άδα</td><td>${+b.total}€</td><td>${pillFor(b.status)}</td></tr>
   `).join('') || '<tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
@@ -1125,7 +1136,11 @@ function bookingHasEnded(b){
 }
 
 function renderBookings(){
-  const todayISO = new Date().toISOString().slice(0,10);
+  window.__bkAll = CACHE.bookings;
+  if (window.npBkStats) window.npBkStats.render(CACHE.bookings);
+  // Local (Greek) date — toISOString() is UTC and showed yesterday's list after midnight.
+  const _n = new Date();
+  const todayISO = _n.getFullYear() + '-' + String(_n.getMonth()+1).padStart(2,'0') + '-' + String(_n.getDate()).padStart(2,'0');
   const all = [...CACHE.bookings];
   let todayList = [], futureList = [], pastList = [];
   const todayPanel  = document.getElementById('todayPanel');
@@ -2390,6 +2405,8 @@ window.addEventListener('load', () => {
 });
 </script>
 <script type="module" src="americano.js"></script>
+<script type="module" src="finance.js"></script>
+<script type="module" src="bookings-stats.js"></script>
 
 </body>
 </html>
