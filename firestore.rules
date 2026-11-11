@@ -123,6 +123,18 @@ service cloud.firestore {
         && ('cancellableUntil' in resource.data)
         && request.time.toMillis() < resource.data.cancellableUntil;
 
+      // Open game («Ψάχνω παίχτες»): the booking owner may cancel the booking
+      // at any time while the game is not full — only in the same batch that
+      // marks the game cancelled (open-games.js → cancelGame).
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && resource.data.status == 'ok'
+        && ('openGameId' in resource.data)
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','cancelledAt'])
+        && get(/databases/$(database)/documents/open_games/$(resource.data.openGameId)).data.status in ['open','kept']
+        && getAfter(/databases/$(database)/documents/open_games/$(resource.data.openGameId)).data.status == 'cancelled';
+
       // Admin may also write anything (used by admin's Add booking form and deletes).
       allow write:  if isAdmin();
     }
@@ -253,6 +265,90 @@ service cloud.firestore {
     //   Shown on the admin Dashboard next to booking revenue. Admin-only.
     match /finance_entries/{id} {
       allow read, write: if isAdmin();
+    }
+
+    // /open_games/{id} — «Βρες παίχτη»: a booking that is looking for players.
+    //   players: map uid → {name, level, at}; friends: the creator's
+    //   companions without an account; count = players + friends (max 4).
+    //   Public read so the site can show «3/4 · ψάχνουν 4ο» on the calendar.
+    match /open_games/{id} {
+      allow read: if true;
+
+      // Created together with the booking by the member who books.
+      allow create: if isVerified()
+        && request.resource.data.creatorUid == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.players.keys().hasOnly([request.auth.uid])
+        && request.resource.data.players.size() == 1
+        && request.resource.data.friends is int
+        && request.resource.data.friends >= 0 && request.resource.data.friends <= 2
+        && request.resource.data.count == 1 + request.resource.data.friends
+        && request.resource.data.levelMin is int && request.resource.data.levelMax is int
+        && request.resource.data.levelMin >= 1 && request.resource.data.levelMax <= 10
+        && request.resource.data.levelMin <= request.resource.data.levelMax
+        && request.resource.data.date is string
+        && request.resource.data.time is string
+        && request.resource.data.court in ['Γήπεδο 1', 'Γήπεδο 2']
+        && request.resource.data.startsAt is int
+        && request.resource.data.bookingId is string;
+
+      allow update: if isAdmin()
+        // JOIN: add exactly yourself to a game that is still open
+        || (isVerified()
+          && resource.data.status == 'open'
+          && request.time.toMillis() < resource.data.startsAt
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players','count','status','updatedAt'])
+          && request.resource.data.players.diff(resource.data.players).addedKeys() == [request.auth.uid].toSet()
+          && request.resource.data.players.diff(resource.data.players).removedKeys().size() == 0
+          && request.resource.data.players.diff(resource.data.players).changedKeys().size() == 0
+          && request.resource.data.players[request.auth.uid].name is string
+          && request.resource.data.players[request.auth.uid].name.size() <= 40
+          && request.resource.data.players[request.auth.uid].level is int
+          && request.resource.data.count == resource.data.count + 1
+          && request.resource.data.count == request.resource.data.players.size() + resource.data.friends
+          && request.resource.data.count <= 4
+          && ((request.resource.data.count == 4 && request.resource.data.status == 'full')
+              || (request.resource.data.count < 4 && request.resource.data.status == 'open')))
+        // LEAVE: remove exactly yourself, up to 24h before (creator cannot leave — they cancel)
+        || (isSignedIn()
+          && request.auth.uid != resource.data.creatorUid
+          && resource.data.status in ['open','full']
+          && request.time.toMillis() < resource.data.startsAt - 86400000
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players','count','status','updatedAt'])
+          && request.resource.data.players.diff(resource.data.players).removedKeys() == [request.auth.uid].toSet()
+          && request.resource.data.players.diff(resource.data.players).addedKeys().size() == 0
+          && request.resource.data.players.diff(resource.data.players).changedKeys().size() == 0
+          && request.resource.data.count == resource.data.count - 1
+          && request.resource.data.status == 'open')
+        // CREATOR: keep the court as is, or cancel, while the game is not full
+        || (isSignedIn()
+          && request.auth.uid == resource.data.creatorUid
+          && resource.data.status == 'open'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+          && request.resource.data.status in ['kept','cancelled']);
+
+      allow delete: if isAdmin();
+    }
+
+    // /notifications/{id} — in-site notifications (no email/SMS costs).
+    //   Only players of the same open game can notify each other about it.
+    match /notifications/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.toUid == request.auth.uid);
+      allow update: if isSignedIn() && resource.data.toUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.toUid == request.auth.uid);
+      allow create: if isAdmin() || (isSignedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && request.resource.data.toUid != request.auth.uid
+        && request.resource.data.read == false
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120
+        && request.resource.data.text is string && request.resource.data.text.size() <= 300
+        && request.resource.data.gameId is string
+        && (request.auth.uid in getAfter(/databases/$(database)/documents/open_games/$(request.resource.data.gameId)).data.players
+            || request.auth.uid in get(/databases/$(database)/documents/open_games/$(request.resource.data.gameId)).data.players)
+        && (request.resource.data.toUid in getAfter(/databases/$(database)/documents/open_games/$(request.resource.data.gameId)).data.players
+            || request.resource.data.toUid in get(/databases/$(database)/documents/open_games/$(request.resource.data.gameId)).data.players));
     }
 
     // /americano_* — Americano tournament manager in the admin panel

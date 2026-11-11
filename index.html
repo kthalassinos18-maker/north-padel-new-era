@@ -12,6 +12,7 @@
 <meta name="turnstile-sitekey" content="0x4AAAAAAE8Puw2gIEeedD8P">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="levels.js"></script>
+<link rel="stylesheet" href="open-games.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1005,6 +1006,8 @@
       </div>
       <p class="hint" id="playersHint" style="display:none" data-i18n="form_2p_note">Η 2άδα είναι διαθέσιμη μόνο μέχρι το session 19:30–21:00.</p>
     </div>
+    <!-- «Ψάχνω παίχτες» (open game) — filled by open-games.js -->
+    <div class="form-field" id="ogFormBox" style="display:none"></div>
     <div class="form-field">
       <label>ΡΑΚΕΤΕΣ <span class="label-hint" id="racketHint" data-i18n="form_rackets_h">(+€2 η καθεμία)</span></label>
       <div class="stepper">
@@ -1609,22 +1612,34 @@
     return snap.docs.map(d => d.data().time);
   }
   // Atomically create booking + slot marker (public occupancy indicator).
-  async function createBookingWithSlot(data){
+  // `og` (optional): open-game data («Ψάχνω παίχτες») created in the same batch.
+  async function createBookingWithSlot(data, og){
     const sId = slotId(data.date, data.court, data.time);
     // Pre-check (rule will also enforce uniqueness because create fails if doc exists)
     const slotRef = doc(db, 'slots', sId);
     const existing = await getDoc(slotRef);
     if (existing.exists()) throw new Error('Το slot κρατήθηκε ήδη από άλλον χρήστη.');
     const bookingRef = doc(collection(db, 'bookings'));
+    const gameRef = og ? doc(collection(db, 'open_games')) : null;
     const batch = writeBatch(db);
-    batch.set(bookingRef, { ...data, createdAt: serverTimestamp() });
+    batch.set(bookingRef, { ...data, ...(gameRef ? { openGameId: gameRef.id } : {}), createdAt: serverTimestamp() });
     batch.set(slotRef, {
       date: data.date, court: data.court, time: data.time,
       userId: data.userId, bookingId: bookingRef.id,
+      ...(gameRef ? { openGameId: gameRef.id } : {}),
       createdAt: serverTimestamp(),
     });
+    if (gameRef){
+      batch.set(gameRef, {
+        ...og,
+        date: data.date, time: data.time, court: data.court, startsAt: data.startsAt,
+        creatorUid: data.userId, bookingId: bookingRef.id, slotId: sId,
+        status: 'open', note: '',
+        createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      });
+    }
     await batch.commit();
-    return bookingRef.id;
+    return gameRef ? { bookingId: bookingRef.id, gameId: gameRef.id } : bookingRef.id;
   }
   async function cancelBookingDoc(id, date, court, time){
     // Grab booking details BEFORE the batch so we can craft the WhatsApp
@@ -2867,6 +2882,15 @@
   // Load the admin's chosen schedule at boot
   loadSchedule();
   let OCCUPIED_SLOTS = new Set();
+  let OPEN_GAMES = {};   // time → open game («3/4 · ψάχνουν 4ο»), joinable instead of taken
+  // Live updates from open-games.js (someone joined / a game filled up).
+  window.addEventListener('npOGUpdate', () => {
+    if (selectedDate && window.npOG){
+      const iso = selectedDate.getFullYear() + '-' + String(selectedDate.getMonth()+1).padStart(2,'0') + '-' + String(selectedDate.getDate()).padStart(2,'0');
+      OPEN_GAMES = window.npOG.forDate(iso, 'Γήπεδο 1');
+      applyDisabledSessions();
+    }
+  });
   // Once the selected day is TODAY, any session whose start time has
   // already passed gets crossed out too — you can't book 09:00-10:30
   // at 9pm. Only applies when selectedDate is today; future dates are
@@ -2891,6 +2915,18 @@
       const globallyOff = DISABLED_SESSIONS.has(t);
       const occupied   = OCCUPIED_SLOTS.has(t);
       const pastToday  = isSlotPastToday(t);
+      if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+      const og = OPEN_GAMES[t];
+      if (og && !globallyOff && !pastToday){
+        const n = window.npOG ? window.npOG.count(og) : og.count;
+        btn.classList.remove('taken'); btn.classList.add('og');
+        btn.disabled = false; btn.removeAttribute('aria-disabled');
+        btn.dataset.og = og.id;
+        btn.title = n + '/4 · ' + L('og_need','ψάχνουν') + ' ' + (4 - n);
+        btn.innerHTML = esc(btn.dataset.label) + '<small>👥 ' + n + '/4 · ' + L('og_lvl','Επ.') + ' ' + og.levelMin + '–' + og.levelMax + '</small>';
+        return;
+      }
+      if (btn.classList.contains('og')){ btn.classList.remove('og'); delete btn.dataset.og; btn.textContent = btn.dataset.label; }
       if (globallyOff || occupied || pastToday){
         btn.classList.add('taken');
         btn.disabled = true;
@@ -2913,6 +2949,7 @@
       const times = await window.npFB.listOccupiedTimes(iso, 'Γήπεδο 1');
       OCCUPIED_SLOTS = new Set(times);
     } catch(e){ console.warn('occupancy fetch failed', e); OCCUPIED_SLOTS = new Set(); }
+    OPEN_GAMES = window.npOG ? window.npOG.forDate(iso, 'Γήπεδο 1') : {};
     // Also refresh admin's global disabled list at the same moment
     try {
       const cfg = await window.npFB.getConfig('sessions');
@@ -3174,11 +3211,12 @@
       const scheduleSize = (sched && Array.isArray(sched[activeSeason]))
         ? sched[activeSeason].filter(s => s.enabled !== false).length : 12;
       const closuresByDate = (cl && cl.byDate) || {};
+      const ogOpen = window.npOG ? window.npOG.openByMonth(ym, 'Γήπεδο 1') : {};
       document.querySelectorAll('#calGrid .cal-day[data-day]').forEach(btn => {
         if (btn.disabled) return;
         const d = +btn.dataset.day;
         const iso = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-        const occupied = occ[iso] || 0;
+        const occupied = Math.max(0, (occ[iso] || 0) - (ogOpen[iso] || 0));
         const closedCount = (closuresByDate[iso] || []).length;
         const available = Math.max(0, scheduleSize - occupied - closedCount);
         btn.classList.remove('day-open','day-few','day-full');
@@ -3254,6 +3292,8 @@
   document.querySelector('.sessions').addEventListener('click', (e) => {
     const slot = e.target.closest('.session-slot');
     if (!slot) return;
+    // A time with an open game opens the court view to join it.
+    if (slot.dataset.og && window.npOG){ window.npOG.open(slot.dataset.og); return; }
     if (slot.classList.contains('taken')) return;
     if (navigator.vibrate) navigator.vibrate(40);
     selectedSession = slot.dataset.time;
@@ -3287,6 +3327,7 @@
   let premiumBalls = false;
 
   let LIVE_PRICES = { p4:44, p2:30, racket:2, balls:8, c1:70, c2:65, c3:75 };
+  window.__npPrices = () => LIVE_PRICES;
   function reflectPricesInUI(){
     const b4 = document.querySelector('.seg-opt[data-players="4"]');
     const b2 = document.querySelector('.seg-opt[data-players="2"]');
@@ -3504,8 +3545,13 @@
       cancellableUntil,
     };
 
+    // «Ψάχνω παίχτες»: open game created together with the booking.
+    let ogPayload = null;
+    try { ogPayload = window.npOG ? window.npOG.formPayload() : null; }
+    catch(ex){ alert(ex.message); return; }
+
     try {
-      await window.npFB.createBookingWithSlot(record);
+      const created = await window.npFB.createBookingWithSlot(record, ogPayload);
 
       // Update bookings count + burn any consumed coupon/gift (fire-and-forget)
       if (u){
@@ -3528,13 +3574,14 @@
         '🏟️ ' + court + '\n' +
         '👥 ' + players + 'άδα · ' + rackets + ' ρακέτες' + (premiumBalls?' · premium μπάλες':'') + '\n' +
         '💶 Σύνολο: ' + total + '€' + (discountKind === 'welcome' ? ' (−10% καλωσόρισμα)' : '');
-      window.npFB.notifyAdminWhatsApp(waText);
+      window.npFB.notifyAdminWhatsApp(waText + (ogPayload ? '\n👥 ΑΝΟΙΧΤΟ ΠΑΙΧΝΙΔΙ: ' + ogPayload.count + '/4 · ψάχνει ' + (4 - ogPayload.count) + ' · επίπεδο ' + ogPayload.levelMin + '–' + ogPayload.levelMax : ''));
 
       const rktLbl = rackets === 1 ? L('rk_single','ρακέτα') : L('rk_plural','ρακέτες');
       const guestNote = isGuest ? '\n\n' + L('booking_guest_note','(Guest κράτηση — για ακύρωση/αλλαγή τηλεφώνησε στο 693 439 1978 ή 695 178 4471)') : '';
       alert('✅ ' + L('booking_ok','Κράτηση καταχωρήθηκε!') + '\n' + name + ' · ' + phone + '\n' + dateISO + ' · ' + selectedSession + '\n' + (players===2?L('unit_2p','2άδα'):L('unit_4p','4άδα')) + ', ' + rackets + ' ' + rktLbl + (premiumBalls?', ' + L('booking_prem_balls','premium μπάλες'):'') + '\n' + L('booking_total','Σύνολο') + ': €' + total + guestNote);
       if (u) renderAuth();
       resetBookingFormState();
+      if (ogPayload && created && created.gameId && window.npOG) window.npOG.afterCreate(created.gameId);
     } catch(err){
       // A permission-denied here almost always means the deterministic
       // /slots doc already exists — i.e. someone else's booking landed on
@@ -4389,6 +4436,8 @@ T.en['wd_mon'] = 'M';
 T.de['wd_mon'] = 'M';
 T.en['wd_tue'] = 'T';
 T.de['wd_tue'] = 'D';
+T.en['og_need'] = 'looking for'; T.de['og_need'] = 'suchen';
+T.en['og_lvl'] = 'Lv';           T.de['og_lvl'] = 'Nv.';
 T.en['wd_wed'] = 'W';
 T.de['wd_wed'] = 'M';
 T.en['wd_thu'] = 'T';
@@ -4471,5 +4520,6 @@ T.de['wd_sun'] = 'S';
 
 </script>
 
+<script type="module" src="open-games.js"></script>
 </body>
 </html>

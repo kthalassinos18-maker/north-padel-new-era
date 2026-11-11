@@ -1,0 +1,122 @@
+/* ============ OPEN GAMES («Βρες παίχτη») ============ */
+
+/* Hero button under ΚΡΑΤΗΣΗ */
+.og-btn{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);z-index:6;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;padding:10px 16px 10px 12px;border-radius:999px;border:1px solid rgba(183,255,74,0.55);background:rgba(10,25,41,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#f4f9ff;font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;letter-spacing:0.12em;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 0 rgba(183,255,74,0.4);animation:ogGlow 2.6s ease-in-out infinite}
+.og-btn:active{transform:translateX(-50%) scale(.97)}
+@keyframes ogGlow{0%,100%{box-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 0 rgba(183,255,74,0.35)}50%{box-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 7px rgba(183,255,74,0)}}
+.og-dots{display:grid;grid-template-columns:repeat(2,10px);gap:3px;padding:3px;border:1px solid rgba(255,255,255,0.35);border-radius:4px;position:relative}
+.og-dots::after{content:"";position:absolute;left:2px;right:2px;top:50%;height:1px;background:rgba(255,255,255,0.55)}
+.og-dots i{width:10px;height:10px;border-radius:50%;background:#b7ff4a}
+.og-dots i.e{background:transparent;border:1.5px dashed #b7ff4a;animation:ogPulse 1.4s ease-in-out infinite}
+@keyframes ogPulse{0%,100%{opacity:.35}50%{opacity:1}}
+.og-btn .og-n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#b7ff4a;color:#0a1929;font-family:'Inter',sans-serif;font-size:11px;font-weight:800;letter-spacing:0;display:inline-flex;align-items:center;justify-content:center}
+.og-btn .og-bell{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff4a6b;color:#fff;font-family:'Inter',sans-serif;font-size:10px;font-weight:800;letter-spacing:0;display:flex;align-items:center;justify-content:center}
+
+/* Overlay */
+.og-ov{position:fixed;inset:0;z-index:900;background:radial-gradient(ellipse at 50% 0%,#12355c 0%,#0a1929 60%);color:#f4f9ff;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
+.og-ov.open{opacity:1;pointer-events:auto}
+.og-top{display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px));border-bottom:1px solid rgba(183,255,74,0.15)}
+.og-top h2{flex:1;font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;letter-spacing:0.12em}
+.og-x{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,0.08);color:#fff;font-size:22px;cursor:pointer;line-height:1}
+.og-back{border:0;background:transparent;color:#b7ff4a;font-size:22px;cursor:pointer;padding:4px 8px}
+.og-tabs{display:flex;gap:6px;padding:12px 16px 0;overflow-x:auto}
+.og-tab{flex:none;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:rgba(244,249,255,0.75);border-radius:999px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;position:relative}
+.og-tab.on{background:#b7ff4a;border-color:#b7ff4a;color:#0a1929}
+.og-tab .dot{display:inline-block;min-width:16px;height:16px;line-height:16px;border-radius:8px;background:#ff4a6b;color:#fff;font-size:10px;margin-left:6px;padding:0 4px;text-align:center}
+.og-body{flex:1;overflow-y:auto;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.og-wrap{max-width:560px;margin:0 auto}
+.og-empty{text-align:center;color:rgba(244,249,255,0.6);padding:30px 10px;line-height:1.6}
+.og-empty b{color:#f4f9ff}
+.og-main{display:inline-block;margin-top:14px;background:#b7ff4a;color:#0a1929;border:0;border-radius:12px;padding:13px 20px;font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.12em;cursor:pointer}
+.og-main:disabled{opacity:.45;cursor:not-allowed}
+.og-sec{background:rgba(255,255,255,0.06);color:#f4f9ff;border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.og-danger{color:#ff8a8a;border-color:rgba(255,107,107,0.4);background:rgba(255,107,107,0.08)}
+.og-note{font-size:12px;color:rgba(244,249,255,0.55);line-height:1.5;margin-top:10px}
+
+/* Game cards */
+.og-list{display:flex;flex-direction:column;gap:10px}
+.og-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#0f2540;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;color:inherit;font-family:inherit;cursor:pointer}
+.og-card:hover{border-color:rgba(183,255,74,0.45)}
+.og-card .when{min-width:62px;text-align:center;border-right:1px solid rgba(255,255,255,0.08);padding-right:12px}
+.og-card .when b{display:block;font-family:'Oswald',sans-serif;font-size:22px;line-height:1.1}
+.og-card .when small{font-size:11px;color:rgba(244,249,255,0.6);letter-spacing:0.06em}
+.og-card .mid{flex:1;min-width:0}
+.og-card .t{font-weight:700;font-size:15px}
+.og-card .s{font-size:12px;color:rgba(244,249,255,0.6);margin-top:3px}
+.og-card .need{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.06em;color:#b7ff4a;white-space:nowrap;text-align:right}
+.og-mini{display:inline-grid;grid-template-columns:repeat(2,12px);gap:3px;margin-top:6px}
+.og-mini i{width:12px;height:12px;border-radius:50%;background:#b7ff4a}
+.og-mini i.e{background:transparent;border:1.5px dashed rgba(183,255,74,0.8)}
+.og-status{display:inline-block;font-size:10px;font-weight:800;letter-spacing:0.12em;padding:3px 8px;border-radius:6px}
+.og-status.open{background:rgba(183,255,74,0.15);color:#b7ff4a}
+.og-status.full{background:rgba(74,195,255,0.18);color:#4ac3ff}
+.og-status.kept{background:rgba(255,255,255,0.1);color:rgba(244,249,255,0.8)}
+.og-status.cancelled{background:rgba(255,107,107,0.15);color:#ff8a8a}
+
+/* Decision banner */
+.og-decide{background:linear-gradient(135deg,rgba(255,193,74,0.18),rgba(255,193,74,0.05));border:1px solid rgba(255,193,74,0.5);border-radius:14px;padding:14px;margin-bottom:14px}
+.og-decide b{color:#ffc14a}
+.og-decide .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.og-decide .row > *{flex:1}
+
+/* Panoramic court */
+.og-head{text-align:center;margin-bottom:6px}
+.og-head .d{font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;letter-spacing:0.04em}
+.og-head .i{font-size:13px;color:rgba(244,249,255,0.65);margin-top:2px}
+.og-stage{position:relative;width:100%;max-width:520px;margin:6px auto 0;aspect-ratio:36/30}
+.og-stage svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.og-stage .og-in{animation:ogIn .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ogIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+.og-seat{position:absolute;transform:translate(-50%,-50%) scale(var(--k,1));display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;color:#fff;font-family:inherit;cursor:default;padding:0;animation:ogPop .5s cubic-bezier(.2,1.4,.4,1) both;animation-delay:var(--dl,0s)}
+@keyframes ogPop{from{opacity:0;transform:translate(-50%,-30%) scale(calc(var(--k,1)*.4))}to{opacity:1;transform:translate(-50%,-50%) scale(var(--k,1))}}
+.og-seat .av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#b7ff4a,#7fd321);color:#0a1929;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;box-shadow:0 0 0 3px rgba(10,25,41,0.85),0 8px 18px rgba(0,0,0,0.5)}
+.og-seat.me .av{background:linear-gradient(135deg,#4ac3ff,#1d8fe0);color:#fff}
+.og-seat.friend .av{background:linear-gradient(135deg,#d8e3ee,#9fb3c8)}
+.og-seat .nm{font-size:12px;font-weight:700;background:rgba(10,25,41,0.85);padding:2px 8px;border-radius:8px;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.og-seat .lv{font-size:10px;font-weight:700;color:#b7ff4a;background:rgba(10,25,41,0.85);padding:1px 6px;border-radius:6px;white-space:nowrap}
+.og-seat.empty{cursor:pointer}
+.og-seat.empty .av{background:rgba(10,25,41,0.55);border:2px dashed #b7ff4a;color:#b7ff4a;font-size:28px;box-shadow:0 0 18px rgba(183,255,74,0.35);animation:ogBreath 1.6s ease-in-out infinite}
+@keyframes ogBreath{0%,100%{box-shadow:0 0 10px rgba(183,255,74,0.25)}50%{box-shadow:0 0 26px rgba(183,255,74,0.6)}}
+.og-seat.empty .nm{color:#b7ff4a}
+.og-seat.empty:disabled{cursor:not-allowed}
+.og-seat.empty:disabled .av{animation:none;opacity:.5}
+.og-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.og-fact{background:#0f2540;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;text-align:center}
+.og-fact b{display:block;font-family:'Oswald',sans-serif;font-size:18px}
+.og-fact small{font-size:10px;letter-spacing:0.14em;color:rgba(244,249,255,0.55);font-weight:700}
+.og-acts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.og-full-banner{text-align:center;background:rgba(74,195,255,0.12);border:1px solid rgba(74,195,255,0.45);border-radius:14px;padding:14px;margin:12px 0;font-weight:700}
+
+/* Notifications */
+.og-nt{display:flex;gap:12px;align-items:flex-start;background:#0f2540;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;width:100%;text-align:left;color:inherit;font-family:inherit}
+.og-nt.unread{border-color:rgba(183,255,74,0.5);background:rgba(183,255,74,0.06)}
+.og-nt .ic{font-size:22px;line-height:1}
+.og-nt .tx b{display:block;font-size:14px}
+.og-nt .tx span{font-size:13px;color:rgba(244,249,255,0.7)}
+.og-nt .tx small{display:block;font-size:11px;color:rgba(244,249,255,0.45);margin-top:3px}
+
+/* Toast */
+.og-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,140%);z-index:950;max-width:min(92vw,440px);background:#0f2540;border:1px solid rgba(183,255,74,0.55);border-radius:14px;padding:12px 14px;color:#f4f9ff;font-size:14px;box-shadow:0 12px 40px rgba(0,0,0,0.5);display:flex;gap:10px;align-items:center;transition:transform .35s cubic-bezier(.2,.8,.2,1);cursor:pointer}
+.og-toast.show{transform:translate(-50%,0)}
+
+/* Booking form block */
+.og-form{border:1px solid rgba(183,255,74,0.3);background:rgba(183,255,74,0.05);border-radius:12px;padding:12px}
+.og-form .check-line{margin:0}
+.og-form .og-opts{margin-top:10px;display:none}
+.og-form.on .og-opts{display:block}
+.og-form .og-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.og-form .og-chip{border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#f4f9ff;border-radius:999px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.og-form .og-chip.on{background:#b7ff4a;border-color:#b7ff4a;color:#0a1929}
+.og-form label.sm{display:block;font-size:11px;letter-spacing:0.14em;color:rgba(244,249,255,0.6);font-weight:600;margin-top:10px}
+.og-form select{margin-top:6px}
+
+/* Booking calendar: session with an open game */
+.session-slot.og{background:rgba(74,195,255,0.1);border-color:rgba(74,195,255,0.55);color:#f4f9ff;text-decoration:none;cursor:pointer}
+.session-slot.og small{display:block;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0;color:#4ac3ff;margin-top:4px}
+
+@media(min-width:900px){ .og-btn{bottom:13%} }
+@media(max-height:620px){ .og-btn{bottom:16%} }
+@media(max-width:420px){
+  .og-seat .av{width:44px;height:44px;font-size:19px}
+  .og-head .d{font-size:21px}
+}

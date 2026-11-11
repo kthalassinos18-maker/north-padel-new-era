@@ -358,6 +358,8 @@
     <section class="section" id="sec-bookings">
       <!-- Search & stats by month / day / range (logic in bookings-stats.js) -->
       <div id="bksRoot"></div>
+      <!-- Open games «Βρες παίχτη» (logic in admin-open-games.js) -->
+      <div id="ogAdminRoot"></div>
 
       <div class="panel" id="todayPanel" style="border-color:rgba(183,255,74,0.4);background:linear-gradient(180deg,rgba(183,255,74,0.05) 0%,rgba(15,37,64,0) 40%)">
         <h3 style="color:#b7ff4a">🎾 ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ <span class="actions"><span class="pill ok" id="todayCount">0</span></span></h3>
@@ -788,6 +790,8 @@
           const sId = (b.date + '_' + b.court + '_' + b.time).replace(/[^a-zA-Z0-9_-]/g, '_');
           batch.delete(doc(db, 'slots', sId));
         }
+        // An open game («Ψάχνω παίχτες») on this booking is cancelled with it.
+        if (b.openGameId) batch.set(doc(db, 'open_games', b.openGameId), { status: 'cancelled', updatedAt: serverTimestamp() }, { merge: true });
       }
       await batch.commit();
     },
@@ -823,8 +827,13 @@
           date: next.date, court: next.court, time: next.time,
           userId: booking.userId || window.npFB.auth.currentUser.uid,
           bookingId: booking.id,
+          ...(booking.openGameId ? { openGameId: booking.openGameId } : {}),
           createdAt: serverTimestamp(),
         });
+      }
+      // Keep its open game («Ψάχνω παίχτες») on the new day/time too.
+      if (booking.openGameId){
+        batch.set(doc(db, 'open_games', booking.openGameId), { date: next.date, court: next.court, time: next.time, startsAt, slotId: newSlotId, updatedAt: serverTimestamp() }, { merge: true });
       }
       await batch.commit();
     },
@@ -1273,7 +1282,8 @@ function renderBookings(){
   // past edit (adding reschedule) ended up needing to be made twice.
   function nameCellHtml(b){
     const noteMark = b.adminNote ? ' 📝' : '';
-    return `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${noteMark}${customerNoteTag(b)}`;
+    const og = b.openGameId && window.npAdminOG ? window.npAdminOG.tag(b.openGameId) : '';
+    return `<span data-edit-name="${esc(b.id)}" style="cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.4)" title="Κλικ για επεξεργασία">${esc(b.name||'—')}</span>${noteMark}${customerNoteTag(b)}${og}`;
   }
   function actionCellHtml(b){
     return `<div style="display:flex;gap:4px;justify-content:flex-end">
@@ -2508,6 +2518,7 @@ window.addEventListener('load', () => {
 <script type="module" src="americano.js"></script>
 <script type="module" src="finance.js"></script>
 <script type="module" src="bookings-stats.js"></script>
+<script type="module" src="admin-open-games.js"></script>
 
 </body>
 </html>
