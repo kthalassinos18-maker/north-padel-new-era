@@ -13,6 +13,7 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="levels.js"></script>
 <link rel="stylesheet" href="open-games.css">
+<link rel="stylesheet" href="player-profile.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2049,6 +2050,7 @@
         <div class="pf-email">${esc(u.email)}${verifiedBadge}</div>
         <div class="pf-badge">${lv.icon} ${esc(lv.name)}</div>
         <button type="button" class="pf-cta outline" id="changeLevelBtn" style="margin-top:12px;font-size:11px;padding:8px">✎ ΑΛΛΑΓΗ ΕΠΙΠΕΔΟΥ</button>`;
+      if (window.npProfile) window.npProfile.hero();
 
       const bookings = (u.bookings||[]).slice(-3).reverse();
       const bookingRows = bookings.length
@@ -2417,6 +2419,7 @@
     if (u.welcomeCoupon) rewardBits.push('🎁 ' + L('reward_welcome','−10% καλωσόρισμα στην πρώτη κράτηση'));
 
     document.getElementById('profileFull').innerHTML = `
+      <div id="ppCard"></div>
       <div class="pf-section">
         <h3><span class="ico">🪪</span>${L('pf_personal','ΠΡΟΣΩΠΙΚΑ')}</h3>
         <div class="pf-grid">
@@ -2443,6 +2446,8 @@
           </select>
         </div>
       </div>
+
+      <div class="pf-section" id="ppStyle"></div>
 
       <div class="pf-section">
         <h3><span class="ico">📅</span>${L('pf_availability','ΔΙΑΘΕΣΙΜΟΤΗΤΑ')}</h3>
@@ -2479,6 +2484,11 @@
         </div>
       </div>
 
+      <div class="pf-section" id="ppAlerts"></div>
+
+      <div class="pf-section" id="ppStats"></div>
+      <div class="pf-section" id="ppBadges"></div>
+
       ${rewardBits.length ? `<div class="pf-section" style="border-color:rgba(183,255,74,0.3)">
         <h3><span class="ico">🎁</span>${L('pf_rewards','ΠΡΟΣΦΟΡΕΣ ΣΟΥ')}</h3>
         ${rewardBits.map(r => `<div style="padding:6px 0;font-size:14px">${r}</div>`).join('')}
@@ -2504,6 +2514,8 @@
     `;
 
     renderMyBookings(u);
+    // Player card, photo, style, stats, badges, «Ειδοποίησέ με» (player-profile.js)
+    if (window.npProfile) window.npProfile.render(u);
 
     // Chip toggles
     document.querySelectorAll('#profileFull .pf-chip').forEach(c => {
@@ -2530,10 +2542,12 @@
         contactMethod: document.getElementById('p_contact').value,
         lookingForGame: document.getElementById('p_lfg').checked,
         availability: { days, times },
+        ...(window.npProfile ? window.npProfile.patch() : {}),
       };
       try {
         await window.npFB.updateProfile(u.uid, patch);
         Object.assign(currentProfile, patch);
+        if (window.npProfile) window.npProfile.afterSave(currentProfile);
         // Sync public snapshot
         if (patch.lookingForGame){
           await window.npFB.upsertPublicProfile(u.uid, {
@@ -4528,5 +4542,6 @@ T.de['wd_sun'] = 'S';
 </script>
 
 <script type="module" src="open-games.js"></script>
+<script type="module" src="player-profile.js"></script>
 </body>
 </html>

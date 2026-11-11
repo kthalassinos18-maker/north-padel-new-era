@@ -385,6 +385,8 @@ function openPlayerEditor(p){
       <div class="field"><label>ΟΝΟΜΑ *</label><input class="am-in" id="amPName" maxlength="24" value="${esc(E.name)}"></div>
       <div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input class="am-in" id="amPPhone" type="tel" maxlength="20" value="${esc(E.phone)}"></div>
       <div class="field"><label>ΕΠΙΠΕΔΟ</label><select class="am-in" id="amPLevel">${LEVELS.map(l => `<option value="${esc(l)}" ${l === (E.level || '') ? 'selected' : ''}>${esc(l || '—')}</option>`).join('')}</select></div>
+      <div class="field"><label>ΜΕΛΟΣ ΤΟΥ SITE</label><select class="am-in" id="amPMember"><option value="">— Χωρίς λογαριασμό —</option>${members().map(m => `<option value="${esc(m.uid)}" ${m.uid === (E.memberUid || '') ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select>
+        <span class="am-muted" style="font-size:11px">Αν συνδεθεί, τα τρόπαια εμφανίζονται στο προφίλ του μέλους.</span></div>
     </div>
     <div class="field" style="margin-top:14px"><label>ΣΗΜΕΙΩΣΕΙΣ</label><textarea class="am-in" id="amPNotes" rows="3" maxlength="300" placeholder="π.χ. αριστερόχειρας, διαθεσιμότητα">${esc(E.notes)}</textarea></div>
     <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
@@ -403,10 +405,11 @@ async function savePlayer(btn){
   E.name = $('amPName').value.trim();
   E.phone = $('amPPhone').value.trim();
   E.level = $('amPLevel').value;
+  E.memberUid = $('amPMember') ? $('amPMember').value : (E.memberUid || '');
   E.notes = $('amPNotes').value.trim();
   if (!E.name){ err.textContent = 'Γράψε όνομα.'; return; }
   if (A.players.some(p => p.id !== E.id && norm(p.name) === norm(E.name))){ err.textContent = 'Υπάρχει ήδη παίχτης με αυτό το όνομα.'; return; }
-  const data = { name: E.name, phone: E.phone, level: E.level, notes: E.notes, photo: E.photo || '' };
+  const data = { name: E.name, phone: E.phone, level: E.level, notes: E.notes, photo: E.photo || '', memberUid: E.memberUid || '' };
   btn.disabled = true; err.textContent = 'Αποθήκευση...';
   try {
     if (E.id){
@@ -428,6 +431,32 @@ async function delPlayer(){
     A.players = A.players.filter(p => p.id !== E.id);
     closeModal(); render();
   } catch(e){ $('amPErr').textContent = 'Αποτυχία: ' + e.message; }
+}
+
+/* ---------- site members (for linking players → profile trophies) ---------- */
+function members(){
+  let users = [];
+  try { users = (typeof CACHE !== 'undefined' && CACHE.users) || []; } catch(_) {}
+  return users.map(u => ({ uid: u.uid, label: ((u.name || '') + ' ' + (u.surname || '')).trim() || u.email || u.uid, full: norm(((u.name || '') + ' ' + (u.surname || '')).trim()) }))
+    .filter(m => m.uid).sort((a, b) => a.label.localeCompare(b.label, 'el'));
+}
+/** Public result of a finished tournament → shown on the linked members' profiles. */
+async function publishTrophy(T){
+  const s = standings(T), mem = members();
+  const uidOf = (name) => {
+    const p = playerByName(name);
+    if (p && p.memberUid) return p.memberUid;
+    const m = mem.find(x => x.full && x.full === norm(name));   // exact "Όνομα Επώνυμο" match
+    return m ? m.uid : null;
+  };
+  const players = s.rows.map((r, i) => ({ name: r.n, rank: i + 1, pts: r.f, uid: uidOf(r.n) }));
+  try {
+    await setDoc(doc(db(), 'trophies', T.id), {
+      name: T.name || 'Americano', date: T.date || '', players,
+      uids: players.map(p => p.uid).filter(Boolean),
+      winnerUid: players[0] && players[0].uid || null, updatedAt: serverTimestamp(),
+    });
+  } catch(e){ console.warn('trophy publish', e); }
 }
 
 /* ---------- tournament view ---------- */
@@ -610,12 +639,12 @@ async function finishTour(){
   const s = standings(T);
   const left = s.total - s.done;
   if (!confirm(left ? `Υπάρχουν ακόμα ${left} αγώνες χωρίς σκορ. Ολοκλήρωση τουρνουά παρ' όλα αυτά;` : 'Ολοκλήρωση τουρνουά και αποθήκευση στο ιστορικό;')) return;
-  try { await saveTour(T, { status: 'finished', winners: s.rows.slice(0, 3).map(r => r.n) }); render(); }
+  try { await saveTour(T, { status: 'finished', winners: s.rows.slice(0, 3).map(r => r.n) }); await publishTrophy(T); render(); }
   catch(e){ alert('Αποτυχία: ' + e.message); }
 }
 async function reopenTour(){
   const T = curTour(); if (!T) return;
-  try { await saveTour(T, { status: 'active', winners: [] }); render(); }
+  try { await saveTour(T, { status: 'active', winners: [] }); await deleteDoc(doc(db(), 'trophies', T.id)).catch(() => {}); render(); }
   catch(e){ alert('Αποτυχία: ' + e.message); }
 }
 async function delTour(){
@@ -630,6 +659,7 @@ async function delTour(){
       await b.commit();
     }
     await deleteDoc(doc(db(), C_TOURS, T.id));
+    await deleteDoc(doc(db(), 'trophies', T.id)).catch(() => {});
     (T.matches || []).forEach((_, i) => lsDel(liveKey(T.id, i)));
     A.tours = A.tours.filter(t => t.id !== T.id);
     A.tourId = null; A.view = 'list'; render();

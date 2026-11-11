@@ -1,0 +1,49 @@
+/* ============ PLAYER PROFILE v2 (player-profile.js) ============ */
+
+/* Player card */
+.pp-card{position:relative;overflow:hidden;border-radius:20px;padding:20px 18px 16px;background:radial-gradient(circle at 85% 0%,rgba(183,255,74,0.28),transparent 45%),linear-gradient(160deg,#143a66 0%,#0b1f38 55%,#0a1929 100%);border:1px solid rgba(183,255,74,0.45);box-shadow:0 14px 40px rgba(0,0,0,0.45)}
+.pp-card::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,0.025) 0 2px,transparent 2px 14px);pointer-events:none}
+.pp-top{display:flex;gap:16px;align-items:center;position:relative;z-index:1}
+.pp-photo{width:92px;height:92px;border-radius:50%;flex:none;background:#b7ff4a center/cover no-repeat;color:#0a1929;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;box-shadow:0 0 0 3px #0a1929,0 0 0 5px #b7ff4a;cursor:pointer;position:relative}
+.pp-photo .cam{position:absolute;right:-4px;bottom:-4px;width:30px;height:30px;border-radius:50%;background:#0a1929;border:2px solid #b7ff4a;display:flex;align-items:center;justify-content:center;font-size:14px}
+.pp-name{font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;letter-spacing:0.03em;line-height:1.1;color:#f4f9ff}
+.pp-lv{display:inline-flex;align-items:center;gap:6px;margin-top:6px;background:#b7ff4a;color:#0a1929;border-radius:999px;padding:4px 12px 4px 8px;font-weight:800;font-size:13px}
+.pp-lv b{font-family:'Oswald',sans-serif;font-size:16px}
+.pp-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pp-tags span{font-size:11px;font-weight:700;letter-spacing:0.04em;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.85)}
+.pp-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;position:relative;z-index:1}
+.pp-nums div{background:rgba(10,25,41,0.55);border-radius:12px;padding:10px 6px;text-align:center}
+.pp-nums b{display:block;font-family:'Oswald',sans-serif;font-size:22px;color:#f4f9ff}
+.pp-nums small{font-size:9px;letter-spacing:0.16em;color:rgba(244,249,255,0.55);font-weight:700}
+.pp-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:10px;letter-spacing:0.18em;color:rgba(244,249,255,0.45);font-weight:700;position:relative;z-index:1}
+.pp-foot .brand{color:#b7ff4a}
+.pp-actions{display:flex;gap:8px;margin-top:12px}
+.pp-actions button{flex:1;padding:11px 10px;border-radius:12px;border:1px solid rgba(183,255,74,0.4);background:rgba(183,255,74,0.08);color:#b7ff4a;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.pp-actions button.solid{background:#b7ff4a;color:#0a1929;border-color:#b7ff4a}
+
+/* Choice chips (style) */
+.pp-q{font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin:14px 0 8px}
+.pp-q:first-of-type{margin-top:0}
+.pp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pp-chip{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(244,249,255,0.75);padding:9px 13px;border-radius:20px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.pp-chip.on{background:#b7ff4a;border-color:#b7ff4a;color:#0a1929}
+
+/* Stats */
+.pp-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.pp-stat{background:rgba(10,25,41,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px}
+.pp-stat b{display:block;font-family:'Oswald',sans-serif;font-size:22px;color:#f4f9ff}
+.pp-stat small{font-size:11px;color:rgba(244,249,255,0.55)}
+.pp-trophy{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
+.pp-trophy:last-child{border-bottom:0}
+.pp-trophy .m{font-size:20px}
+.pp-trophy small{display:block;color:rgba(244,249,255,0.5);font-size:11px}
+
+/* Badges */
+.pp-badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pp-badge{text-align:center;padding:10px 4px;border-radius:12px;background:rgba(183,255,74,0.08);border:1px solid rgba(183,255,74,0.3)}
+.pp-badge .i{font-size:26px;line-height:1.1}
+.pp-badge .n{font-size:10px;font-weight:700;color:#f4f9ff;margin-top:4px;line-height:1.25}
+.pp-badge.off{background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.07)}
+.pp-badge.off .i{filter:grayscale(1);opacity:.35}
+.pp-badge.off .n{color:rgba(244,249,255,0.35)}
+@media(max-width:420px){ .pp-badges{grid-template-columns:repeat(3,1fr)} .pp-photo{width:78px;height:78px;font-size:30px} .pp-name{font-size:21px} }

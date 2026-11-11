@@ -39,7 +39,7 @@ service cloud.firestore {
       allow update: if isAdmin() || (
         isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name','surname','phone','level','levelScale','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount','phoneVerified'])
+             .hasOnly(['name','surname','phone','level','levelScale','hand','side','playMode','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount','phoneVerified'])
         && (!('level' in request.resource.data.diff(resource.data).affectedKeys())
             || (request.resource.data.level is int
                 && request.resource.data.level >= 1
@@ -328,6 +328,47 @@ service cloud.firestore {
           && request.resource.data.status in ['kept','cancelled']);
 
       allow delete: if isAdmin();
+
+      // Game chat — only the players of this game (and the admin).
+      match /chat/{mid} {
+        allow read: if isAdmin()
+          || (isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/open_games/$(id)).data.players);
+        allow create: if isSignedIn()
+          && request.resource.data.uid == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/open_games/$(id)).data.players
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500
+          && request.resource.data.name is string && request.resource.data.name.size() <= 40;
+        allow delete: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      }
+    }
+
+    // /avatars/{uid} — profile photo (small, compressed). Public so it can be
+    // shown on the open-game court; only the owner (or admin) writes it.
+    match /avatars/{uid} {
+      allow read: if true;
+      allow write: if isAdmin() || (isOwner(uid)
+        && request.resource.data.photo is string
+        && request.resource.data.photo.size() < 150000);
+    }
+
+    // /og_alerts/{uid} — «Ειδοποίησέ με»: when an open game matching my
+    // days/times/level opens, its organiser's page sends me a notification.
+    //   Readable by verified members (to find who to notify): first name,
+    //   level, gender, preferred days/times only.
+    match /og_alerts/{uid} {
+      allow read: if isVerified() || isAdmin();
+      allow write: if isAdmin() || (isOwner(uid) && isVerified()
+        && request.resource.data.keys().hasOnly(['on','name','level','gender','days','times','updatedAt'])
+        && request.resource.data.on is bool
+        && request.resource.data.level is int);
+    }
+
+    // /trophies/{tournamentId} — public results of finished Americano
+    // tournaments (written by the admin) so members see them on their profile.
+    match /trophies/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // /notifications/{id} — in-site notifications (no email/SMS costs).
@@ -337,7 +378,20 @@ service cloud.firestore {
       allow update: if isSignedIn() && resource.data.toUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if isAdmin() || (isSignedIn() && resource.data.toUid == request.auth.uid);
-      allow create: if isAdmin() || (isSignedIn()
+      allow create: if isAdmin()
+        // «Ειδοποίησέ με»: the organiser of a game alerts a member who asked for it.
+        || (isVerified()
+          && request.resource.data.type == 'alert'
+          && request.resource.data.fromUid == request.auth.uid
+          && request.resource.data.toUid is string
+          && request.resource.data.toUid != request.auth.uid
+          && request.resource.data.read == false
+          && request.resource.data.title is string && request.resource.data.title.size() <= 120
+          && request.resource.data.text is string && request.resource.data.text.size() <= 300
+          && request.resource.data.gameId is string
+          && get(/databases/$(database)/documents/open_games/$(request.resource.data.gameId)).data.creatorUid == request.auth.uid
+          && get(/databases/$(database)/documents/og_alerts/$(request.resource.data.toUid)).data.on == true)
+        || (isSignedIn()
         && request.resource.data.fromUid == request.auth.uid
         && request.resource.data.toUid is string
         && request.resource.data.toUid != request.auth.uid
