@@ -31,18 +31,21 @@ service cloud.firestore {
         && request.resource.data.freeCourts == 0
         && request.resource.data.bookingsCount == 0
         && request.resource.data.level is int
-        && request.resource.data.level >= 1 && request.resource.data.level <= 5;
+        // levels are 1–10 since Nov 2026 (old accounts: 1–5, migrated by the admin panel)
+        && request.resource.data.level >= 1 && request.resource.data.level <= 10;
 
       // Owner may only update a whitelist of profile fields. Loyalty and
       // identity fields are admin-only.
       allow update: if isAdmin() || (
         isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name','surname','phone','level','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount','phoneVerified'])
+             .hasOnly(['name','surname','phone','level','levelScale','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount','phoneVerified'])
         && (!('level' in request.resource.data.diff(resource.data).affectedKeys())
             || (request.resource.data.level is int
                 && request.resource.data.level >= 1
-                && request.resource.data.level <= 5))
+                && request.resource.data.level <= 10))
+        && (!('levelScale' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.levelScale == 10)
         // freeCourts / couponPct / welcomeCoupon: owner may only decrease
         // (burn a gift after use). Admin still bypasses via the top branch.
         && (!('freeCourts' in request.resource.data.diff(resource.data).affectedKeys())

@@ -11,6 +11,7 @@
      Cloudflare Pages Settings for the /api/verify-turnstile function. -->
 <meta name="turnstile-sitekey" content="0x4AAAAAAE8Puw2gIEeedD8P">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script src="levels.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -76,6 +77,11 @@
   .consent-row{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.5;color:rgba(244,249,255,0.75);padding:6px 0;cursor:pointer}
   .consent-row input[type="checkbox"]{margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:#b7ff4a;cursor:pointer}
   .consent-row span{flex:1}
+  .consent-row a{color:#b7ff4a;text-decoration:underline}
+  .consent-main{background:rgba(183,255,74,0.05);border:1px solid rgba(183,255,74,0.25);border-radius:10px;padding:12px}
+  .consent-small{font-size:11px;color:rgba(244,249,255,0.6);padding:6px 2px 0}
+  .consent-small input[type="checkbox"]{width:14px;height:14px}
+  .consent-small em{color:rgba(244,249,255,0.45)}
   .pw-wrap{position:relative}
   .pw-wrap input{padding-right:44px}
   .pw-toggle{position:absolute;right:8px;bottom:6px;background:transparent;border:0;color:rgba(244,249,255,0.6);font-size:18px;width:32px;height:32px;cursor:pointer;padding:0;border-radius:6px;line-height:1;display:flex;align-items:center;justify-content:center}
@@ -752,22 +758,27 @@
     <div class="form-field">
       <label data-i18n="auth_level">ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ</label>
       <select id="si_level" required style="padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px">
-        <option value="1" data-i18n="level_opt_1">🔰 Beginner — Πρώτες μπαλιές</option>
-        <option value="2" data-i18n="level_opt_2">🥉 Amateur — Λίγες φορές έχω παίξει</option>
-        <option value="3" data-i18n="level_opt_3">🥈 Regular — Παίζω σταθερά</option>
-        <option value="4" data-i18n="level_opt_4">🥇 Pro — Έμπειρος παίκτης</option>
-        <option value="5" data-i18n="level_opt_5">🏆 Champion — Ανταγωνιστικό επίπεδο</option>
+        <option value="1" data-i18n="level_opt_1">🌱 1 · Πρώτη επαφή — δεν έχω παίξει ποτέ ή μόνο 1–2 φορές</option>
+        <option value="2" data-i18n="level_opt_2">🔰 2 · Αρχάριος — μαθαίνω τα βασικά χτυπήματα</option>
+        <option value="3" data-i18n="level_opt_3">🎾 3 · Αρχάριος+ — κρατάω το μπαλάκι στο παιχνίδι</option>
+        <option value="4" data-i18n="level_opt_4">🙂 4 · Ερασιτέχνης — παίζω πού και πού για πλάκα</option>
+        <option value="5" data-i18n="level_opt_5">💪 5 · Μέτριος — παίζω σταθερά, βγάζω τοίχους</option>
+        <option value="6" data-i18n="level_opt_6">🔥 6 · Μέτριος+ — βολέ, λομπ, κοντρόλ στο παιχνίδι</option>
+        <option value="7" data-i18n="level_opt_7">🥉 7 · Καλός — παίζω με τακτική και θέσεις</option>
+        <option value="8" data-i18n="level_opt_8">🥈 8 · Προχωρημένος — bandeja / víbora, τοπικά τουρνουά</option>
+        <option value="9" data-i18n="level_opt_9">🥇 9 · Πολύ προχωρημένος — αγωνιστικός παίχτης, κατάταξη</option>
+        <option value="10" data-i18n="level_opt_10">🏆 10 · Pro — επαγγελματικό / ομοσπονδιακό επίπεδο</option>
       </select>
     </div>
     <p class="auth-note" style="color:#b7ff4a" data-i18n="auth_welcome_note">🎁 Καλωσόρισμα: -10% στην πρώτη σου κράτηση!</p>
 
-    <label class="consent-row">
+    <label class="consent-row consent-main">
       <input type="checkbox" id="si_consent_essential" required>
-      <span data-i18n-html="auth_consent_essential">Αποδέχομαι τη χρήση των στοιχείων μου (όνομα, email, τηλέφωνο) για τη διαχείριση του λογαριασμού και των κρατήσεών μου. <span style="color:#ff6b6b">*</span></span>
+      <span data-i18n-html="auth_consent_all">Έχω διαβάσει και αποδέχομαι τους <a href="/legal.html#terms" target="_blank" rel="noopener">Όρους Χρήσης</a> και την <a href="/legal.html#privacy" target="_blank" rel="noopener">Πολιτική Απορρήτου</a>. Συμφωνώ να χρησιμοποιούνται τα στοιχεία μου (όνομα, email, τηλέφωνο, επίπεδο) για τον λογαριασμό και τις κρατήσεις μου, και να λαμβάνω email και μηνύματα για τις κρατήσεις μου και από το «Βρες παίχτη» (π.χ. όταν ψάχνουμε παίχτη για συμπλήρωμα τετράδας). Είμαι άνω των 15 ετών ή έχω τη συγκατάθεση γονέα/κηδεμόνα. <span style="color:#ff6b6b">*</span></span>
     </label>
-    <label class="consent-row">
+    <label class="consent-row consent-small">
       <input type="checkbox" id="si_consent_marketing">
-      <span data-i18n-html="auth_consent_marketing">Θέλω να λαμβάνω ενημερώσεις για τουρνουά, προσφορές και events του North Padel μέσω email / SMS. <em style="color:rgba(244,249,255,0.5)">(προαιρετικό — μπορώ να το ανακαλέσω ανά πάσα στιγμή)</em></span>
+      <span data-i18n-html="auth_consent_marketing2">Θέλω επίσης να μαθαίνω για προσφορές, τουρνουά και events. <em>(προαιρετικό)</em></span>
     </label>
 
     <button type="submit" class="submit-btn" data-i18n="auth_signup_btn">ΕΓΓΡΑΦΗ</button>
@@ -1484,6 +1495,7 @@
     await setDoc(doc(db, 'users', cred.user.uid), {
       name, surname, phone, email,
       level: level || 1,
+      levelScale: 10,
       // welcomeCoupon starts OFF; admin activates per-user from the
       // admin panel (Members table 🎫 +5). Bots and low-effort signups
       // never receive the discount without admin approval.
@@ -1502,7 +1514,7 @@
         '📛 ' + (name||'') + ' ' + (surname||'') + '\n' +
         '📧 ' + email + '\n' +
         '📞 ' + (phone||'') + '\n' +
-        '🎾 Επίπεδο: ' + (level||1) + '/5\n\n' +
+        '🎾 Επίπεδο: ' + (level||1) + '/10\n\n' +
         '⏳ Περιμένει την έγκρισή σου για το −10% κουπόνι.\n' +
         '👉 admin.html → Μέλη → ΕΝΕΡΓΟΠΟΙΗΣΗ'
       );
@@ -1536,6 +1548,7 @@
         email: user.email,
         name: '', surname: '', phone: '',
         level: 1,
+        levelScale: 10,
         welcomeCoupon: false,
         freeCourts: 0,
         bookingsCount: 0,
@@ -1976,13 +1989,9 @@
   });
 
   /* ============ USER ACCOUNTS (Firebase Auth + Firestore) ============ */
-  const LEVELS = [
-    { name:'Beginner',  icon:'🔰' },
-    { name:'Amateur',   icon:'🥉' },
-    { name:'Regular',   icon:'🥈' },
-    { name:'Pro',       icon:'🥇' },
-    { name:'Champion',  icon:'🏆' },
-  ];
+  // 10 levels — shared definitions in levels.js (also used by admin.html)
+  const LEVELS = window.NP_LEVELS.map(l => ({ name: l.el, icon: l.icon }));
+  const lv10 = (u) => window.npLv10(u);
   // XSS-safe: escape any string dropped into innerHTML
   function esc(s){
     return String(s == null ? '' : s)
@@ -2012,7 +2021,7 @@
       signupF.style.display = 'none';
       tabs.style.display = 'none';
       profile.style.display = 'flex';
-      const lvIdx = Math.max(0, Math.min(4, (u.level || 1) - 1));
+      const lvIdx = lv10(u) - 1;
       const lv = LEVELS[lvIdx];
       const isAdmin = window.npFB && window.npFB.isAdmin(u);
       const initials = ((u.name||'')[0]||'') + ((u.surname||'')[0]||'');
@@ -2118,13 +2127,14 @@
       const changeBtn = document.getElementById('changeLevelBtn');
       if (changeBtn){
         changeBtn.addEventListener('click', async () => {
-          const opts = LEVELS.map((l,i)=>`${i+1}. ${l.icon} ${l.name}`).join('\n');
-          const ans = prompt(L('lvl_prompt','Επίλεξε νέο επίπεδο (1-5):')+'\n\n'+opts+'\n\n'+L('lvl_current','Τρέχον')+': '+(lvIdx+1), String(lvIdx+1));
+          const opts = LEVELS.map((l,i)=>`${i+1}. ${l.icon} ${L('level_'+(i+1), l.name)}`).join('\n');
+          const ans = prompt(L('lvl_prompt','Επίλεξε νέο επίπεδο (1-10):')+'\n\n'+opts+'\n\n'+L('lvl_current','Τρέχον')+': '+(lvIdx+1), String(lvIdx+1));
           const n = parseInt(ans,10);
-          if (n >= 1 && n <= 5 && window.npFB){
+          if (n >= 1 && n <= 10 && window.npFB){
             try {
-              await window.npFB.updateProfile(u.uid, { level: n });
+              await window.npFB.updateProfile(u.uid, { level: n, levelScale: 10 });
               currentProfile.level = n;
+              currentProfile.levelScale = 10;
               renderAuth();
             } catch(err){ alert(L('lvl_change_fail','Αποτυχία αλλαγής')+': '+err.message); }
           }
@@ -2266,7 +2276,7 @@
     const err = document.getElementById('signupError');
     err.textContent = '';
     if (!document.getElementById('si_consent_essential').checked){
-      err.textContent = L('signup_need_consent','Πρέπει να αποδεχτείς τη χρήση των στοιχείων για τη διαχείριση του λογαριασμού.');
+      err.textContent = L('signup_need_consent2','Για να γίνει η εγγραφή πρέπει να αποδεχτείς τους όρους (το πρώτο κουτάκι).');
       return;
     }
     const pass1 = document.getElementById('si_pass').value;
@@ -2284,8 +2294,10 @@
       password: pass1,
       level:   +document.getElementById('si_level').value,
       consent: {
-        essential:  true,
+        essential:  true,      // terms + privacy policy + account/booking processing
+        findPlayer: true,      // emails/messages from «Βρες παίχτη» (part of the required box)
         marketing:  document.getElementById('si_consent_marketing').checked,
+        version:    '2026-11',
         acceptedAt: new Date().toISOString(),
       },
     };
@@ -2384,7 +2396,7 @@
     const availDays  = new Set(u.availability?.days || []);
     const availTimes = new Set(u.availability?.times || []);
     const lfg = !!u.lookingForGame;
-    const lvIdx = Math.max(0, Math.min(4, (u.level || 1) - 1));
+    const lvIdx = lv10(u) - 1;
 
     const rewardBits = [];
     if (u.welcomeCoupon) rewardBits.push('🎁 ' + L('reward_welcome','−10% καλωσόρισμα στην πρώτη κράτηση'));
@@ -2412,7 +2424,7 @@
         <h3><span class="ico">🎾</span>${L('pf_level','ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ')}</h3>
         <div class="pf-field">
           <select id="p_level">
-            ${LEVELS.map((l,i) => `<option value="${i+1}" ${i===lvIdx?'selected':''}>${l.icon} ${esc(L('level_'+(i+1), l.name))}</option>`).join('')}
+            ${LEVELS.map((l,i) => `<option value="${i+1}" ${i===lvIdx?'selected':''}>${l.icon} ${i+1} · ${esc(L('level_'+(i+1), l.name))}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -2498,6 +2510,7 @@
         gender:  document.getElementById('p_gender').value,
         city:    document.getElementById('p_city').value.trim(),
         level:   +document.getElementById('p_level').value,
+        levelScale: 10,
         bio:     document.getElementById('p_bio').value.trim().slice(0,280),
         contactMethod: document.getElementById('p_contact').value,
         lookingForGame: document.getElementById('p_lfg').checked,
@@ -2677,8 +2690,10 @@
     }
     body.innerHTML = `<div class="fp-count">${L('searching','Αναζήτηση...')}</div>`;
     await waitFB();
-    const minLv = Math.max(1, u.level - 1);
-    const maxLv = Math.min(5, u.level + 1);
+    // 10-level scale: show players within ±2 of mine
+    const myLv = lv10(u);
+    const minLv = Math.max(1, myLv - 2);
+    const maxLv = Math.min(10, myLv + 2);
     try {
       const all = await window.npFB.listLookingForGame(minLv, maxLv);
       // Exclude self
@@ -2686,7 +2701,7 @@
       if (!others.length){
         body.innerHTML = `<div class="fp-empty">
           <h4>${L('fp_empty_h','Κανένας άλλος προς το παρόν')}</h4>
-          <p>${L('fp_empty_p','Δεν υπάρχουν άλλοι παίκτες που ψάχνουν παρέα σε επίπεδο ±1 από το δικό σου. Έλα ξανά σε λίγες μέρες!')}</p>
+          <p>${L('fp_empty_p','Δεν υπάρχουν άλλοι παίκτες που ψάχνουν παρέα σε επίπεδο ±2 από το δικό σου. Έλα ξανά σε λίγες μέρες!')}</p>
         </div>`;
         return;
       }
@@ -2696,7 +2711,7 @@
       const levelLbl = L('fp_level_range','επίπεδο');
       body.innerHTML = `<div class="fp-count">${others.length} ${playersLbl} · ${levelLbl} ${minLv}–${maxLv}</div>` +
         others.map(p => {
-          const lvIdx = Math.max(0, Math.min(4, (p.level||1) - 1));
+          const lvIdx = Math.max(0, Math.min(9, (p.level||1) - 1));
           const lv = LEVELS[lvIdx];
           const initial = (p.firstName||'?')[0]?.toUpperCase() || '?';
           const daysStr = (p.availability?.days || []).map(i => L(DAYS_KEYS[i], DAYS_EL[i])).join(', ') || '—';
@@ -4100,12 +4115,12 @@ T.en['tp_noon']      = '🍽️ Midday (13:30-15:00)';        T.de['tp_noon']   
 T.en['tp_afternoon'] = '🌤️ Afternoon (15:00-19:30)';     T.de['tp_afternoon'] = '🌤️ Nachmittag (15:00-19:30)';
 T.en['tp_evening']   = '🌙 Evening (19:30-22:30)';        T.de['tp_evening']   = '🌙 Abend (19:30-22:30)';
 T.en['tp_late']      = '🌌 Night (22:30-01:30)';          T.de['tp_late']      = '🌌 Nacht (22:30-01:30)';
-// Levels 1-5
-T.en['level_1'] = 'Beginner';        T.de['level_1'] = 'Anfänger';
-T.en['level_2'] = 'Casual';          T.de['level_2'] = 'Gelegenheitsspieler';
-T.en['level_3'] = 'Regular';         T.de['level_3'] = 'Regelmäßig';
-T.en['level_4'] = 'Intermediate';    T.de['level_4'] = 'Mittelstufe';
-T.en['level_5'] = 'Advanced';        T.de['level_5'] = 'Fortgeschritten';
+// Levels 1-10 (from levels.js)
+window.NP_LEVELS.forEach((l, i) => {
+  T.en['level_' + (i+1)] = l.en;  T.de['level_' + (i+1)] = l.de;
+  T.en['level_opt_' + (i+1)] = l.icon + ' ' + (i+1) + ' · ' + l.en + ' — ' + l.d_en;
+  T.de['level_opt_' + (i+1)] = l.icon + ' ' + (i+1) + ' · ' + l.de + ' — ' + l.d_de;
+});
 
 // Common
 T.en['alert_error']         = 'Error';                                         T.de['alert_error']         = 'Fehler';
@@ -4149,7 +4164,7 @@ T.en['pw_changed_ok']       = 'Password changed successfully.';                T
 T.en['pw_wrong_current']    = 'Wrong current password.';                       T.de['pw_wrong_current']    = 'Falsches aktuelles Passwort.';
 T.en['pw_weak']             = 'The new password is too weak.';                 T.de['pw_weak']             = 'Das neue Passwort ist zu schwach.';
 T.en['pw_need_relogin']     = 'Recent sign-in required. Please log out and back in.'; T.de['pw_need_relogin']     = 'Kürzliche Anmeldung erforderlich. Bitte ab- und wieder anmelden.';
-T.en['lvl_prompt']          = 'Choose your new level (1-5):';                  T.de['lvl_prompt']          = 'Wähle dein neues Niveau (1-5):';
+T.en['lvl_prompt']          = 'Choose your new level (1-10):';                 T.de['lvl_prompt']          = 'Wähle dein neues Niveau (1-10):';
 T.en['lvl_current']         = 'Current';                                       T.de['lvl_current']         = 'Aktuell';
 T.en['lvl_change_fail']     = 'Failed to change';                              T.de['lvl_change_fail']     = 'Änderung fehlgeschlagen';
 
@@ -4231,7 +4246,7 @@ T.en['fp_enable_lfg']         = 'Enable "Looking for players"';                T
 T.en['fp_enable_lfg_p']       = 'You need to state you\'re looking for a game first. You\'ll then also appear to others.'; T.de['fp_enable_lfg_p']       = 'Du musst zuerst angeben, dass du eine Runde suchst. Dann erscheinst auch du bei anderen.';
 T.en['fp_enable_in_profile']  = 'ENABLE IN PROFILE';                           T.de['fp_enable_in_profile']  = 'IM PROFIL AKTIVIEREN';
 T.en['fp_empty_h']            = 'No one else right now';                       T.de['fp_empty_h']            = 'Zurzeit niemand anderes';
-T.en['fp_empty_p']            = 'There are no other players looking for a game at level ±1 from yours. Check back in a few days!'; T.de['fp_empty_p']            = 'Es gibt derzeit keine anderen Spieler auf Niveau ±1 zu deinem, die eine Runde suchen. Schau in ein paar Tagen wieder rein!';
+T.en['fp_empty_p']            = 'There are no other players looking for a game at level ±2 from yours. Check back in a few days!'; T.de['fp_empty_p']            = 'Es gibt derzeit keine anderen Spieler auf Niveau ±2 zu deinem, die eine Runde suchen. Schau in ein paar Tagen wieder rein!';
 T.en['fp_player_single']      = 'player';                                      T.de['fp_player_single']      = 'Spieler';
 T.en['fp_player_plural']      = 'players';                                     T.de['fp_player_plural']      = 'Spieler';
 T.en['fp_level_range']        = 'level';                                       T.de['fp_level_range']        = 'Niveau';
@@ -4328,17 +4343,14 @@ T.de['findplayer_crumb'] = 'MATCH-MAKING';
 T.en['findplayer_title'] = 'Find a player';
 T.de['findplayer_title'] = 'Spieler finden';
 
-/* ============ Signup: player-level options ============ */
-T.en['level_opt_1'] = '🔰 Beginner — Just picked up a racket';
-T.de['level_opt_1'] = '🔰 Anfänger — Gerade den Schläger entdeckt';
-T.en['level_opt_2'] = '🥉 Amateur — I\'ve played a few times';
-T.de['level_opt_2'] = '🥉 Amateur — Ein paar Mal gespielt';
-T.en['level_opt_3'] = '🥈 Regular — I play regularly';
-T.de['level_opt_3'] = '🥈 Regular — Ich spiele regelmäßig';
-T.en['level_opt_4'] = '🥇 Pro — Experienced player';
-T.de['level_opt_4'] = '🥇 Pro — Erfahrener Spieler';
-T.en['level_opt_5'] = '🏆 Champion — Competitive level';
-T.de['level_opt_5'] = '🏆 Champion — Wettkampf-Niveau';
+/* ============ Signup: player-level options → generated from levels.js (see "Levels 1-10") ============ */
+/* ============ Signup: consent ============ */
+T.en['auth_consent_all'] = 'I have read and accept the <a href="/legal.html#terms" target="_blank" rel="noopener">Terms of Use</a> and the <a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a>. I agree that my details (name, email, phone, level) are used for my account and bookings, and to receive emails and messages about my bookings and from “Find a player” (e.g. when a player is needed to complete a foursome). I am over 15 or have a parent’s/guardian’s consent. <span style="color:#ff6b6b">*</span>';
+T.de['auth_consent_all'] = 'Ich habe die <a href="/legal.html#terms" target="_blank" rel="noopener">Nutzungsbedingungen</a> und die <a href="/legal.html#privacy" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und akzeptiere sie. Ich bin einverstanden, dass meine Daten (Name, E-Mail, Telefon, Niveau) für mein Konto und meine Buchungen verwendet werden und dass ich E-Mails und Nachrichten zu meinen Buchungen und von „Spieler finden“ erhalte (z. B. wenn ein vierter Spieler gesucht wird). Ich bin über 15 oder habe die Zustimmung eines Elternteils/Erziehungsberechtigten. <span style="color:#ff6b6b">*</span>';
+T.en['auth_consent_marketing2'] = 'I’d also like to hear about offers, tournaments and events. <em>(optional)</em>';
+T.de['auth_consent_marketing2'] = 'Ich möchte auch über Angebote, Turniere und Events informiert werden. <em>(optional)</em>';
+T.en['signup_need_consent2'] = 'To sign up you need to accept the terms (the first box).';
+T.de['signup_need_consent2'] = 'Um dich zu registrieren, musst du die Bedingungen akzeptieren (das erste Kästchen).';
 
 /* ============ Booking form — guest note + cancel policy ============ */
 T.en['guest_note'] = '💡 <b>You\'re booking as a guest.</b> No sign-up needed!<br><span style="color:rgba(244,249,255,0.6)">If you <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">log in / sign up</button>, you get -10% on your first booking.</span>';

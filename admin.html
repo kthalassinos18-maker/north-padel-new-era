@@ -690,13 +690,7 @@
         </div>
         <div class="field"><label>ΠΟΛΗ</label><input type="text" id="me_city"></div>
         <div class="field"><label>ΕΠΙΠΕΔΟ</label>
-          <select id="me_level">
-            <option value="1">🔰 Beginner</option>
-            <option value="2">🥉 Amateur</option>
-            <option value="3">🥈 Regular</option>
-            <option value="4">🥇 Pro</option>
-            <option value="5">🏆 Champion</option>
-          </select>
+          <select id="me_level"></select>
         </div>
       </div>
       <div class="field" style="margin-top:14px">
@@ -746,6 +740,7 @@
 </div>
 
 <!-- ============ FIREBASE ============ -->
+<script src="levels.js"></script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
@@ -1471,9 +1466,8 @@ function renderMembers(){
   const pendingPanel = document.getElementById('pendingPanel');
   document.getElementById('pendingCount').textContent = pending.length;
   if (pendingPanel) pendingPanel.style.display = pending.length ? '' : 'none';
-  const LI_ICONS = ['🔰','🥉','🥈','🥇','🏆'];
   document.getElementById('tblPending').innerHTML = pending.map(m => {
-    const lv = LI_ICONS[Math.max(0, Math.min(4, (m.level||1)-1))];
+    const lv = window.npLvLabel(window.npLv10(m));
     const created = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate().toISOString().slice(0,10) : '—';
     return `<tr>
       <td>${esc((m.name||'') + ' ' + (m.surname||''))}</td>
@@ -1510,11 +1504,9 @@ function renderMembers(){
       renderMembers();
     } catch(e){ alert('Αποτυχία: '+e.message); btn.disabled = false; btn.textContent = '✗ ΑΠΟΡΡΙΨΗ'; }
   }));
-  const LEVEL_ICONS = ['🔰','🥉','🥈','🥇','🏆'];
-  const LEVEL_NAMES = ['Beginner','Amateur','Regular','Pro','Champion'];
   document.getElementById('tblMembers').innerHTML = users.map(m => {
     const isOwner = isAdminEmail(m.email);
-    const lvIdx = Math.max(0, Math.min(4, (m.level || 1) - 1));
+    const lvLabel = window.npLvLabel(window.npLv10(m));
     const marketing = m.consent && m.consent.marketing ? '<span class="pill ok">ΝΑΙ</span>' : '<span class="pill canc">ΟΧΙ</span>';
     const noteBadge = m.adminNote ? ` <span title="${esc(m.adminNote)}" style="cursor:help;color:#ffc14a">📝</span>` : '';
     return `
@@ -1522,7 +1514,7 @@ function renderMembers(){
       <td>${esc((m.name||'') + ' ' + (m.surname||''))}${isOwner?' <span class="pill ok" style="margin-left:6px">👑 OWNER</span>':''}${noteBadge}</td>
       <td>${esc(m.email)}</td>
       <td>${esc(m.phone)}</td>
-      <td>${LEVEL_ICONS[lvIdx]} ${esc(LEVEL_NAMES[lvIdx])}</td>
+      <td style="white-space:nowrap">${esc(lvLabel)}</td>
       <td>${+m.bookingsCount||0}</td>
       <td>${marketing}</td>
       <td>${esc(m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().slice(0,10) : '')}</td>
@@ -1945,8 +1937,35 @@ document.getElementById('clearClosuresBtn').addEventListener('click', async () =
 });
 
 /* ============ INIT ============ */
+// One-time move of every member from the old 1–5 level scale to 1–10
+// (1→1, 2→3, 3→5, 4→7, 5→9). Runs the first time the admin opens the panel
+// after the update; members who already saved a 1–10 level are skipped.
+async function migrateLevels(){
+  try {
+    const cfg = await window.npFB.getConfig('levels');
+    if (cfg && cfg.scale === 10) return;
+    const todo = (CACHE.users || []).filter(u => u.levelScale !== 10);
+    const { doc, writeBatch } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+    const db = window.npFB.db;
+    for (let i = 0; i < todo.length; i += 200){
+      const batch = writeBatch(db);
+      todo.slice(i, i + 200).forEach(u => {
+        const lv = window.npLv10(u);
+        batch.set(doc(db, 'users', u.uid), { level: lv, levelScale: 10 }, { merge: true });
+        // Find-a-Player snapshot exists only for members who are looking for a game.
+        if (u.lookingForGame) batch.set(doc(db, 'public_profiles', u.uid), { level: lv }, { merge: true });
+        u.level = lv; u.levelScale = 10;
+      });
+      await batch.commit();
+    }
+    await window.npFB.setConfig('levels', { scale: 10, migrated: todo.length, migratedAt: new Date().toISOString() });
+    if (todo.length) console.info('Levels migrated to 1–10:', todo.length);
+  } catch(e){ console.warn('level migration', e); }
+}
+
 async function refreshAll(){
   await loadAll();
+  await migrateLevels();
   await loadClosuresCache();
   renderDashboard(); renderBookings(); renderMembers(); renderSessions(); renderPrices();
   renderUpcomingClosures();
@@ -2125,7 +2144,9 @@ function openMemberEditor(m){
   document.getElementById('me_birthday').value = m.birthday || '';
   document.getElementById('me_gender').value   = m.gender || '';
   document.getElementById('me_city').value     = m.city || '';
-  document.getElementById('me_level').value    = String(m.level || 1);
+  const lvSel = document.getElementById('me_level');
+  if (!lvSel.options.length) lvSel.innerHTML = window.NP_LEVELS.map((l, i) => `<option value="${i+1}">${l.icon} ${i+1} · ${l.el}</option>`).join('');
+  lvSel.value = String(window.npLv10(m));
   document.getElementById('me_note').value     = m.adminNote || '';
   document.getElementById('me_bookings').textContent  = m.bookingsCount || 0;
   document.getElementById('me_marketing').textContent = (m.consent && m.consent.marketing) ? 'ΝΑΙ' : 'ΟΧΙ';
@@ -2171,6 +2192,7 @@ document.getElementById('memSaveBtn').addEventListener('click', async () => {
     gender:   document.getElementById('me_gender').value,
     city:     document.getElementById('me_city').value.trim(),
     level:    +document.getElementById('me_level').value,
+    levelScale: 10,
     adminNote: document.getElementById('me_note').value.trim().slice(0, 500),
     lookingForGame: document.getElementById('me_lfg').checked,
     bio:      document.getElementById('me_bio').value.trim().slice(0, 280),
