@@ -3591,7 +3591,12 @@
       // they can actually act on.
       const code = err && err.code;
       if (code === 'permission-denied' || /permission/i.test(err && err.message || '')){
-        alert(L('slot_taken_meanwhile','Κάποιος άλλος μόλις έκλεισε αυτή την ώρα. Διάλεξε άλλη ώρα ή ημέρα.'));
+        // Only say "someone else booked it" when the slot really is taken now;
+        // otherwise the write was refused for another reason.
+        let reallyTaken = true;
+        try { reallyTaken = !(await window.npFB.isSlotFree(dateISO, court, selectedSession)); } catch(_){}
+        if (reallyTaken) alert(L('slot_taken_meanwhile','Κάποιος άλλος μόλις έκλεισε αυτή την ώρα. Διάλεξε άλλη ώρα ή ημέρα.'));
+        else alert(L('booking_refused','Η κράτηση δεν ολοκληρώθηκε (δεν επιτράπηκε από το σύστημα). Η ώρα είναι ακόμα ελεύθερη — δοκίμασε ξανά ή τηλεφώνησέ μας στο 693 439 1978.'));
         try { await refreshSessionsForDate(); } catch(_){}
       } else {
         alert(L('booking_fail','Αποτυχία καταχώρησης') + ': ' + err.message);
@@ -4437,6 +4442,8 @@ T.de['wd_mon'] = 'M';
 T.en['wd_tue'] = 'T';
 T.de['wd_tue'] = 'D';
 T.en['og_need'] = 'looking for'; T.de['og_need'] = 'suchen';
+T.en['booking_refused'] = 'The booking was not completed (refused by the system). The time is still free — please try again or call us on 693 439 1978.';
+T.de['booking_refused'] = 'Die Buchung wurde nicht abgeschlossen (vom System abgelehnt). Die Zeit ist noch frei — bitte erneut versuchen oder uns anrufen: 693 439 1978.';
 T.en['og_lvl'] = 'Lv';           T.de['og_lvl'] = 'Nv.';
 T.en['wd_wed'] = 'W';
 T.de['wd_wed'] = 'M';
