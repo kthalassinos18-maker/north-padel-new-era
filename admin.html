@@ -1105,7 +1105,8 @@ function renderDashboard(){
   }
 
   // Only bookings from today onwards (it used to list the oldest bookings ever).
-  const upcoming = live.filter(b => (b.date||'') >= today).sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).slice(0,5);
+  // (and not today's courts that have already finished)
+  const upcoming = live.filter(b => (b.date||'') > today || ((b.date||'') === today && !bookingHasEnded(b))).sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).slice(0,5);
   document.getElementById('tblUpcoming').innerHTML = upcoming.map(b => `
     <tr><td>${esc(fmtDate(b.date))}</td><td>${esc(b.time)}</td><td>${esc(b.court)}</td><td>${esc(b.name)}</td><td>${+b.players}άδα</td><td>${+b.total}€</td><td>${pillFor(b.status)}</td></tr>
   `).join('') || '<tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία κράτηση.</td></tr>';
