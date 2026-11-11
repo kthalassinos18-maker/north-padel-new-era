@@ -95,3 +95,25 @@
   .bks-range label{flex:1}
   .bks-range input{flex:1;min-width:0}
 }
+
+/* ============ PERIOD PICKER (admin-utils.js) ============ */
+.pp{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.pp-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pp-nav{display:flex;align-items:center;gap:8px}
+.pp-nav .btn{min-width:40px;font-size:18px;padding:6px 10px;line-height:1}
+.pp-nav .btn:disabled{opacity:.3;cursor:not-allowed}
+.pp-label{position:relative;font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;letter-spacing:0.03em;min-width:200px;text-align:center;color:#f4f9ff;white-space:nowrap}
+.pp-daypick{cursor:pointer;border-bottom:1px dashed rgba(183,255,74,0.5)}
+.pp-daypick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pp-modes{display:inline-flex;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:3px;gap:2px}
+.pp-mode{background:transparent;border:0;color:rgba(244,249,255,0.7);padding:8px 14px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.pp-mode.on{background:#b7ff4a;color:#0a1929}
+@media(max-width:640px){
+  .pp{gap:10px}
+  .pp-right,.pp-nav{width:100%}
+  .pp-nav{justify-content:space-between}
+  .pp-label{flex:1;min-width:0;font-size:20px}
+  .pp-now{width:100%}
+  .pp-modes{width:100%}
+  .pp-mode{flex:1;padding:9px 4px}
+}

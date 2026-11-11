@@ -191,6 +191,12 @@
     .gift-label-txt{display:none}
   }
 
+  /* ============ SPLIT PAYMENT ============ */
+  .split-sum{display:block;margin-top:4px;background:rgba(199,155,255,0.12);border:1px solid rgba(199,155,255,0.35);color:#c79bff;border-radius:6px;padding:3px 7px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap}
+  .split-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .split-chip{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(244,249,255,0.85);border-radius:999px;padding:8px 12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .split-chip.on{background:rgba(199,155,255,0.18);border-color:#c79bff;color:#c79bff}
+
   /* ============ GIFTS CELL ============ */
   .gifts-cell{display:flex;flex-direction:column;gap:8px;min-width:280px}
   .gifts-summary{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:12px;line-height:1.3}
@@ -1135,6 +1141,77 @@ function bookingHasEnded(b){
   return new Date(endDate + 'T' + end + ':00').getTime() <= Date.now();
 }
 
+/* ============ PAYMENT SELECT + SPLIT PAYMENT ============ */
+const PAY_COLORS = { pending:'#ffc14a', cash:'#b7ff4a', card:'#4a9fff', split:'#c79bff' };
+function fmtEur(n){ n = Math.round((+n||0)*100)/100; return n.toLocaleString('el-GR',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2}) + '€'; }
+function paySelectHtml(b){
+  const pay = b.payMethod || 'pending';
+  const opt = (v, l) => `<option value="${v}" ${pay===v?'selected':''}>${l}</option>`;
+  const total = +b.total || 0, cash = Math.min(total, Math.max(0, +b.payCash || 0));
+  return `<select data-pay="${esc(b.id)}" data-prev="${esc(pay)}" class="pay-sel" style="padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(10,25,41,0.6);color:${PAY_COLORS[pay]||PAY_COLORS.pending};font-size:12px;font-family:inherit;cursor:pointer">
+      ${opt('pending','⏳ Εκκρεμεί')}${opt('cash','💵 Μετρητά')}${opt('card','💳 Κάρτα')}${opt('split','✂️ Μικτή')}
+    </select>${pay === 'split' ? `<button type="button" class="split-sum" data-split-edit="${esc(b.id)}" title="Αλλαγή μοιρασιάς">💵 ${fmtEur(cash)} · 💳 ${fmtEur(total - cash)} ✎</button>` : ''}`;
+}
+// Modal: how much of this booking was paid in cash and how much by card.
+function openSplitPay(b){
+  document.getElementById('splitModal')?.remove();
+  const total = +b.total || 0, players = +b.players || 4;
+  const per = total / players;
+  let cash = b.payMethod === 'split' ? Math.min(total, Math.max(0, +b.payCash || 0)) : Math.round(per * (players - 1) * 100) / 100;
+  const m = document.createElement('div');
+  m.className = 'mem-modal open'; m.id = 'splitModal';
+  const chips = Array.from({ length: players - 1 }, (_, i) => i + 1)
+    .map(k => `<button type="button" class="split-chip" data-k="${k}">${k} κάρτα · ${players - k} μετρητά</button>`).join('');
+  m.innerHTML = `<div class="mem-card" style="max-width:440px">
+      <button class="mem-close" type="button" data-split-close aria-label="Κλείσιμο">×</button>
+      <h2 class="mem-title">✂️ Μικτή πληρωμή</h2>
+      <p style="color:rgba(244,249,255,0.65);font-size:13px;margin-bottom:14px">${esc(b.name||'')} · ${esc(fmtDate(b.date))} ${esc(b.time||'')} · ${players}άδα · <b style="color:#f4f9ff">σύνολο ${fmtEur(total)}</b></p>
+      <div style="font-size:11px;letter-spacing:0.18em;color:rgba(244,249,255,0.55);font-weight:600;margin-bottom:8px">ΓΡΗΓΟΡΗ ΕΠΙΛΟΓΗ (${fmtEur(per)} ο καθένας)</div>
+      <div class="split-chips">${chips}</div>
+      <div class="form-grid" style="margin-top:16px;grid-template-columns:1fr 1fr">
+        <div class="field"><label>💵 ΜΕΤΡΗΤΑ (€)</label><input id="splitCash" inputmode="decimal"></div>
+        <div class="field"><label>💳 ΚΑΡΤΑ (€)</label><input id="splitCard" inputmode="decimal"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:18px">
+        <button type="button" class="btn" id="splitSave" style="flex:1;padding:12px;background:#b7ff4a;color:#0a1929;border-color:#b7ff4a">💾 ΑΠΟΘΗΚΕΥΣΗ</button>
+        <button type="button" class="btn" data-split-close style="padding:12px 18px">Ακύρωση</button>
+      </div>
+      <div id="splitMsg" style="text-align:center;font-size:13px;min-height:16px;margin-top:8px;color:#ff6b6b"></div>
+    </div>`;
+  document.body.appendChild(m);
+  const ci = m.querySelector('#splitCash'), ki = m.querySelector('#splitCard');
+  const num = (v) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? Math.round(n*100)/100 : NaN; };
+  const show = (n) => String(Math.round(n*100)/100).replace('.', ',');
+  const markChips = () => m.querySelectorAll('.split-chip').forEach(c => c.classList.toggle('on', Math.abs((total - cash) - per * +c.dataset.k) < 0.01));
+  const paint = () => { ci.value = show(cash); ki.value = show(total - cash); markChips(); };
+  paint();
+  m.querySelectorAll('.split-chip').forEach(c => c.addEventListener('click', () => { cash = Math.round((total - per * +c.dataset.k) * 100) / 100; paint(); }));
+  // Typing one amount fills in the other so they always add up to the total.
+  ci.addEventListener('input', () => { const n = num(ci.value); if (n >= 0 && n <= total){ cash = n; ki.value = show(total - n); markChips(); } });
+  ki.addEventListener('input', () => { const n = num(ki.value); if (n >= 0 && n <= total){ cash = Math.round((total - n)*100)/100; ci.value = show(cash); markChips(); } });
+  const close = () => m.remove();
+  m.querySelectorAll('[data-split-close]').forEach(x => x.addEventListener('click', close));
+  m.addEventListener('click', (e) => { if (e.target === m) close(); });
+  m.querySelector('#splitSave').addEventListener('click', async () => {
+    const msg = m.querySelector('#splitMsg');
+    const c = num(ci.value), k = num(ki.value);
+    if (!(c >= 0) || !(k >= 0) || Math.abs(c + k - total) > 0.01){ msg.textContent = 'Μετρητά + κάρτα πρέπει να κάνουν ' + fmtEur(total) + '.'; return; }
+    // All on one side → it's simply cash or card.
+    const patch = c === 0 ? { payMethod:'card', payCash:null, payCard:null }
+                : k === 0 ? { payMethod:'cash', payCash:null, payCard:null }
+                : { payMethod:'split', payCash:c, payCard:k };
+    patch.payMethodAt = new Date().toISOString();
+    msg.style.color = 'rgba(244,249,255,0.6)'; msg.textContent = 'Αποθήκευση...';
+    try {
+      await window.npFB.updateBooking(b.id, patch);
+      Object.assign(b, patch);
+      close();
+      renderBookings();
+      if (typeof renderDashboard === 'function') renderDashboard();
+    } catch(e){ msg.style.color = '#ff6b6b'; msg.textContent = 'Αποτυχία: ' + e.message; }
+  });
+}
+
 function renderBookings(){
   window.__bkAll = CACHE.bookings;
   if (window.npBkStats) window.npBkStats.render(CACHE.bookings);
@@ -1220,11 +1297,7 @@ function renderBookings(){
         <td>${+b.players||0}άδα</td>
         <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
         <td>
-          <select data-pay="${esc(b.id)}" class="pay-sel" style="padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(10,25,41,0.6);color:${pay==='cash'?'#b7ff4a':pay==='card'?'#4a9fff':'#ffc14a'};font-size:12px;font-family:inherit;cursor:pointer">
-            <option value="pending" ${pay==='pending'?'selected':''}>⏳ Εκκρεμεί</option>
-            <option value="cash" ${pay==='cash'?'selected':''}>💵 Μετρητά</option>
-            <option value="card" ${pay==='card'?'selected':''}>💳 Κάρτα</option>
-          </select>
+          ${paySelectHtml(b)}
         </td>
         <td>${pillFor(b.status)}</td>
         <td style="text-align:right">${actionCellHtml(b)}</td>
@@ -1239,11 +1312,7 @@ function renderBookings(){
       <td>${nameCellHtml(b)}</td><td>${phoneCellHtml(b)}</td><td>${+b.players}άδα</td>
       <td><button class="btn" data-edit-price="${esc(b.id)}" data-cur="${+b.total||0}" title="Επεξεργασία τιμής" style="padding:5px 10px;min-width:64px">${+b.total||0}€</button></td>
       <td>
-        <select data-pay="${esc(b.id)}" class="pay-sel" style="padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(10,25,41,0.6);color:${pay==='cash'?'#b7ff4a':pay==='card'?'#4a9fff':'#ffc14a'};font-size:12px;font-family:inherit;cursor:pointer">
-          <option value="pending" ${pay==='pending'?'selected':''}>⏳ Εκκρεμεί</option>
-          <option value="cash" ${pay==='cash'?'selected':''}>💵 Μετρητά</option>
-          <option value="card" ${pay==='card'?'selected':''}>💳 Κάρτα</option>
-        </select>
+        ${paySelectHtml(b)}
       </td>
       <td>${pillFor(b.status)}</td>
       <td style="text-align:right">${actionCellHtml(b)}</td>
@@ -1265,13 +1334,22 @@ function renderBookings(){
   document.querySelectorAll('.pay-sel').forEach(sel => sel.addEventListener('change', async () => {
     const id = sel.dataset.pay;
     const val = sel.value;
+    const b = CACHE.bookings.find(x => x.id === id);
+    // Μικτή: ask how much was cash / card (e.g. a 4-player court where some pay by card).
+    if (val === 'split'){ sel.value = sel.dataset.prev || 'pending'; if (b) openSplitPay(b); return; }
     // Colored based on selection
-    sel.style.color = val === 'cash' ? '#b7ff4a' : val === 'card' ? '#4a9fff' : '#ffc14a';
+    sel.style.color = PAY_COLORS[val] || PAY_COLORS.pending;
     try {
-      await window.npFB.updateBooking(id, { payMethod: val, payMethodAt: new Date().toISOString() });
-      const b = CACHE.bookings.find(x => x.id === id);
-      if (b) b.payMethod = val;
-    } catch(e){ alert('Αποτυχία: '+e.message); sel.value = sel.dataset.prev || 'pending'; }
+      await window.npFB.updateBooking(id, { payMethod: val, payMethodAt: new Date().toISOString(), payCash: null, payCard: null });
+      if (b){ b.payMethod = val; b.payCash = null; b.payCard = null; }
+      sel.dataset.prev = val;
+      renderBookings();
+      if (typeof renderDashboard === 'function') renderDashboard();
+    } catch(e){ alert('Αποτυχία: '+e.message); sel.value = sel.dataset.prev || 'pending'; sel.style.color = PAY_COLORS[sel.value] || PAY_COLORS.pending; }
+  }));
+  document.querySelectorAll('[data-split-edit]').forEach(el => el.addEventListener('click', () => {
+    const b = CACHE.bookings.find(x => x.id === el.dataset.splitEdit);
+    if (b) openSplitPay(b);
   }));
   document.querySelectorAll('[data-edit-price]').forEach(btn => btn.addEventListener('click', async () => {
     const cur = +btn.dataset.cur;

@@ -7,6 +7,7 @@
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { range, shift, compare, inRange, pickerHtml, sumPay, today as utilToday } from './admin-utils.js';
 
 const C_FIN = 'finance_entries';
 const COL_IN = '#3aa58a';   // income  (validated pair on #0f2540)
@@ -43,7 +44,8 @@ function parseAmount(s){ const n = parseFloat(String(s || '').replace(/\s/g, '')
 const db = () => window.npFB.db;
 
 /* ---------- state ---------- */
-const F = { month: thisMonth(), entries: [], loaded: false, loading: false, error: null, bookings: [], edit: null };
+const F = { mode: 'month', anchor: utilToday(), entries: [], loaded: false, loading: false, error: null, bookings: [], edit: null };
+const curRange = () => range(F.mode, F.anchor);
 
 async function load(){
   if (F.loaded || F.loading || !window.npFB) return;
@@ -62,10 +64,10 @@ async function load(){
 }
 
 /* ---------- numbers ---------- */
-// `upto` (YYYY-MM-DD, optional) cuts the month at that day — used to compare a
-// month that is still running with the same days of the previous month.
-function monthData(m, upto){
-  const inM = (d) => (d || '').startsWith(m) && (!upto || d <= upto);
+// Totals for a date range {from, to} (YYYY-MM-DD, inclusive).
+const monthData = (m) => periodData({ from: m + '-01', to: m + '-31' });
+function periodData(rg){
+  const inM = (d) => inRange(d, rg);
   const bk = F.bookings.filter(b => b.status !== 'cancelled' && inM(b.date));
   const sum = (arr) => arr.reduce((s, b) => s + (+b.total || 0), 0);
   // Income comes only from court bookings; entries are expenses.
@@ -86,9 +88,9 @@ function monthData(m, upto){
     rackets: bk.reduce((s, b) => s + (+b.rackets || 0), 0),
     balls: bk.filter(b => b.premiumBalls).length,
     bookingRev,
-    cash: sum(bk.filter(b => b.payMethod === 'cash')),
-    card: sum(bk.filter(b => b.payMethod === 'card')),
-    pending: sum(bk.filter(b => !b.payMethod || b.payMethod === 'pending')),
+    // split payments (part cash, part card) are counted in both
+    ...sumPay(bk),
+    split: bk.filter(b => b.payMethod === 'split').length,
     expenses, expByCat: byCat(exp),
     income: bookingRev,
     net: bookingRev - expenses,
@@ -106,25 +108,15 @@ function delta(cur, prev, goodUp, label){
 /* ---------- render ---------- */
 function paint(){
   const r = $('finRoot'); if (!r) return;
-  const m = F.month, D = monthData(m);
-  const isNow = m === thisMonth();
-  // Running month: compare 1..today with the same days of last month.
-  const pm = shiftMonth(m, -1);
-  const C = isNow ? monthData(m, localToday()) : D;
-  const P = isNow ? monthData(pm, pm + '-' + localToday().slice(8, 10)) : monthData(pm);
-  const vs = (isNow ? 'ίδιες μέρες ' : '') + monthShort(pm);
+  const rg = curRange(), D = periodData(rg);
+  // Fair comparison (running period is cut at today on both sides).
+  const cmp = compare(F.mode, F.anchor);
+  const C = periodData(cmp.cur), P = periodData(cmp.prev), vs = cmp.label;
   const head = `<div class="fin-head">
       <h3 class="fin-title">💰 ΟΙΚΟΝΟΜΙΚΑ</h3>
-      <div class="fin-nav">
-        <button class="btn" data-fin="prev" aria-label="Προηγούμενος μήνας">‹</button>
-        <span class="fin-month">${esc(monthName(m))}</span>
-        <button class="btn" data-fin="next" aria-label="Επόμενος μήνας" ${isNow ? 'disabled' : ''}>›</button>
-        ${isNow ? '' : '<button class="btn" data-fin="now">Σήμερα</button>'}
-      </div>
-      <div class="fin-add">
-        <button class="btn" data-fin="add">+ ΝΕΟ ΕΞΟΔΟ</button>
-      </div>
-    </div>`;
+      <div class="fin-add"><button class="btn" data-fin="add">+ ΝΕΟ ΕΞΟΔΟ</button></div>
+    </div>
+    ${pickerHtml('fin', F.mode, F.anchor)}`;
   const err = F.error ? `<div class="notice" style="margin-bottom:14px"><strong>Έξοδα:</strong> ${esc(F.error)}</div>` : '';
   const kpis = `<div class="stat-grid fin-kpis">
       <div class="stat"><div class="stat-label">ΕΣΟΔΑ</div><div class="stat-value">${eur(D.income)}</div>${delta(C.income, P.income, true, vs)}</div>
@@ -137,7 +129,7 @@ function paint(){
       ${line('📅 Κρατήσεις γηπέδων', eur(D.bookingRev), D.count + ' κρατήσεις · ' + D.four + ' τετράδες · ' + D.two + ' δυάδες')}
       <div class="fin-sub">
         ${line('💵 Μετρητά', eur(D.cash))}
-        ${line('💳 Κάρτα', eur(D.card))}
+        ${line('💳 Κάρτα', eur(D.card), D.split ? (D.split === 1 ? 'μαζί με 1 μικτή πληρωμή' : 'μαζί με ' + D.split + ' μικτές πληρωμές') : '')}
         ${D.pending ? line('<span style="color:#ffc14a">⏳ Δεν έχουν πληρωθεί ακόμα</span>', eur(D.pending)) : ''}
         ${line('Γήπεδο 1 / Γήπεδο 2', D.court1 + ' / ' + D.court2)}
         ${D.rackets || D.balls ? line('Ενοικίαση ρακετών / premium μπαλάκια', D.rackets + ' / ' + D.balls) : ''}
@@ -150,17 +142,17 @@ function paint(){
           <div class="fin-cat-row"><span>${esc(catLabel('expense', c))}</span><b>${eur(v)} <small>${Math.round(v / D.expenses * 100)}%</small></b></div>
           <div class="fin-bar"><i style="width:${Math.max(2, v / maxExp * 100)}%"></i></div>
         </div>`).join('') + line('<b>Σύνολο</b>', eur(D.expenses))
-      : `<div class="am-empty">Κανένα έξοδο αυτόν τον μήνα.<br><br><button class="btn" data-fin="add">+ ΠΡΟΣΘΗΚΗ ΕΞΟΔΟΥ</button></div>`}
+      : `<div class="am-empty">Κανένα έξοδο σε αυτή την περίοδο.<br><br><button class="btn" data-fin="add">+ ΠΡΟΣΘΗΚΗ ΕΞΟΔΟΥ</button></div>`}
     </div>`;
   const rows = D.entries.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  const list = `<div class="panel"><h3>ΕΞΟΔΑ ${esc(monthName(m).toUpperCase())} <span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)">${rows.length}</span></h3>
+  const list = `<div class="panel"><h3>ΕΞΟΔΑ · ${esc(rg.label.toUpperCase())} <span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)">${rows.length}</span></h3>
       ${rows.length ? '<div class="fin-list">' + rows.map(e => `
         <button class="fin-entry" data-fin="edit" data-id="${esc(e.id)}">
           <span class="fin-date">${esc(fd(e.date))}</span>
           <span class="fin-desc"><b>${esc(catLabel('expense', e.category))}</b>${e.description ? `<small>${esc(e.description)}</small>` : ''}</span>
           <span class="fin-amt out">−${eur(e.amount)}</span>
         </button>`).join('') + '</div>'
-      : '<div class="am-empty">Δεν υπάρχουν καταχωρημένα έξοδα για αυτόν τον μήνα.</div>'}
+      : '<div class="am-empty">Δεν υπάρχουν καταχωρημένα έξοδα σε αυτή την περίοδο.</div>'}
     </div>`;
   r.innerHTML = head + err + kpis + `<div class="fin-cols">${incomeBox}${expenseBox}</div>` + chartPanel() + list;
   bindChart();
@@ -170,7 +162,8 @@ function paint(){
 function chartPanel(){
   // Phones get 6 months so the labels stay readable.
   const N = window.innerWidth < 640 ? 6 : 12;
-  const months = []; for (let k = N - 1; k >= 0; k--) months.push(shiftMonth(F.month, -k));
+  const am = F.anchor.slice(0, 7), selM = F.mode === 'month' ? am : '';
+  const months = []; for (let k = N - 1; k >= 0; k--) months.push(shiftMonth(am, -k));
   const data = months.map(m => { const d = monthData(m); return { m, inc: d.income, exp: d.expenses, net: d.net }; });
   const max = Math.max(1, ...data.map(d => Math.max(d.inc, d.exp)));
   const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))); const f = max / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; })();
@@ -185,10 +178,10 @@ function chartPanel(){
   };
   data.forEach((d, i) => {
     const cx = L + cw * i + cw / 2;
-    svg += `<g class="fin-col${d.m === F.month ? ' sel' : ''}" data-i="${i}">
+    svg += `<g class="fin-col${d.m === selM ? ' sel' : ''}" data-i="${i}">
         <rect x="${L + cw * i}" y="${T}" width="${cw}" height="${H - T - B + 20}" class="fin-hit"/>
         ${bar(cx - bw - 1, d.inc, COL_IN)}${bar(cx + 1, d.exp, COL_OUT)}
-        <text x="${cx}" y="${H - 8}" class="fin-ax${d.m === F.month ? ' cur' : ''}" text-anchor="middle">${monthShort(d.m)}</text>
+        <text x="${cx}" y="${H - 8}" class="fin-ax${d.m === am ? ' cur' : ''}" text-anchor="middle">${monthShort(d.m)}</text>
       </g>`;
   });
   svg += `<line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" class="fin-base"/>`;
@@ -218,7 +211,7 @@ function bindChart(){
     };
     g.addEventListener('mouseenter', show);
     g.addEventListener('mouseleave', () => { tip.hidden = true; });
-    g.addEventListener('click', () => { F.month = d.m; paint(); });
+    g.addEventListener('click', () => { F.mode = 'month'; F.anchor = d.m + '-01'; paint(); });
   });
 }
 
@@ -226,7 +219,7 @@ function bindChart(){
 function openEditor(entry){
   const E = F.edit = entry ? { ...entry, kind: 'expense' } : {
     id: null, kind: 'expense', category: 'rackets',
-    date: F.month === thisMonth() ? localToday() : F.month + '-01', amount: '', description: '', notes: '',
+    date: inRange(localToday(), curRange()) ? localToday() : curRange().from, amount: '', description: '', notes: '',
   };
   const m = document.createElement('div');
   m.className = 'mem-modal open'; m.id = 'finModal';
@@ -276,7 +269,7 @@ async function saveEntry(btn){
       const ref = await addDoc(collection(db(), C_FIN), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
       F.entries.push({ id: ref.id, ...data });
     }
-    F.month = date.slice(0, 7) > thisMonth() ? F.month : date.slice(0, 7);
+    if (!inRange(date, curRange())) F.anchor = date;
     closeEditor(); paint();
   } catch(e){
     btn.disabled = false;
@@ -299,9 +292,10 @@ document.addEventListener('click', (e) => {
   const inRoot = $('finRoot') && $('finRoot').contains(el), inModal = $('finModal') && $('finModal').contains(el);
   if (!inRoot && !inModal) return;
   switch (el.dataset.fin){
-    case 'prev': F.month = shiftMonth(F.month, -1); paint(); break;
-    case 'next': if (F.month < thisMonth()){ F.month = shiftMonth(F.month, 1); paint(); } break;
-    case 'now': F.month = thisMonth(); paint(); break;
+    case 'pmode': F.mode = el.dataset.m; paint(); break;
+    case 'pprev': F.anchor = shift(F.mode, F.anchor, -1); paint(); break;
+    case 'pnext': F.anchor = shift(F.mode, F.anchor, 1); paint(); break;
+    case 'pnow': F.anchor = utilToday(); paint(); break;
     case 'add': openEditor(null); break;
     case 'edit': openEditor(F.entries.find(x => x.id === el.dataset.id)); break;
     case 'cat': F.edit.category = el.dataset.cat; paintCats(); break;
@@ -311,6 +305,10 @@ document.addEventListener('click', (e) => {
   }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('finModal')) closeEditor(); });
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if ($('finRoot') && $('finRoot').contains(t) && t.dataset.finF === 'anchor' && t.value){ F.anchor = t.value; paint(); }
+});
 
 /* ---------- public ---------- */
 // Called by renderDashboard() every time bookings are (re)loaded.
