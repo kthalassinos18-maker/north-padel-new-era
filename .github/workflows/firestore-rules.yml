@@ -8,8 +8,8 @@ name: Publish Firestore rules
 
 on:
   push:
-    branches: [main]
-    paths: [firestore.rules, firebase.json]
+    branches: [main, epipeda]   # epipeda: temporary, first test run
+    paths: [firestore.rules, firebase.json, .github/workflows/firestore-rules.yml]
   workflow_dispatch:
 
 concurrency:
