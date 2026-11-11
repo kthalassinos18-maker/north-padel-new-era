@@ -14,6 +14,12 @@
 <script src="levels.js"></script>
 <link rel="stylesheet" href="open-games.css">
 <link rel="stylesheet" href="player-profile.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="North Padel">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2485,6 +2491,7 @@
       </div>
 
       <div class="pf-section" id="ppAlerts"></div>
+      <div class="pf-section" id="ppPush"></div>
 
       <div class="pf-section" id="ppStats"></div>
       <div class="pf-section" id="ppBadges"></div>
@@ -2516,6 +2523,7 @@
     renderMyBookings(u);
     // Player card, photo, style, stats, badges, «Ειδοποίησέ με» (player-profile.js)
     if (window.npProfile) window.npProfile.render(u);
+    if (window.npPush) window.npPush.render();
 
     // Chip toggles
     document.querySelectorAll('#profileFull .pf-chip').forEach(c => {
@@ -4543,5 +4551,6 @@ T.de['wd_sun'] = 'S';
 
 <script type="module" src="open-games.js"></script>
 <script type="module" src="player-profile.js"></script>
+<script type="module" src="push.js"></script>
 </body>
 </html>

@@ -401,6 +401,10 @@ function viewGame(){
 }
 
 /* ---------- actions ---------- */
+// Notifications written by an action are also pushed to the recipients' phones.
+let PENDING = [];
+function nref(){ const r = doc(collection(db(), 'notifications')); PENDING.push(r.id); return r; }
+function flushPush(){ const ids = PENDING; PENDING = []; if (window.npPush) window.npPush.send(ids); }
 function note(toUid, g, icon, title, text, type){
   return { toUid, fromUid: me().uid, gameId: g.id, type, icon, title, text, read: false, createdMs: Date.now(), createdAt: serverTimestamp() };
 }
@@ -424,6 +428,7 @@ async function join(){
   if (!confirm(t('Μπαίνεις στο παιχνίδι', 'Join the game on', 'Am Spiel teilnehmen am') + ' ' + whenTxt(g0) + '?\n' + t('Πληρωμή στο γήπεδο', 'Pay at the court', 'Bezahlung am Platz') + ': ' + price() + '€.')) return;
   const ref = doc(db(), 'open_games', g0.id);
   let becameFull = false, gAfter = null;
+  PENDING = [];
   try {
     await runTransaction(db(), async (tx) => {
       const snap = await tx.get(ref);
@@ -440,11 +445,11 @@ async function join(){
       const others = Object.keys(g.players || {});
       const who = (u.name || '').trim() || t('Ένας παίχτης', 'A player', 'Ein Spieler');
       if (becameFull){
-        others.forEach(id => tx.set(doc(collection(db(), 'notifications')), note(id, g, '✅',
+        others.forEach(id => tx.set(nref(), note(id, g, '✅',
           t('Η τετράδα έκλεισε!', 'Your four is complete!', 'Eure Vierer-Runde steht!'),
           whenTxt(g) + ' · ' + (g.court || '') + ' — ' + who + t(' συμπλήρωσε το παιχνίδι. Τα λέμε στο γήπεδο!', ' completed the game. See you on court!', ' hat das Spiel vervollständigt. Bis auf dem Platz!'), 'full')));
       } else if (g.creatorUid && g.creatorUid !== u.uid){
-        tx.set(doc(collection(db(), 'notifications')), note(g.creatorUid, g, '👋',
+        tx.set(nref(), note(g.creatorUid, g, '👋',
           who + t(' μπήκε στο παιχνίδι σου', ' joined your game', ' ist deinem Spiel beigetreten'),
           whenTxt(g) + ' · ' + count + '/4 · ' + t('ψάχνετε ακόμα ', 'still need ', 'noch gesucht: ') + (4 - count), 'join'));
       }
@@ -453,6 +458,8 @@ async function join(){
     alert(t('Δεν έγινε', 'Could not join', 'Nicht möglich') + ': ' + (e.code === 'permission-denied' ? t('δεν επιτρέπεται (μήπως έκλεισε στο μεταξύ;)', 'not allowed (was it filled meanwhile?)', 'nicht erlaubt (inzwischen voll?)') : e.message));
     return;
   }
+  flushPush();
+  if (window.npPush) window.npPush.suggest();
   if (becameFull){
     const names = seatsOf(gAfter).map(s => s.name).join(', ');
     try { window.npFB.notifyAdminWhatsApp('✅ Ανοιχτό παιχνίδι ΓΕΜΙΣΕ (4/4)\n📅 ' + gAfter.date + ' · ' + gAfter.time + '\n🏟️ ' + (gAfter.court || '') + '\n👥 ' + names); } catch(_) {}
@@ -463,6 +470,7 @@ async function leave(){
   const u = me(); const g0 = OG.games.find(x => x.id === OG.gameId); if (!u || !g0) return;
   if (!confirm(t('Σίγουρα αποχωρείς από το παιχνίδι;', 'Leave this game?', 'Spiel wirklich verlassen?'))) return;
   const ref = doc(db(), 'open_games', g0.id);
+  PENDING = [];
   try {
     await runTransaction(db(), async (tx) => {
       const snap = await tx.get(ref); const g = { id: snap.id, ...snap.data() };
@@ -470,23 +478,26 @@ async function leave(){
       const players = { ...g.players }; delete players[u.uid];
       tx.update(ref, { players, count: playerCount(g) - 1, status: 'open', updatedAt: serverTimestamp() });
       if (g.creatorUid && g.creatorUid !== u.uid){
-        tx.set(doc(collection(db(), 'notifications')), note(g.creatorUid, g, '↩️',
+        tx.set(nref(), note(g.creatorUid, g, '↩️',
           ((u.name || '').trim() || t('Ένας παίχτης', 'A player', 'Ein Spieler')) + t(' αποχώρησε', ' left your game', ' hat das Spiel verlassen'),
           whenTxt(g) + ' · ' + t('το παιχνίδι ξαναψάχνει παίχτη.', 'the game is looking for a player again.', 'das Spiel sucht wieder Mitspieler.'), 'leave'));
       }
     });
+    flushPush();
     toast(t('Αποχώρησες από το παιχνίδι.', 'You left the game.', 'Du hast das Spiel verlassen.'));
   } catch(e){ alert(t('Δεν έγινε', 'Failed', 'Fehlgeschlagen') + ': ' + e.message); }
 }
 async function keep(id){
   const g = OG.games.find(x => x.id === id); if (!g) return;
   if (!confirm(t('Το γήπεδο μένει κλεισμένο με', 'The court stays booked with', 'Der Platz bleibt gebucht mit') + ' ' + playerCount(g) + ' ' + t('άτομα και η κράτηση ισχύει κανονικά (44€ για το γήπεδο). Συνέχεια;', 'people and the booking stands as normal. Continue?', 'Personen und die Buchung gilt normal. Weiter?'))) return;
+  PENDING = [];
   try {
     const b = writeBatch(db());
     b.update(doc(db(), 'open_games', id), { status: 'kept', updatedAt: serverTimestamp() });
-    Object.keys(g.players || {}).filter(x => x !== me().uid).forEach(x => b.set(doc(collection(db(), 'notifications')), note(x, g, '📌',
+    Object.keys(g.players || {}).filter(x => x !== me().uid).forEach(x => b.set(nref(), note(x, g, '📌',
       t('Το παιχνίδι κρατήθηκε', 'The game was kept', 'Das Spiel wurde behalten'), whenTxt(g) + ' · ' + playerCount(g) + '/4 — ' + t('παίζετε κανονικά.', 'you play as planned.', 'ihr spielt wie geplant.'), 'kept')));
     await b.commit();
+    flushPush();
     try { window.npFB.notifyAdminWhatsApp('📌 Ανοιχτό παιχνίδι: ΚΡΑΤΗΘΗΚΕ με ' + playerCount(g) + ' άτομα\n📅 ' + g.date + ' · ' + g.time + '\n👤 ' + (g.creatorName || '')); } catch(_) {}
     toast('📌 ' + t('Το γήπεδο κρατήθηκε.', 'Court kept.', 'Platz behalten.'));
   } catch(e){ alert(t('Δεν έγινε', 'Failed', 'Fehlgeschlagen') + ': ' + e.message); }
@@ -494,14 +505,16 @@ async function keep(id){
 async function cancelGame(id){
   const g = OG.games.find(x => x.id === id); if (!g) return;
   if (!confirm(t('Ακύρωση του παιχνιδιού και της κράτησης; Το γήπεδο θα ελευθερωθεί και θα ενημερωθούν οι υπόλοιποι.', 'Cancel the game and the booking? The court will be freed and the others notified.', 'Spiel und Buchung stornieren? Der Platz wird frei und die anderen werden benachrichtigt.'))) return;
+  PENDING = [];
   try {
     const b = writeBatch(db());
     b.update(doc(db(), 'open_games', id), { status: 'cancelled', updatedAt: serverTimestamp() });
     if (g.bookingId) b.update(doc(db(), 'bookings', g.bookingId), { status: 'cancelled', cancelledAt: serverTimestamp() });
     if (g.slotId) b.delete(doc(db(), 'slots', g.slotId));
-    Object.keys(g.players || {}).filter(x => x !== me().uid).forEach(x => b.set(doc(collection(db(), 'notifications')), note(x, g, '❌',
+    Object.keys(g.players || {}).filter(x => x !== me().uid).forEach(x => b.set(nref(), note(x, g, '❌',
       t('Το παιχνίδι ακυρώθηκε', 'The game was cancelled', 'Das Spiel wurde storniert'), whenTxt(g) + ' · ' + t('ο διοργανωτής το ακύρωσε.', 'the organiser cancelled it.', 'der Organisator hat storniert.'), 'cancelled')));
     await b.commit();
+    flushPush();
     try { window.npFB.notifyAdminWhatsApp('❌ Ανοιχτό παιχνίδι ΑΚΥΡΩΘΗΚΕ από τον διοργανωτή\n📅 ' + g.date + ' · ' + g.time + '\n👤 ' + (g.creatorName || '') + '\n✅ Η ώρα είναι ξανά διαθέσιμη online.'); } catch(_) {}
     toast(t('Το παιχνίδι ακυρώθηκε.', 'Game cancelled.', 'Spiel storniert.'));
     if (typeof window.renderAuth === 'function') try { window.renderAuth(); } catch(_) {}
@@ -607,13 +620,15 @@ async function sendAlerts(gameId){
     .slice(0, 60);
   const need = 4 - playerCount(g);
   for (let i = 0; i < subs.length; i += 15){
+    PENDING = [];
     const b = writeBatch(db());
-    subs.slice(i, i + 15).forEach(a => b.set(doc(collection(db(), 'notifications')), {
+    subs.slice(i, i + 15).forEach(a => b.set(nref(), {
       toUid: a.uid, fromUid: u.uid, gameId: g.id, type: 'alert', icon: '🎾', read: false, createdMs: Date.now(), createdAt: serverTimestamp(),
       title: t('Ψάχνουν παίχτη για εσένα!', 'A game needs you!', 'Ein Spiel sucht dich!'),
       text: whenTxt(g) + ' · ' + t('Επίπεδο', 'Level', 'Niveau') + ' ' + g.levelMin + '–' + g.levelMax + ' · ' + t('λείπ' + (need === 1 ? 'ει 1' : 'ουν ' + need), need + ' missing', need + ' fehlen') + (typeTags(g).length ? ' · ' + typeTags(g).join(' · ') : ''),
     }));
     await b.commit();
+    flushPush();
   }
 }
 
@@ -637,7 +652,7 @@ window.npOG = {
       levelMin: Math.max(1, lv - FORM.range), levelMax: Math.min(10, lv + FORM.range),
     };
   },
-  afterCreate(gameId){ FORM.on = false; FORM.friendNames = []; paintFormBox(); setTimeout(() => openOverlay('mine', gameId), 600); sendAlerts(gameId).catch(e => console.warn('alerts', e)); },
+  afterCreate(gameId){ if (window.npPush) window.npPush.suggest(); FORM.on = false; FORM.friendNames = []; paintFormBox(); setTimeout(() => openOverlay('mine', gameId), 600); sendAlerts(gameId).catch(e => console.warn('alerts', e)); },
   /** {time: game} for open games on a date (court 1) — the booking calendar shows them as joinable. */
   forDate(iso, court){ const o = {}; OG.games.filter(g => g.date === iso && g.court === court && g.status === 'open' && isUpcoming(g)).forEach(g => { o[g.time] = g; }); return o; },
   /** {date: n} open games per day in a month — they don't count as taken. */

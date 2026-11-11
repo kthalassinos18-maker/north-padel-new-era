@@ -3,7 +3,7 @@
  * are missing, and which games need the organiser's keep/cancel decision
  * (6h before start). Also tags bookings that are open games.
  */
-import { collection, doc, query, where, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { collection, doc, query, where, onSnapshot, updateDoc, serverTimestamp, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -13,7 +13,54 @@ const DAYS = ['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'];
 const fdate = (iso) => { const [y, m, d] = iso.split('-').map(Number); return DAYS[new Date(y, m - 1, d).getDay()] + ' ' + pad(d) + '/' + pad(m); };
 const count = (g) => Object.keys(g.players || {}).length + (+g.friends || 0);
 const ST = { open: ['ΑΝΟΙΧΤΟ', 'ok'], full: ['ΓΕΜΑΤΟ 4/4', 'ok'], kept: ['ΚΡΑΤΗΘΗΚΕ', 'pend'], cancelled: ['ΑΚΥΡΩΘΗΚΕ', 'canc'] };
-const G = { games: [], unsub: null, showAll: false };
+const G = { games: [], unsub: null, showAll: false, open: null, alerts: null, sent: {} };
+try { G.sent = JSON.parse(localStorage.getItem('np_og_wa_sent') || '{}'); } catch(_) {}
+
+/* ---------- WhatsApp to matching members (free: opens your own WhatsApp) ---------- */
+const lv10 = (u) => (window.npLv10 ? window.npLv10(u) : (+u.level || 1));
+const genderOk = (g, u) => !g.gameGender || g.gameGender === 'any' || g.gameGender === 'mixed' || (g.gameGender === 'men' && u.gender === 'M') || (g.gameGender === 'women' && u.gender === 'F');
+function waPhone(p){
+  let d = String(p || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.length === 10 && /^(69|2)/.test(d)) d = '30' + d;
+  return d.length >= 11 ? d : '';
+}
+function matching(g){
+  let users = [];
+  try { users = (typeof CACHE !== 'undefined' && CACHE.users) || []; } catch(_) {}
+  const al = G.alerts || {};
+  return users.filter(u => u.uid && !(g.players || {})[u.uid] && waPhone(u.phone)
+      && lv10(u) >= g.levelMin && lv10(u) <= g.levelMax && genderOk(g, u)
+      && !(window.npFB.ADMIN_EMAILS || []).includes((u.email || '').toLowerCase()))
+    .map(u => ({ u, alert: !!(al[u.uid] && al[u.uid].on), consent: !!(u.consent && (u.consent.findPlayer || u.consent.marketing)), d: Math.abs(lv10(u) - (g.levelMin + g.levelMax) / 2) }))
+    .sort((a, b) => (b.alert - a.alert) || (b.consent - a.consent) || (a.d - b.d));
+}
+function waText(g, u){
+  const need = 4 - count(g);
+  const first = (u.name || '').trim().split(' ')[0];
+  return `Γεια σου${first ? ' ' + first : ''}! 🎾 Ψάχνουμε ${need} ${need === 1 ? 'παίχτη' : 'παίχτες'} για padel στο North Padel:\n📅 ${fdate(g.date)} ${String(g.time || '').replace('-', '–')}\n🎯 Επίπεδο ${g.levelMin}–${g.levelMax}\n👉 Μπες εδώ: ${location.origin}/#og=${g.id}`;
+}
+async function loadAlerts(){
+  if (G.alerts) return;
+  try { const snap = await getDocs(collection(window.npFB.db, 'og_alerts')); G.alerts = {}; snap.docs.forEach(d => { G.alerts[d.id] = d.data(); }); }
+  catch(e){ G.alerts = {}; console.warn('og_alerts', e); }
+}
+function matchRow(g){
+  const list = matching(g);
+  if (!list.length) return `<tr><td colspan="6" style="background:rgba(37,211,102,0.05);color:rgba(244,249,255,0.5);padding:12px">Κανένα μέλος με τηλέφωνο δεν ταιριάζει (επίπεδο ${g.levelMin}–${g.levelMax}${g.gameGender && g.gameGender !== 'any' && g.gameGender !== 'mixed' ? ', ' + (g.gameGender === 'men' ? 'άνδρες' : 'γυναίκες') : ''}).</td></tr>`;
+  return `<tr><td colspan="6" style="background:rgba(37,211,102,0.05);padding:10px 12px">
+    <div style="font-size:12px;color:rgba(244,249,255,0.6);margin-bottom:8px">Πάτα «WhatsApp» — ανοίγει το δικό σου WhatsApp με έτοιμο μήνυμα, και πατάς Αποστολή. 🔔 = έχει ζητήσει ειδοποιήσεις.</div>
+    <div style="display:flex;flex-direction:column;gap:6px">${list.slice(0, 40).map(({ u, alert, consent }) => {
+      const key = g.id + '_' + u.uid, sent = G.sent[key];
+      return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="min-width:150px"><b>${esc(((u.name || '') + ' ' + (u.surname || '')).trim() || u.email)}</b> ${alert ? '🔔' : ''}</span>
+        <span style="color:#b7ff4a;font-size:12px">Επ. ${lv10(u)}</span>
+        <span style="color:rgba(244,249,255,0.5);font-size:12px">${esc(u.phone || '')}</span>
+        ${!consent && !alert ? '<span style="color:rgba(244,249,255,0.4);font-size:11px">(παλιό μέλος)</span>' : ''}
+        <a class="btn" style="margin-left:auto;text-decoration:none;${sent ? 'opacity:.55' : 'background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.5);color:#5ff08f'}" target="_blank" rel="noopener"
+           data-wa-sent="${esc(key)}" href="https://wa.me/${waPhone(u.phone)}?text=${encodeURIComponent(waText(g, u))}">📲 ${sent ? 'Στάλθηκε ✓' : 'WhatsApp'}</a>
+      </div>`; }).join('')}</div></td></tr>`;
+}
 
 function waitFB(){ return new Promise(r => window.npFB ? r() : window.addEventListener('npFBReady', r, { once: true })); }
 async function start(){
@@ -47,8 +94,8 @@ function paint(){
       <td>Επ. ${g.levelMin}–${g.levelMax}</td>
       <td style="white-space:normal;min-width:220px">${names}</td>
       <td><span class="pill ${st[1]}">${st[0]}</span>${needDecision(g) ? '<div style="color:#ffc14a;font-size:11px;margin-top:4px">⏰ περιμένει απόφαση διοργανωτή</div>' : ''}</td>
-      <td style="text-align:right">${g.status === 'open' ? `<button class="btn" data-ogadm="kept" data-id="${esc(g.id)}" title="Κλείσιμο ως έχει">📌 Κράτα</button>` : ''}</td>
-    </tr>`;
+      <td style="text-align:right;white-space:nowrap">${g.status === 'open' ? `<button class="btn" data-ogadm="wa" data-id="${esc(g.id)}" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.5);color:#5ff08f">📲 Ποιοι ταιριάζουν${G.open === g.id ? ' ▲' : ''}</button> <button class="btn" data-ogadm="kept" data-id="${esc(g.id)}" title="Κλείσιμο ως έχει">📌 Κράτα</button>` : ''}</td>
+    </tr>${G.open === g.id && g.status === 'open' ? matchRow(g) : ''}`;
   }).join('');
   const openN = upcoming.filter(g => g.status === 'open').length, decN = upcoming.filter(needDecision).length;
   r.innerHTML = `<div class="panel">
@@ -60,9 +107,16 @@ function paint(){
     <p style="color:rgba(244,249,255,0.45);font-size:12px;margin-top:8px">Το γήπεδο είναι κλεισμένο στο όνομα του διοργανωτή (κανονική κράτηση). Αν διαγράψεις την κράτηση, ακυρώνεται και το παιχνίδι.</p>
   </div>`;
 }
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-wa-sent]'); if (!a) return;
+  G.sent[a.dataset.waSent] = Date.now();
+  try { localStorage.setItem('np_og_wa_sent', JSON.stringify(G.sent)); } catch(_) {}
+  setTimeout(paint, 300);
+});
 document.addEventListener('click', async (e) => {
   const el = e.target.closest('[data-ogadm]'); if (!el || !$('ogAdminRoot') || !$('ogAdminRoot').contains(el)) return;
   if (el.dataset.ogadm === 'all'){ G.showAll = !G.showAll; paint(); return; }
+  if (el.dataset.ogadm === 'wa'){ G.open = G.open === el.dataset.id ? null : el.dataset.id; await loadAlerts(); paint(); return; }
   if (el.dataset.ogadm === 'kept'){
     if (!confirm('Κλείσιμο του παιχνιδιού ως έχει; Δεν θα φαίνεται πια στο «Βρες παίχτη».')) return;
     try { await updateDoc(doc(window.npFB.db, 'open_games', el.dataset.id), { status: 'kept', updatedAt: serverTimestamp() }); }

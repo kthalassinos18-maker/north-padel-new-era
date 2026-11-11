@@ -364,6 +364,17 @@ service cloud.firestore {
         && request.resource.data.level is int);
     }
 
+    // /push_tokens/{token} — this device may get phone notifications for uid.
+    //   Written by the member's own browser; read only by the server
+    //   (/api/push uses the service account) and the admin.
+    match /push_tokens/{token} {
+      allow read: if isAdmin();
+      allow create, update: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','ua','platform','createdAt']);
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+    }
+
     // /trophies/{tournamentId} — public results of finished Americano
     // tournaments (written by the admin) so members see them on their profile.
     match /trophies/{id} {
