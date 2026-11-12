@@ -320,6 +320,17 @@ service cloud.firestore {
           && request.resource.data.players.diff(resource.data.players).changedKeys().size() == 0
           && request.resource.data.count == resource.data.count - 1
           && request.resource.data.status == 'open')
+        // MOVE: a player changes only their own spot on the court
+        || (isSignedIn()
+          && resource.data.status in ['open','full']
+          && request.time.toMillis() < resource.data.startsAt
+          && request.auth.uid in resource.data.players
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players','updatedAt'])
+          && request.resource.data.players.diff(resource.data.players).affectedKeys() == [request.auth.uid].toSet()
+          && request.resource.data.players[request.auth.uid].diff(resource.data.players[request.auth.uid]).affectedKeys().hasOnly(['seat'])
+          && request.resource.data.players[request.auth.uid].seat is int
+          && request.resource.data.players[request.auth.uid].seat >= 0
+          && request.resource.data.players[request.auth.uid].seat <= 3)
         // CREATOR: keep the court as is, or cancel, while the game is not full
         || (isSignedIn()
           && request.auth.uid == resource.data.creatorUid

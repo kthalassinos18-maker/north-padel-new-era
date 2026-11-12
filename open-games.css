@@ -141,3 +141,9 @@
 .og-chat-in input{flex:1;min-width:0;background:rgba(10,25,41,0.7);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#f4f9ff;padding:10px 12px;font-family:inherit;font-size:16px;outline:none}
 .og-chat-in input:focus{border-color:#b7ff4a}
 .og-chat-in button{border:0;border-radius:10px;background:#b7ff4a;color:#0a1929;font-size:18px;font-weight:800;padding:0 16px;cursor:pointer}
+
+/* ---- seats: side labels + team names ---- */
+.og-seat .sd{font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#b7ff4a;opacity:.85}
+.og-team{position:absolute;left:50%;transform:translateX(-50%);font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:0.22em;color:rgba(255,255,255,0.55);pointer-events:none}
+.og-team.a{left:1%;top:62%;transform:none;writing-mode:vertical-rl;rotate:180deg}
+.og-team.b{left:auto;right:1%;top:14%;transform:none;writing-mode:vertical-rl}

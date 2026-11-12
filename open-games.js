@@ -79,15 +79,22 @@ const isUpcoming = (g) => (g.startsAt || 0) > Date.now();
 const needsDecision = (g) => g.status === 'open' && Date.now() >= g.startsAt - DECIDE_H * HOUR && Date.now() < g.startsAt;
 
 /** The 4 seats in court order: [near-left, near-right, far-left, far-right]. */
+/* Seats: 0 = near-left, 1 = near-right (team A), 2 = far-left, 3 = far-right (team B),
+ * as seen in the court drawing. A player who chose a seat keeps it; older
+ * entries without a seat fill the free ones in order. */
+const SEAT_SIDE = ['left', 'right', 'right', 'left'];   // court side from the player's own view (far team faces us)
+const seatSideLabel = (i) => SEAT_SIDE[i] === 'left' ? t('Αριστερά', 'Left', 'Links') : t('Δεξιά', 'Right', 'Rechts');
+const seatTeam = (i) => (i < 2 ? 'A' : 'B');
 function seatsOf(g){
-  const s = [];
-  const pl = Object.entries(g.players || {}).map(([uid, p]) => ({ uid, ...p })).sort((a, b) => (a.at || 0) - (b.at || 0));
+  const s = [null, null, null, null], rest = [];
+  const ok = (i) => Number.isInteger(i) && i >= 0 && i < 4 && !s[i];
+  const pl = Object.entries(g.players || {}).map(([uid, p]) => ({ kind: 'member', uid, ...p })).sort((a, b) => (a.at || 0) - (b.at || 0));
   const creator = pl.find(p => p.uid === g.creatorUid);
-  if (creator) s.push({ kind: 'member', ...creator });
-  for (let i = 0; i < (+g.friends || 0); i++) s.push({ kind: 'friend', name: (g.friendNames || [])[i] || t('Φίλος', 'Friend', 'Freund') });
-  pl.filter(p => p.uid !== g.creatorUid).forEach(p => s.push({ kind: 'member', ...p }));
-  while (s.length < 4) s.push({ kind: 'empty' });
-  return s.slice(0, 4);
+  const friends = Array.from({ length: +g.friends || 0 }, (_, i) => ({ kind: 'friend', name: (g.friendNames || [])[i] || t('Φίλος', 'Friend', 'Freund'), seat: (g.friendSeats || [])[i] }));
+  [creator, ...friends, ...pl.filter(p => p.uid !== g.creatorUid)].filter(Boolean)
+    .forEach(p => { if (ok(p.seat)) s[p.seat] = p; else rest.push(p); });
+  rest.forEach(p => { const i = s.indexOf(null); if (i >= 0) s[i] = p; });
+  return s.map(x => x || { kind: 'empty' });
 }
 function avgLevel(g){
   const lv = Object.values(g.players || {}).map(p => +p.level || 0).filter(Boolean);
@@ -358,12 +365,14 @@ function viewGame(){
     const [x, y, k] = SEAT_POS[i];
     const style = `left:${x / 3.6}%;top:${y / 3}%;--k:${k};--dl:${0.15 + i * 0.08}s`;
     if (s.kind === 'empty'){
-      return `<button class="og-seat empty" style="${style}" data-og="join" ${canJoin ? '' : 'disabled'} aria-label="${t('Άδεια θέση — μπες', 'Free spot — join', 'Freier Platz — mitspielen')}"><span class="av">＋</span><span class="nm">${canJoin ? t('ΜΠΕΣ', 'JOIN', 'MITSPIELEN') : t('Άδεια', 'Free', 'Frei')}</span></button>`;
+      const canMove = inGame && (g.status === 'open' || g.status === 'full') && isUpcoming(g);
+      const act = canJoin ? 'join' : canMove ? 'move' : '';
+      return `<button class="og-seat empty" style="${style}" ${act ? `data-og="${act}" data-seat="${i}"` : 'disabled'} aria-label="${t('Άδεια θέση', 'Free spot', 'Freier Platz')} · ${esc(seatSideLabel(i))}"><span class="av">${canMove ? '⇄' : '＋'}</span><span class="nm">${canJoin ? t('ΜΠΕΣ', 'JOIN', 'MITSPIELEN') : canMove ? t('ΑΛΛΑΓΗ', 'MOVE', 'WECHSELN') : t('Άδεια', 'Free', 'Frei')}</span><span class="sd">${esc(seatSideLabel(i))}</span></button>`;
     }
     const nm = s.kind === 'friend' ? s.name : (s.name || '').split(' ')[0];
     return `<div class="og-seat ${s.kind === 'friend' ? 'friend' : ''} ${s.uid && s.uid === uid ? 'me' : ''}" style="${style}" ${s.uid ? `data-uid="${esc(s.uid)}"` : ''}>
         <span class="av">${esc((nm || '?').charAt(0).toUpperCase())}</span><span class="nm">${esc(nm)}${s.uid === g.creatorUid ? ' 👑' : ''}</span>
-        ${s.level ? `<span class="lv">${esc(lvBadge(s.level))}${s.side && SIDE_S[s.side] ? ' · ' + esc(SIDE_S[s.side]()) : ''}</span>` : s.kind === 'friend' ? `<span class="lv" style="color:rgba(244,249,255,0.6)">${t('παρέα', 'with', 'dabei')}</span>` : ''}
+        ${s.level ? `<span class="lv">${esc(lvBadge(s.level))} · ${esc(seatSideLabel(i).toLowerCase())}</span>` : s.kind === 'friend' ? `<span class="lv" style="color:rgba(244,249,255,0.6)">${t('παρέα', 'with', 'dabei')} · ${esc(seatSideLabel(i).toLowerCase())}</span>` : ''}
       </div>`;
   }).join('');
   let acts = '';
@@ -388,7 +397,9 @@ function viewGame(){
     <div class="og-head"><div class="d">${esc(dayShort(g.date))} ${esc(dm(g.date))} · ${esc((g.time || '').replace('-', ' – '))}</div>
       <div class="i">${esc(g.court || '')} · ${t('Επίπεδο', 'Level', 'Niveau')} ${g.levelMin}–${g.levelMax}${g.note ? ' · ' + esc(g.note) : ''}</div>
       ${typeTags(g).length ? `<div class="og-tags" style="justify-content:center;margin-top:8px">${typeTags(g).map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div>
-    <div class="og-stage">${courtSvg()}${seatHtml}</div>
+    <div class="og-stage">${courtSvg()}${seatHtml}<span class="og-team a">${t('ΟΜΑΔΑ Α', 'TEAM A', 'TEAM A')}</span><span class="og-team b">${t('ΟΜΑΔΑ Β', 'TEAM B', 'TEAM B')}</span></div>
+    ${canJoin ? `<p class="og-note" style="text-align:center;margin-top:4px">👆 ${t('Πάτα την άδεια θέση που θέλεις — ομάδα και πλευρά.', 'Tap the free spot you want — team and side.', 'Tippe auf den gewünschten freien Platz — Team und Seite.')}</p>` : ''}
+    ${inGame && seats.some(x => x.kind === 'empty') && (g.status === 'open' || g.status === 'full') ? `<p class="og-note" style="text-align:center;margin-top:4px">⇄ ${t('Θες άλλη θέση; Πάτα μια άδεια.', 'Want another spot? Tap a free one.', 'Anderer Platz? Tippe auf einen freien.')}</p>` : ''}
     <div class="og-facts">
       <div class="og-fact"><b>${n}/4</b><small>${t('ΠΑΙΧΤΕΣ', 'PLAYERS', 'SPIELER')}</small></div>
       <div class="og-fact"><b>${avgLevel(g) || '—'}</b><small>${t('ΜΕΣΟ ΕΠΙΠΕΔΟ', 'AVG LEVEL', 'Ø NIVEAU')}</small></div>
@@ -415,7 +426,7 @@ function requireMember(){
   if (!u.emailVerified){ alert(t('Πρέπει πρώτα να επιβεβαιώσεις το email σου (δες το προφίλ σου).', 'Please verify your email first (see your profile).', 'Bitte bestätige zuerst deine E-Mail (siehe Profil).')); return null; }
   return u;
 }
-async function join(){
+async function join(seat){
   const u = requireMember(); if (!u) return;
   const g0 = OG.games.find(x => x.id === OG.gameId); if (!g0) return;
   const lv = lv10(u);
@@ -425,7 +436,10 @@ async function join(){
       : t('Αυτό το παιχνίδι είναι ' + GENDER[g0.gameGender]().toLowerCase() + '.', 'This is a ' + GENDER[g0.gameGender]().toLowerCase() + ' game.', 'Dies ist ein ' + GENDER[g0.gameGender]() + '-Spiel.'));
     return;
   }
-  if (!confirm(t('Μπαίνεις στο παιχνίδι', 'Join the game on', 'Am Spiel teilnehmen am') + ' ' + whenTxt(g0) + '?\n' + t('Πληρωμή στο γήπεδο', 'Pay at the court', 'Bezahlung am Platz') + ': ' + price() + '€.')) return;
+  const free0 = seatsOf(g0).map((x, i) => (x.kind === 'empty' ? i : -1)).filter(i => i >= 0);
+  if (!Number.isInteger(seat) || !free0.includes(seat)) seat = free0[0];
+  const where = seat == null ? '' : '\n' + t('Θέση', 'Spot', 'Platz') + ': ' + t('Ομάδα ', 'Team ', 'Team ') + seatTeam(seat) + ' · ' + seatSideLabel(seat);
+  if (!confirm(t('Μπαίνεις στο παιχνίδι', 'Join the game on', 'Am Spiel teilnehmen am') + ' ' + whenTxt(g0) + '?' + where + '\n' + t('Πληρωμή στο γήπεδο', 'Pay at the court', 'Bezahlung am Platz') + ': ' + price() + '€.')) return;
   const ref = doc(db(), 'open_games', g0.id);
   let becameFull = false, gAfter = null;
   PENDING = [];
@@ -438,7 +452,10 @@ async function join(){
       if (isIn(g, u.uid)) throw new Error(t('Είσαι ήδη μέσα.', 'You are already in.', 'Du bist schon dabei.'));
       const count = playerCount(g) + 1;
       if (count > 4) throw new Error(t('Δεν υπάρχει άδεια θέση.', 'No free spot.', 'Kein freier Platz.'));
-      const players = { ...g.players, [u.uid]: { name: (u.name || '').trim() || t('Παίχτης', 'Player', 'Spieler'), level: lv, at: Date.now(), ...(u.side ? { side: u.side } : {}) } };
+      // The chosen spot may have been taken a moment ago — then take another free one.
+      const free = seatsOf(g).map((x, i) => (x.kind === 'empty' ? i : -1)).filter(i => i >= 0);
+      const mySeat = free.includes(seat) ? seat : free[0];
+      const players = { ...g.players, [u.uid]: { name: (u.name || '').trim() || t('Παίχτης', 'Player', 'Spieler'), level: lv, at: Date.now(), seat: mySeat, ...(u.side ? { side: u.side } : {}) } };
       becameFull = count === 4;
       tx.update(ref, { players, count, status: becameFull ? 'full' : 'open', updatedAt: serverTimestamp() });
       gAfter = { ...g, players, count };
@@ -465,6 +482,20 @@ async function join(){
     try { window.npFB.notifyAdminWhatsApp('✅ Ανοιχτό παιχνίδι ΓΕΜΙΣΕ (4/4)\n📅 ' + gAfter.date + ' · ' + gAfter.time + '\n🏟️ ' + (gAfter.court || '') + '\n👥 ' + names); } catch(_) {}
     toast('✅ ' + t('Η τετράδα έκλεισε! Ειδοποιήθηκαν όλοι.', 'The four is complete! Everyone was notified.', 'Die Runde steht! Alle wurden benachrichtigt.'));
   } else toast('🎾 ' + t('Μπήκες στο παιχνίδι!', 'You joined the game!', 'Du bist dabei!'));
+}
+/** Move yourself to another free spot. */
+async function move(seat){
+  const u = me(); const g0 = OG.games.find(x => x.id === OG.gameId); if (!u || !g0) return;
+  const ref = doc(db(), 'open_games', g0.id);
+  try {
+    await runTransaction(db(), async (tx) => {
+      const snap = await tx.get(ref); const g = { id: snap.id, ...snap.data() };
+      if (!isIn(g, u.uid)) return;
+      if (seatsOf(g)[seat].kind !== 'empty') throw new Error(t('Η θέση πιάστηκε μόλις τώρα.', 'That spot was just taken.', 'Der Platz wurde gerade belegt.'));
+      tx.update(ref, { players: { ...g.players, [u.uid]: { ...g.players[u.uid], seat } }, updatedAt: serverTimestamp() });
+    });
+    toast('⇄ ' + t('Νέα θέση', 'New spot', 'Neuer Platz') + ': ' + t('Ομάδα ', 'Team ', 'Team ') + seatTeam(seat) + ' · ' + seatSideLabel(seat));
+  } catch(e){ alert(t('Δεν έγινε', 'Failed', 'Fehlgeschlagen') + ': ' + e.message); }
 }
 async function leave(){
   const u = me(); const g0 = OG.games.find(x => x.id === OG.gameId); if (!u || !g0) return;
@@ -553,7 +584,8 @@ document.addEventListener('click', (e) => {
     case 'tab': OG.tab = el.dataset.t; OG.view = 'list'; render(); if (OG.tab === 'notes') markNotesRead(); break;
     case 'game': OG.view = 'game'; OG.gameId = el.dataset.id; render(); $('ogOv').querySelector('.og-body').scrollTop = 0; break;
     case 'note': if (el.dataset.id && OG.games.some(g => g.id === el.dataset.id)){ OG.view = 'game'; OG.gameId = el.dataset.id; render(); } break;
-    case 'join': if (!el.disabled) join(); break;
+    case 'join': if (!el.disabled) join(el.dataset.seat != null ? +el.dataset.seat : undefined); break;
+    case 'move': move(+el.dataset.seat); break;
     case 'leave': leave(); break;
     case 'keep': keep(el.dataset.id); break;
     case 'cancel': cancelGame(el.dataset.id); break;
@@ -566,7 +598,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('ogOv'
 document.addEventListener('click', (e) => { if (e.target.closest('[data-lang], .lang-btn, .lang-opt')) setTimeout(() => { paintHeroBtn(); if ($('ogOv') && $('ogOv').classList.contains('open')) render(); paintFormBox(); }, 50); });
 
 /* ============ BOOKING FORM: «Ψάχνω παίχτες» ============ */
-const FORM = { on: false, have: 2, range: 2, friendNames: [], gender: 'any', mode: 'friendly' };
+const FORM = { on: false, have: 2, range: 2, friendNames: [], gender: 'any', mode: 'friendly', mySide: '' };
 function paintFormBox(){
   const box = $('ogFormBox'); if (!box) return;
   const u = me();
@@ -585,6 +617,8 @@ function paintFormBox(){
         <div class="og-row">${[1, 2, 3].map(k => `<button type="button" class="og-chip ${FORM.have === k ? 'on' : ''}" data-ogf="have" data-k="${k}">${k} → ${t('ψάχνω', 'need', 'suche')} ${4 - k}</button>`).join('')}</div>
         ${FORM.have > 1 ? `<label class="sm">${t('ΟΝΟΜΑΤΑ ΤΗΣ ΠΑΡΕΑΣ ΣΟΥ (ΠΡΟΑΙΡΕΤΙΚΟ)', 'YOUR FRIENDS’ NAMES (OPTIONAL)', 'NAMEN DEINER FREUNDE (OPTIONAL)')}</label>
           <div class="og-row">${Array.from({ length: FORM.have - 1 }, (_, i) => `<input type="text" maxlength="20" data-ogf="fname" data-i="${i}" value="${esc(FORM.friendNames[i] || '')}" placeholder="${t('Φίλος', 'Friend', 'Freund')} ${i + 1}" style="flex:1;min-width:120px">`).join('')}</div>` : ''}
+        <label class="sm">${t('Η ΘΕΣΗ ΣΟΥ ΣΤΟ ΓΗΠΕΔΟ', 'YOUR SIDE', 'DEINE SEITE')}</label>
+        <div class="og-row">${['left', 'right'].map(k => `<button type="button" class="og-chip ${(FORM.mySide || (u.side === 'right' ? 'right' : 'left')) === k ? 'on' : ''}" data-ogf="side" data-v="${k}">${k === 'left' ? t('Αριστερά (revés)', 'Left (revés)', 'Links (Revés)') : t('Δεξιά (drive)', 'Right (drive)', 'Rechts (Drive)')}</button>`).join('')}</div>
         <label class="sm">${t('ΤΥΠΟΣ ΠΑΙΧΝΙΔΙΟΥ', 'GAME TYPE', 'SPIELART')}</label>
         <div class="og-row">${['any', 'mixed', 'men', 'women'].map(k => `<button type="button" class="og-chip ${FORM.gender === k ? 'on' : ''}" data-ogf="gender" data-v="${k}">${esc(GENDER[k]())}</button>`).join('')}</div>
         <div class="og-row">${['friendly', 'competitive'].map(k => `<button type="button" class="og-chip ${FORM.mode === k ? 'on' : ''}" data-ogf="mode" data-v="${k}">${k === 'competitive' ? '🔥 ' : '🙂 '}${esc(MODE[k]())}</button>`).join('')}</div>
@@ -601,6 +635,7 @@ document.addEventListener('click', (e) => {
   if (c && c.dataset.ogf === 'range'){ FORM.range = +c.dataset.r; paintFormBox(); }
   if (c && c.dataset.ogf === 'gender'){ FORM.gender = c.dataset.v; paintFormBox(); }
   if (c && c.dataset.ogf === 'mode'){ FORM.mode = c.dataset.v; paintFormBox(); }
+  if (c && c.dataset.ogf === 'side'){ FORM.mySide = c.dataset.v; paintFormBox(); }
   if (e.target.closest('.seg-opt')) setTimeout(paintFormBox, 0);
 });
 
@@ -641,12 +676,15 @@ window.npOG = {
     if (!u) throw new Error(t('Το «Ψάχνω παίχτες» είναι μόνο για μέλη.', '“Looking for players” is for members only.', '„Suche Mitspieler“ nur für Mitglieder.'));
     if (!document.querySelector('.seg-opt.active[data-players="4"]')) return null;
     const lv = lv10(u), friends = FORM.have - 1;
+    const mySeat = (FORM.mySide || (u.side === 'right' ? 'right' : 'left')) === 'right' ? 1 : 0;
     if (FORM.gender === 'men' && u.gender !== 'M' || FORM.gender === 'women' && u.gender !== 'F')
       throw new Error(t('Για ' + GENDER[FORM.gender]().toLowerCase() + ' παιχνίδι συμπλήρωσε σωστά το φύλο σου στο προφίλ.', 'For a ' + GENDER[FORM.gender]().toLowerCase() + ' game, please set your gender in your profile.', 'Für ein ' + GENDER[FORM.gender]() + '-Spiel bitte Geschlecht im Profil angeben.'));
     return {
       gameGender: FORM.gender, gameMode: FORM.mode,
       creatorName: ((u.name || '').trim() || 'Παίχτης'),
-      players: { [u.uid]: { name: (u.name || '').trim() || 'Παίχτης', level: lv, at: Date.now(), ...(u.side ? { side: u.side } : {}) } },
+      // Organiser sits on team A on the chosen side; the friends next to them, then team B.
+      players: { [u.uid]: { name: (u.name || '').trim() || 'Παίχτης', level: lv, at: Date.now(), seat: mySeat, ...(u.side ? { side: u.side } : {}) } },
+      friendSeats: [0, 1, 2, 3].filter(i => i !== mySeat).slice(0, friends),
       friends, friendNames: FORM.friendNames.slice(0, friends).map(s => (s || '').trim().slice(0, 20)),
       count: 1 + friends,
       levelMin: Math.max(1, lv - FORM.range), levelMax: Math.min(10, lv + FORM.range),
