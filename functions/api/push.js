@@ -19,8 +19,11 @@ const MAX_AGE_MS = 15 * 60 * 1000;
 
 export async function onRequestPost(ctx){
   try {
-    const sa = parseSA(ctx.env.FIREBASE_SERVICE_ACCOUNT);
-    if (!sa) return json({ ok: false, error: 'server-not-configured' }, 503);
+    const raw = ctx.env.FIREBASE_SERVICE_ACCOUNT;
+    const sa = parseSA(raw);
+    // Tell missing vs. wrong content apart (never echoes the secret).
+    if (!raw) return json({ ok: false, error: 'server-not-configured', detail: 'secret-missing' }, 503);
+    if (!sa) return json({ ok: false, error: 'server-not-configured', detail: /^\s*\{/.test(raw) ? 'secret-not-a-service-account' : 'secret-not-json' }, 503);
     const body = await ctx.request.json().catch(() => ({}));
     const ids = Array.isArray(body.ids) ? [...new Set(body.ids.filter(x => typeof x === 'string' && /^[A-Za-z0-9_-]{6,40}$/.test(x)))].slice(0, MAX_IDS) : [];
     if (!ids.length) return json({ ok: false, error: 'no-ids' }, 400);
