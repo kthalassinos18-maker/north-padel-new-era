@@ -28,7 +28,21 @@ async function supported(){
   try { SUPPORTED = !!VAPID_KEY && 'serviceWorker' in navigator && 'Notification' in window && await isSupported(); } catch(_) { SUPPORTED = false; }
   return SUPPORTED;
 }
-async function register(){ return navigator.serviceWorker.register('/firebase-messaging-sw.js'); }
+// Register the background worker and wait until it is ACTIVE — the first time
+// it needs a moment to install, and subscribing before that fails with
+// "Subscription failed - no active Service Worker".
+async function register(){
+  const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+  if (reg.active) return reg;
+  const sw = reg.installing || reg.waiting;
+  await new Promise((res, rej) => {
+    if (!sw) return res();
+    const to = setTimeout(() => rej(new Error(t('ο service worker δεν ξεκίνησε', 'service worker did not start', 'Service Worker startete nicht'))), 15000);
+    const check = () => { if (sw.state === 'activated'){ clearTimeout(to); res(); } else if (sw.state === 'redundant'){ clearTimeout(to); rej(new Error('service worker install failed')); } };
+    sw.addEventListener('statechange', check); check();
+  });
+  return reg.active ? reg : (await navigator.serviceWorker.ready);
+}
 async function saveToken(u){
   const reg = await register();
   const token = await getToken(getMessaging(getApp()), { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
