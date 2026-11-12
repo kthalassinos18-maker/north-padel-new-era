@@ -10,7 +10,7 @@ import { getMessaging, getToken, deleteToken, isSupported } from 'https://www.gs
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 // Firebase console → Project settings → Cloud Messaging → Web Push certificates → Key pair (public key)
-const VAPID_KEY = '';
+const VAPID_KEY = 'BOzdwyNbymPJetFJOqCEKJtaVdedu8ew8cSLH0-cc1mqSxs85-EWZEJfuNJlQKL3YlTS8q6gJTCPXWPHN8BcVUk';
 
 const $ = (id) => document.getElementById(id);
 const lang = () => { try { return localStorage.getItem('northPadelLang') || 'el'; } catch(_) { return 'el'; } };
