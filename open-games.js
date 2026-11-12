@@ -222,10 +222,26 @@ function paintChat(){
     : `<div class="og-note" style="text-align:center">${t('Γράψτε εδώ για να κανονίσετε λεπτομέρειες (μπαλάκια, ποιος φέρνει τι...).', 'Write here to sort out the details (balls, who brings what...).', 'Hier Details absprechen (Bälle, wer bringt was...).')}</div>`;
   l.scrollTop = l.scrollHeight;
 }
+const CHAT_NOTIFY_GAP = 2 * 60 * 1000;   // at most one chat notification per sender per game every 2'
 async function sendChat(text){
   const u = me(); if (!u || !OG.gameId || !text.trim()) return;
-  try { await addDoc(collection(db(), 'open_games', OG.gameId, 'chat'), { uid: u.uid, name: ((u.name || '').trim() || 'Player').slice(0, 40), text: text.trim().slice(0, 500), at: Date.now(), createdAt: serverTimestamp() }); }
-  catch(e){ alert(t('Δεν στάλθηκε', 'Not sent', 'Nicht gesendet') + ': ' + e.message); }
+  const name = ((u.name || '').trim() || 'Player').slice(0, 40), msg = text.trim().slice(0, 500);
+  try { await addDoc(collection(db(), 'open_games', OG.gameId, 'chat'), { uid: u.uid, name, text: msg, at: Date.now(), createdAt: serverTimestamp() }); }
+  catch(e){ alert(t('Δεν στάλθηκε', 'Not sent', 'Nicht gesendet') + ': ' + e.message); return; }
+  // Tell the other players (in-site + phone), without flooding them.
+  const g = OG.games.find(x => x.id === OG.gameId); if (!g) return;
+  const key = 'np_chat_notified_' + g.id;
+  let last = 0; try { last = +localStorage.getItem(key) || 0; } catch(_) {}
+  if (Date.now() - last < CHAT_NOTIFY_GAP) return;
+  const others = Object.keys(g.players || {}).filter(x => x !== u.uid); if (!others.length) return;
+  try {
+    PENDING = [];
+    const b = writeBatch(db());
+    others.forEach(x => b.set(nref(), note(x, g, '💬', '💬 ' + name.split(' ')[0] + ' — ' + whenTxt(g), msg.slice(0, 280), 'chat')));
+    await b.commit();
+    flushPush();
+    try { localStorage.setItem(key, String(Date.now())); } catch(_) {}
+  } catch(e){ console.warn('chat notify', e); }
 }
 function shareGame(){
   const g = OG.games.find(x => x.id === OG.gameId); if (!g) return;
