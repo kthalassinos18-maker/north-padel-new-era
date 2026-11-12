@@ -2426,7 +2426,8 @@
 
     document.getElementById('profileFull').innerHTML = `
       <div id="ppCard"></div>
-      <div class="pf-section">
+      <div id="ppTabs" class="pp-tabs"></div>
+      <div class="pf-section" data-tab="info">
         <h3><span class="ico">🪪</span>${L('pf_personal','ΠΡΟΣΩΠΙΚΑ')}</h3>
         <div class="pf-grid">
           <div class="pf-field"><label>${L('pf_name','ΟΝΟΜΑ')}</label><input id="p_name" value="${esc(u.name||'')}"></div>
@@ -2444,7 +2445,7 @@
         </div>
       </div>
 
-      <div class="pf-section">
+      <div class="pf-section" data-tab="info">
         <h3><span class="ico">🎾</span>${L('pf_level','ΕΠΙΠΕΔΟ ΠΑΙΚΤΗ')}</h3>
         <div class="pf-field">
           <select id="p_level">
@@ -2453,9 +2454,9 @@
         </div>
       </div>
 
-      <div class="pf-section" id="ppStyle"></div>
+      <div class="pf-section" id="ppStyle" data-tab="info"></div>
 
-      <div class="pf-section">
+      <div class="pf-section" data-tab="game">
         <h3><span class="ico">📅</span>${L('pf_availability','ΔΙΑΘΕΣΙΜΟΤΗΤΑ')}</h3>
         <div style="margin-bottom:14px">
           <label style="font-size:10px;letter-spacing:0.2em;color:rgba(244,249,255,0.5);font-weight:600;display:block;margin-bottom:8px">${L('pf_days','ΗΜΕΡΕΣ')}</label>
@@ -2467,7 +2468,7 @@
         </div>
       </div>
 
-      <div class="pf-section">
+      <div class="pf-section" data-tab="game">
         <h3><span class="ico">👋</span>${L('pf_lfg_title','ΨΑΧΝΩ ΠΑΙΚΤΕΣ / ΟΜΑΔΑ')}</h3>
         <div class="pf-lfg-row">
           <label class="sw"><input type="checkbox" id="p_lfg" ${lfg?'checked':''}><span class="sw-slider"></span></label>
@@ -2490,18 +2491,18 @@
         </div>
       </div>
 
-      <div class="pf-section" id="ppAlerts"></div>
-      <div class="pf-section" id="ppPush"></div>
+      <div class="pf-section" id="ppAlerts" data-tab="game"></div>
+      <div class="pf-section" id="ppPush" data-tab="game"></div>
 
-      <div class="pf-section" id="ppStats"></div>
-      <div class="pf-section" id="ppBadges"></div>
+      <div class="pf-section" id="ppStats" data-tab="stats"></div>
+      <div class="pf-section" id="ppBadges" data-tab="stats"></div>
 
-      ${rewardBits.length ? `<div class="pf-section" style="border-color:rgba(183,255,74,0.3)">
+      ${rewardBits.length ? `<div class="pf-section" data-tab="book" style="border-color:rgba(183,255,74,0.3)">
         <h3><span class="ico">🎁</span>${L('pf_rewards','ΠΡΟΣΦΟΡΕΣ ΣΟΥ')}</h3>
         ${rewardBits.map(r => `<div style="padding:6px 0;font-size:14px">${r}</div>`).join('')}
       </div>` : ''}
 
-      <div class="pf-section">
+      <div class="pf-section" data-tab="book">
         <h3><span class="ico">📅</span>${L('pf_my_bookings','ΟΙ ΚΡΑΤΗΣΕΙΣ ΜΟΥ')}</h3>
         <div id="myBookingsList" style="display:flex;flex-direction:column;gap:8px">
           <div style="color:rgba(244,249,255,0.5);font-size:13px">${L('loading','Φόρτωση...')}</div>
@@ -2516,8 +2517,8 @@
         </div>
       </div>
 
-      <button type="button" class="pf-save-btn" id="saveProfileBtn">${L('pf_save','ΑΠΟΘΗΚΕΥΣΗ')}</button>
-      <div class="pf-save-msg" id="saveProfileMsg"></div>
+      <button type="button" class="pf-save-btn" id="saveProfileBtn" data-tab="info game">${L('pf_save','ΑΠΟΘΗΚΕΥΣΗ')}</button>
+      <div class="pf-save-msg" id="saveProfileMsg" data-tab="info game"></div>
     `;
 
     renderMyBookings(u);

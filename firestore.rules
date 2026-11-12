@@ -39,7 +39,7 @@ service cloud.firestore {
       allow update: if isAdmin() || (
         isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name','surname','phone','level','levelScale','hand','side','playMode','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount','phoneVerified'])
+             .hasOnly(['name','surname','phone','level','levelScale','hand','side','playMode','onboarded','consent','birthday','gender','city','availability','bio','contactMethod','lookingForGame','freeCourts','couponPct','welcomeCoupon','bookingsCount','phoneVerified'])
         && (!('level' in request.resource.data.diff(resource.data).affectedKeys())
             || (request.resource.data.level is int
                 && request.resource.data.level >= 1

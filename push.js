@@ -102,6 +102,8 @@ document.addEventListener('click', (e) => {
 /* ---------- public ---------- */
 window.npPush = {
   render,
+  enable,
+  isOn: () => !!lsGet() && 'Notification' in window && Notification.permission === 'granted',
   /** Deliver these just-created notifications to the recipients' phones (fire-and-forget). */
   send(ids){
     ids = (ids || []).filter(Boolean); if (!ids.length) return;

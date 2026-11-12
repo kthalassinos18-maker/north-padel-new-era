@@ -117,6 +117,7 @@ function cardHtml(u){
         <div><b>${s ? s.hours : '–'}</b><small>${t('ΩΡΕΣ', 'HOURS', 'STUNDEN')}</small></div>
         <div><b>${s ? s.trophies.length : '–'}</b><small>${t('ΤΟΥΡΝΟΥΑ', 'TOURNAMENTS', 'TURNIERE')}</small></div>
       </div>
+      ${completionHtml(u)}
       <div class="pp-foot"><span class="brand">NORTH PADEL</span><span>${t('ΜΕΛΟΣ ΑΠΟ', 'MEMBER SINCE', 'MITGLIED SEIT')} ${since}</span></div>
     </div>
     <div class="pp-actions">
@@ -231,13 +232,183 @@ async function shareCard(u){
 const upper = (str) => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 function roundRect(x, X, Y, w, h, r){ x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
 
+/* ============ PROFILE COMPLETION + TABS + QUICK SETUP WIZARD ============ */
+const DAY_S = { el: ['Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ','Κυρ'], en: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], de: ['Mo','Di','Mi','Do','Fr','Sa','So'] };
+const TIMES = [
+  ['morning', () => '☀️ ' + t('Πρωί', 'Morning', 'Morgens')], ['noon', () => '🍽️ ' + t('Μεσημέρι', 'Midday', 'Mittags')],
+  ['afternoon', () => '🌤️ ' + t('Απόγευμα', 'Afternoon', 'Nachmittags')], ['evening', () => '🌙 ' + t('Βράδυ', 'Evening', 'Abends')],
+  ['late', () => '🌌 ' + t('Νύχτα', 'Night', 'Nachts')],
+];
+/** Profile completeness: photo, level, style, availability, notifications. */
+function completion(u){
+  const av = u.availability || {};
+  const items = [
+    ['photo', !!P.photo], ['level', true],
+    ['style', !!(P.hand && P.side)],
+    ['when', !!((av.days && av.days.length) || (av.times && av.times.length))],
+    ['notify', !!P.alertOn || !!(window.npPush && window.npPush.isOn && window.npPush.isOn())],
+  ];
+  const done = items.filter(x => x[1]).length;
+  return { pct: Math.round(done / items.length * 100), missing: items.filter(x => !x[1]).map(x => x[0]) };
+}
+function completionHtml(u){
+  const c = completion(u);
+  if (c.pct >= 100) return '';
+  return `<button type="button" class="pp-complete" data-pp="wizard">
+      <span class="pp-cbar"><i style="width:${c.pct}%"></i></span>
+      <span class="pp-ctext"><b>${t('Προφίλ', 'Profile', 'Profil')} ${c.pct}%</b> · ${t('ολοκλήρωσέ το σε 1 λεπτό', 'finish it in 1 minute', 'in 1 Minute fertig')} ➜</span>
+    </button>`;
+}
+
+/* ---- tabs ---- */
+let TAB = null;
+const TABS = [['stats', () => '📊 ' + t('Στατιστικά', 'Stats', 'Statistik')], ['info', () => '🪪 ' + t('Στοιχεία', 'Details', 'Daten')], ['game', () => '🎾 ' + t('Παιχνίδι', 'Game', 'Spiel')], ['book', () => '📅 ' + t('Κρατήσεις', 'Bookings', 'Buchungen')]];
+function paintTabs(u){
+  const bar = $('ppTabs'); if (!bar) return;
+  if (!TAB) TAB = completion(u).pct >= 100 ? 'stats' : 'info';
+  bar.innerHTML = TABS.map(([k, l]) => `<button type="button" class="pp-tab ${TAB === k ? 'on' : ''}" data-pptab="${k}">${l()}</button>`).join('');
+  document.querySelectorAll('#profileFull [data-tab]').forEach(el => { el.style.display = el.dataset.tab.split(' ').includes(TAB) ? '' : 'none'; });
+}
+
+/* ---- wizard ---- */
+const W = { step: 0, level: 1, hand: '', side: '', mode: '', days: new Set(), times: new Set(), alertOn: true, busy: false };
+const STEPS = 5;
+function openWizard(){
+  const u = window.currentUser && window.currentUser(); if (!u) return;
+  const av = u.availability || {};
+  Object.assign(W, { step: 0, level: lv10(u), hand: P.hand || u.hand || '', side: P.side || u.side || '', mode: P.mode || u.playMode || '',
+    days: new Set(av.days || []), times: new Set(av.times || []), alertOn: P.alertOn || !P.uid ? true : P.alertOn, busy: false });
+  if (P.uid === u.uid && P.alertOn === false) W.alertOn = true;
+  let o = $('pwOv');
+  if (!o){ o = document.createElement('div'); o.id = 'pwOv'; o.className = 'pw-ov'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); document.body.appendChild(o); }
+  paintWizard();
+  requestAnimationFrame(() => o.classList.add('open'));
+  document.body.style.overflow = 'hidden';
+}
+function closeWizard(markDone){
+  const o = $('pwOv'); if (o) o.classList.remove('open');
+  document.body.style.overflow = '';
+  const u = window.currentUser && window.currentUser();
+  if (markDone && u && !u.onboarded){ u.onboarded = true; window.npFB.updateProfile(u.uid, { onboarded: true }).catch(() => {}); }
+  if (u && $('profileFull') && $('profileFull').children.length){ paintAll(u); paintTabs(u); }
+}
+function wChips(list, isOn, attr){ return list.map(([k, l]) => `<button type="button" class="pw-chip ${isOn(k) ? 'on' : ''}" ${attr}="${k}">${esc(typeof l === 'function' ? l() : l)}</button>`).join(''); }
+function paintWizard(){
+  const o = $('pwOv'); if (!o) return;
+  const u = window.currentUser && window.currentUser(); if (!u) return;
+  const st = W.step;
+  let title = '', sub = '', body = '';
+  if (st === 0){
+    title = t('Βάλε φωτογραφία', 'Add a photo', 'Foto hinzufügen'); sub = t('Για να σε αναγνωρίζουν οι άλλοι στο γήπεδο.', 'So others recognise you on court.', 'Damit dich andere erkennen.');
+    body = `<div class="pw-photo" data-pw="photo" style="${P.photo ? `background-image:url('${P.photo}')` : ''}">${P.photo ? '' : '📷'}</div>
+      <button type="button" class="pw-btn2" data-pw="photo">${P.photo ? t('Αλλαγή φωτογραφίας', 'Change photo', 'Foto ändern') : t('Επίλεξε φωτογραφία', 'Choose a photo', 'Foto wählen')}</button>
+      <input type="file" id="pwFile" accept="image/*" hidden><div class="pw-msg" id="pwMsg"></div>`;
+  } else if (st === 1){
+    title = t('Ποιο είναι το επίπεδό σου;', 'What’s your level?', 'Dein Niveau?'); sub = t('Για να βρίσκεις παίχτες στα μέτρα σου.', 'To find players that match you.', 'Um passende Spieler zu finden.');
+    body = `<div class="pw-levels">${(window.NP_LEVELS || []).map((l, i) => `<button type="button" class="pw-lv ${W.level === i + 1 ? 'on' : ''}" data-pwlv="${i + 1}"><span class="i">${l.icon}</span><span class="n">${i + 1}</span><span class="tx"><b>${esc(lang() === 'en' ? l.en : lang() === 'de' ? l.de : l.el)}</b><small>${esc(lang() === 'en' ? l.d_en : lang() === 'de' ? l.d_de : l.d_el)}</small></span></button>`).join('')}</div>`;
+  } else if (st === 2){
+    title = t('Πώς παίζεις;', 'How do you play?', 'Wie spielst du?'); sub = t('Τρία γρήγορα πατήματα.', 'Three quick taps.', 'Drei schnelle Tipps.');
+    body = `<div class="pw-q">${t('Χέρι', 'Hand', 'Hand')}</div><div class="pw-chips">${wChips(HAND, k => W.hand === k, 'data-pwhand')}</div>
+      <div class="pw-q">${t('Πλευρά στο γήπεδο', 'Court side', 'Seite')}</div><div class="pw-chips">${wChips(SIDE, k => W.side === k, 'data-pwside')}</div>
+      <div class="pw-q">${t('Τι παιχνίδι θέλεις', 'Game you prefer', 'Bevorzugtes Spiel')}</div><div class="pw-chips">${wChips(MODE, k => W.mode === k, 'data-pwmode')}</div>`;
+  } else if (st === 3){
+    title = t('Πότε παίζεις συνήθως;', 'When do you usually play?', 'Wann spielst du meist?'); sub = t('Διάλεξε όσα θες — μπορείς να τα αλλάξεις όποτε θέλεις.', 'Pick as many as you like — change them any time.', 'Wähle beliebig viele — jederzeit änderbar.');
+    const ds = DAY_S[lang()] || DAY_S.el;
+    body = `<div class="pw-chips">
+        <button type="button" class="pw-chip ${[0,1,2,3,4].every(d => W.days.has(d)) && !W.days.has(5) ? 'on' : ''}" data-pwpreset="week">${t('Καθημερινές', 'Weekdays', 'Werktags')}</button>
+        <button type="button" class="pw-chip ${W.days.has(5) && W.days.has(6) && W.days.size === 2 ? 'on' : ''}" data-pwpreset="weekend">${t('Σαββατοκύριακο', 'Weekend', 'Wochenende')}</button>
+        <button type="button" class="pw-chip ${W.days.size === 7 ? 'on' : ''}" data-pwpreset="all">${t('Όλες', 'Any day', 'Alle')}</button></div>
+      <div class="pw-chips pw-days">${ds.map((d, i) => `<button type="button" class="pw-chip sm ${W.days.has(i) ? 'on' : ''}" data-pwday="${i}">${d}</button>`).join('')}</div>
+      <div class="pw-q">${t('Ώρες', 'Times', 'Zeiten')}</div><div class="pw-chips">${wChips(TIMES, k => W.times.has(k), 'data-pwtime')}</div>`;
+  } else if (st === 4){
+    title = t('Να σε ειδοποιούμε;', 'Shall we notify you?', 'Benachrichtigen?'); sub = t('Μόνο για ό,τι σε αφορά — όχι spam.', 'Only what matters to you — no spam.', 'Nur was dich betrifft — kein Spam.');
+    const pushOn = window.npPush && window.npPush.isOn && window.npPush.isOn();
+    body = `<button type="button" class="pwz-toggle ${W.alertOn ? 'on' : ''}" data-pw="alert"><span class="sw2"></span><span><b>🎾 ${t('Όταν ψάχνουν παίχτη για εμένα', 'When a game needs a player like me', 'Wenn ein Spiel mich sucht')}</b><small>${t('Στο επίπεδό σου, τις μέρες και ώρες που διάλεξες.', 'At your level, on the days and times you picked.', 'Auf deinem Niveau, zu deinen Zeiten.')}</small></span></button>
+      ${window.npPush ? `<button type="button" class="pwz-toggle ${pushOn ? 'on' : ''}" data-pw="push" ${pushOn ? 'disabled' : ''}><span class="sw2"></span><span><b>📲 ${t('Ειδοποιήσεις στο κινητό', 'Phone notifications', 'Handy-Benachrichtigungen')}</b><small>${pushOn ? t('Ενεργές σε αυτή τη συσκευή ✓', 'On for this device ✓', 'Auf diesem Gerät aktiv ✓') : t('Για να τις βλέπεις ακόμα κι αν το site είναι κλειστό.', 'See them even with the site closed.', 'Auch bei geschlossener Seite.')}</small></span></button>` : ''}
+      <div class="pw-msg" id="pushMsg"></div>`;
+  } else {
+    title = '🎉 ' + t('Έτοιμο!', 'All set!', 'Fertig!'); sub = t('Το προφίλ σου είναι στημένο. Τα λέμε στο γήπεδο!', 'Your profile is ready. See you on court!', 'Dein Profil ist fertig. Bis auf dem Platz!');
+    body = `<div class="pw-done"><div class="pw-photo big" style="${P.photo ? `background-image:url('${P.photo}')` : ''}">${P.photo ? '' : '🎾'}</div>
+      <div class="pw-lvbig">${LV(W.level).icon} ${t('Επίπεδο', 'Level', 'Niveau')} ${W.level} · ${esc(lvName(W.level))}</div></div>`;
+  }
+  const dots = Array.from({ length: STEPS }, (_, i) => `<i class="${i < st ? 'done' : i === st ? 'cur' : ''}"></i>`).join('');
+  o.innerHTML = `<div class="pw-box">
+      <div class="pw-top"><div class="pw-dots">${st < STEPS ? dots : ''}</div><button type="button" class="pw-x" data-pw="close" aria-label="${t('Κλείσιμο', 'Close', 'Schließen')}">×</button></div>
+      <div class="pw-body"><h2>${title}</h2><p class="pw-sub">${sub}</p>${body}</div>
+      <div class="pw-foot">
+        ${st > 0 && st < STEPS ? `<button type="button" class="pw-back" data-pw="back">‹ ${t('Πίσω', 'Back', 'Zurück')}</button>` : '<span></span>'}
+        ${st < STEPS ? `<button type="button" class="pw-skip" data-pw="skip">${t('Παράλειψη', 'Skip', 'Überspringen')}</button>` : ''}
+        <button type="button" class="pw-next" data-pw="${st < STEPS ? 'next' : 'finish'}" ${W.busy ? 'disabled' : ''}>${st < STEPS - 1 ? t('Επόμενο', 'Next', 'Weiter') + ' ›' : st === STEPS - 1 ? t('Τέλος', 'Finish', 'Fertig') + ' ✓' : t('Δες την κάρτα μου', 'See my card', 'Meine Karte')}</button>
+      </div></div>`;
+  const f = $('pwFile');
+  if (f) f.onchange = async () => {
+    const file = f.files && f.files[0]; if (!file) return;
+    const m = $('pwMsg'); if (m) m.textContent = t('Ανέβασμα...', 'Uploading...', 'Hochladen...');
+    try {
+      const photo = await resizeSquare(file, 256);
+      await setDoc(doc(db(), 'avatars', u.uid), { photo, updatedAt: serverTimestamp() });
+      P.photo = photo; AV[u.uid] = Promise.resolve(photo); paintHeroAvatar(); paintWizard();
+    } catch(e){ const m2 = $('pwMsg'); if (m2) m2.textContent = e.message; }
+  };
+}
+/** Save what the current step collected, then move on. */
+async function wizardSave(st){
+  const u = window.currentUser && window.currentUser(); if (!u) return;
+  let patch = null;
+  if (st === 1) patch = { level: W.level, levelScale: 10 };
+  if (st === 2) patch = { hand: W.hand, side: W.side, playMode: W.mode };
+  if (st === 3) patch = { availability: { days: [...W.days].sort(), times: TIMES.map(x => x[0]).filter(k => W.times.has(k)) } };
+  if (st === 4) patch = { onboarded: true };
+  if (patch){
+    await window.npFB.updateProfile(u.uid, patch);
+    Object.assign(u, patch);
+    if (st === 2){ P.hand = W.hand; P.side = W.side; P.mode = W.mode; }
+    if (st === 1 && u.lookingForGame) window.npFB.upsertPublicProfile(u.uid, { level: W.level }).catch(() => {});
+  }
+  if (st === 4 || (st === 3 && P.alertOn)){
+    if (st === 4) P.alertOn = W.alertOn;
+    await window.npProfile.afterSave(u);
+  }
+}
+
 /* ---------- events ---------- */
+document.addEventListener('click', async (e) => {
+  const tb = e.target.closest('[data-pptab]');
+  if (tb){ TAB = tb.dataset.pptab; const u = window.currentUser && window.currentUser(); if (u) paintTabs(u); return; }
+  const o = $('pwOv'); if (!o || !o.contains(e.target)) return;
+  const el = e.target.closest('[data-pw],[data-pwlv],[data-pwhand],[data-pwside],[data-pwmode],[data-pwday],[data-pwtime],[data-pwpreset]'); if (!el) return;
+  const d = el.dataset;
+  if (d.pwlv){ W.level = +d.pwlv; return paintWizard(); }
+  if (d.pwhand){ W.hand = W.hand === d.pwhand ? '' : d.pwhand; return paintWizard(); }
+  if (d.pwside){ W.side = W.side === d.pwside ? '' : d.pwside; return paintWizard(); }
+  if (d.pwmode){ W.mode = W.mode === d.pwmode ? '' : d.pwmode; return paintWizard(); }
+  if (d.pwday != null){ const n = +d.pwday; W.days.has(n) ? W.days.delete(n) : W.days.add(n); return paintWizard(); }
+  if (d.pwtime){ W.times.has(d.pwtime) ? W.times.delete(d.pwtime) : W.times.add(d.pwtime); return paintWizard(); }
+  if (d.pwpreset){ W.days = new Set(d.pwpreset === 'week' ? [0,1,2,3,4] : d.pwpreset === 'weekend' ? [5,6] : [0,1,2,3,4,5,6]); return paintWizard(); }
+  switch (d.pw){
+    case 'photo': { const f = $('pwFile'); if (f) f.click(); break; }
+    case 'alert': W.alertOn = !W.alertOn; paintWizard(); break;
+    case 'push': if (window.npPush && window.npPush.enable){ await window.npPush.enable(); paintWizard(); } break;
+    case 'close': closeWizard(true); break;
+    case 'back': W.step = Math.max(0, W.step - 1); paintWizard(); break;
+    case 'skip': if (W.step === STEPS - 1){ W.alertOn = P.alertOn; } W.step++; if (W.step >= STEPS) await wizardSave(4).catch(() => {}); paintWizard(); break;
+    case 'next':
+      W.busy = true; paintWizard();
+      try { await wizardSave(W.step); W.step++; }
+      catch(err){ alert(t('Δεν αποθηκεύτηκε', 'Not saved', 'Nicht gespeichert') + ': ' + err.message); }
+      W.busy = false; paintWizard(); break;
+    case 'finish': closeWizard(true);
+      if (typeof window.renderFullProfile === 'function'){ TAB = 'stats'; try { window.renderFullProfile(); } catch(_) {} }
+      break;
+  }
+});
 document.addEventListener('click', (e) => {
   const u = typeof window.currentUser === 'function' ? window.currentUser() : null; if (!u) return;
   const a = e.target.closest('[data-pp]');
   if (a){
     if (a.dataset.pp === 'photo'){ const f = $('ppFile'); if (f) f.click(); }
     if (a.dataset.pp === 'share') shareCard(u).catch(err => alert(err.message));
+    if (a.dataset.pp === 'wizard') openWizard();
     return;
   }
   const c = e.target.closest('[data-ppc]');
@@ -256,12 +427,14 @@ window.npProfile = {
   async render(u){
     if (!u || !u.uid) return;
     P.uid = u.uid; P.hand = u.hand || ''; P.side = u.side || ''; P.mode = u.playMode || '';
+    paintTabs(u);
     P.photo = await window.npAvatar(u.uid);
     paintAll(u); paintHeroAvatar();
     try { const s = await getDoc(doc(db(), 'og_alerts', u.uid)); P.alertOn = s.exists() && !!s.data().on; const el = $('ppAlertOn'); if (el) el.checked = P.alertOn; } catch(_) {}
     P.stats = await loadStats(u);
-    if (P.uid === u.uid){ paintAll(u); paintHeroAvatar(); }
+    if (P.uid === u.uid){ paintAll(u); paintHeroAvatar(); paintTabs(u); }
   },
+  openWizard,
   /** Extra fields saved together with the profile. */
   patch(){ return { hand: P.hand, side: P.side, playMode: P.mode }; },
   /** After the profile save: keep «Ειδοποίησέ με» in sync with availability / level. */
@@ -275,5 +448,13 @@ window.npProfile = {
       } else await deleteDoc(ref).catch(() => {});
     } catch(e){ console.warn('og_alerts', e); }
   },
-  hero(){ if (P.photo) paintHeroAvatar(); else if (window.currentUser && window.currentUser()) window.npAvatar(window.currentUser().uid).then(p => { if (p){ P.photo = p; paintHeroAvatar(); } }); },
+  hero(){
+    const u = window.currentUser && window.currentUser();
+    if (P.photo) paintHeroAvatar(); else if (u) window.npAvatar(u.uid).then(p => { if (p){ P.photo = p; paintHeroAvatar(); } });
+    // First login after signup (or members who never did it): quick setup, once per visit.
+    if (u && !u.onboarded && u.emailVerified){
+      let shown = false; try { shown = !!sessionStorage.getItem('np_wiz'); sessionStorage.setItem('np_wiz', '1'); } catch(_) {}
+      if (!shown) setTimeout(async () => { P.uid = u.uid; P.photo = await window.npAvatar(u.uid); try { const s = await getDoc(doc(db(), 'og_alerts', u.uid)); P.alertOn = s.exists() && !!s.data().on; } catch(_) {} openWizard(); }, 1200);
+    }
+  },
 };
