@@ -126,9 +126,10 @@ function watchNotes(){
     const before = new Set(OG.notes.map(n => n.id));
     OG.notes = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdMs || 0) - (a.createdMs || 0));
     paintHeroBtn();
+    window.dispatchEvent(new Event('npOGUpdate'));
     const fresh = OG.notes.find(n => !n.read && !before.has(n.id));
     if (fresh && before.size) toast((fresh.icon || '🔔') + ' ' + fresh.title, () => openOverlay('notes'));
-    else if (!before.size){ const unread = OG.notes.filter(n => !n.read).length; if (unread) toast('🔔 ' + unread + ' ' + t('νέες ειδοποιήσεις', 'new notifications', 'neue Benachrichtigungen'), () => openOverlay('notes')); }
+    else if (!before.size){ const unread = OG.notes.filter(n => !n.read).length; if (unread) toast('🔔 ' + unread + ' ' + (unread === 1 ? t('νέα ειδοποίηση', 'new notification', 'neue Benachrichtigung') : t('νέες ειδοποιήσεις', 'new notifications', 'neue Benachrichtigungen')), () => openOverlay('notes')); }
     if ($('ogOv') && $('ogOv').classList.contains('open')) render();
   }, (e) => console.warn('notifications', e));
 }
@@ -713,6 +714,9 @@ window.npOG = {
   openByMonth(ym, court){ const o = {}; OG.games.filter(g => (g.date || '').startsWith(ym) && g.court === court && g.status === 'open').forEach(g => { o[g.date] = (o[g.date] || 0) + 1; }); return o; },
   count: playerCount,
   open: (id) => openOverlay('open', id),
+  show: (tab) => openOverlay(tab || 'open'),
+  openCount: () => openGames().length,
+  unread: () => unreadCount(),
   refreshUser(){ watchNotes(); paintFormBox(); maybeDecisionToast(); },
 };
 

@@ -14,6 +14,7 @@
 <script src="levels.js"></script>
 <link rel="stylesheet" href="open-games.css">
 <link rel="stylesheet" href="player-profile.css">
+<link rel="stylesheet" href="player-menu.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2058,7 +2059,7 @@
         <button type="button" class="pf-cta outline" id="changeLevelBtn" style="margin-top:12px;font-size:11px;padding:8px">✎ ΑΛΛΑΓΗ ΕΠΙΠΕΔΟΥ</button>`;
       if (window.npProfile) window.npProfile.hero();
 
-      const bookings = (u.bookings||[]).slice(-3).reverse();
+      const bookings = (u.bookings||[]).slice().sort((a, b) => ((b.date||'') + (b.time||'')).localeCompare((a.date||'') + (a.time||''))).slice(0, 3);
       const bookingRows = bookings.length
         ? bookings.map(b => `<div class="pf-book-row"><span class="pf-book-d">${esc(b.date)} · ${esc(b.time)}</span><span class="pf-book-p">${+b.total}€</span></div>`).join('')
         : '<div style="color:rgba(244,249,255,0.4);font-size:13px;padding:8px 0">Δεν έχεις κρατήσεις ακόμα.</div>';
@@ -2164,7 +2165,10 @@
         });
       }
       // NOTE: admin panel access requires its own auth on admin.html.
+      // Game-lobby style menu on top of (and instead of) the list above.
+      if (window.npMenu) window.npMenu.render(u);
     } else {
+      if (window.npMenu) window.npMenu.off();
       profile.style.display = 'none';
       tabs.style.display = 'flex';
       loginF.style.display = 'flex';
@@ -4553,5 +4557,6 @@ T.de['wd_sun'] = 'S';
 <script type="module" src="open-games.js"></script>
 <script type="module" src="player-profile.js"></script>
 <script type="module" src="push.js"></script>
+<script type="module" src="player-menu.js"></script>
 </body>
 </html>

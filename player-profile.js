@@ -435,6 +435,7 @@ window.npProfile = {
     if (P.uid === u.uid){ paintAll(u); paintHeroAvatar(); paintTabs(u); }
   },
   openWizard,
+  setTab(tab){ TAB = tab; },
   /** Extra fields saved together with the profile. */
   patch(){ return { hand: P.hand, side: P.side, playMode: P.mode }; },
   /** After the profile save: keep «Ειδοποίησέ με» in sync with availability / level. */
