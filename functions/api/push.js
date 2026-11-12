@@ -52,6 +52,9 @@ export async function onRequestPost(ctx){
               icon: origin + '/assets/icon-192.png',
               badge: origin + '/assets/icon-192.png',
               tag: 'np-' + (d.gameId || id),
+              // Same tag keeps one notification per game in the tray, but every
+              // new one must still ring/vibrate and show (default would replace silently).
+              renotify: true,
             },
             fcm_options: { link: origin + '/' + (d.gameId ? '#og=' + d.gameId : '') },
           },
