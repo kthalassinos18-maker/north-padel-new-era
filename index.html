@@ -3303,6 +3303,11 @@
       // exactly the same either way.
       const openedFrom = currentStep && currentStep.dataset.openedFrom;
       slideBack(currentStep, back);
+      // Opened from the player menu (game lobby) → one step back = that menu.
+      if (back === 'hero' && openedFrom === 'player'){
+        currentStep.dataset.openedFrom = '';
+        setTimeout(() => window.npOpenPlayerPanel && window.npOpenPlayerPanel(), 200);
+      }
       if (back === 'hero' && openedFrom === 'menu'){
         currentStep.dataset.openedFrom = ''; // consumed
         setTimeout(() => {
@@ -3633,6 +3638,13 @@
       if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = submitBtnOrigText; }
     }
   });
+
+  // Re-open the logged-in player menu (used as the "back" target of screens
+  // opened from it: booking, profile, find-a-player, notifications).
+  window.npOpenPlayerPanel = () => {
+    authPanel.classList.add('open');
+    authPanel.setAttribute('aria-hidden','false');
+  };
 
   // Clears the booking form back to a blank slate after a successful
   // submit — without this, selectedDate/selectedSession/players/rackets

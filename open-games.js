@@ -144,7 +144,7 @@ function mountHeroBtn(){
   b.type = 'button'; b.id = 'ogBtn'; b.className = 'og-btn';
   b.setAttribute('aria-label', t('Βρες παίχτη — ανοιχτά παιχνίδια', 'Find a player — open games', 'Spieler finden — offene Spiele'));
   wrap.appendChild(b);
-  b.addEventListener('click', () => { if (navigator.vibrate) navigator.vibrate(30); openOverlay(); });
+  b.addEventListener('click', () => { if (navigator.vibrate) navigator.vibrate(30); OG.from = null; openOverlay(); });
   paintHeroBtn();
 }
 function paintHeroBtn(){
@@ -176,6 +176,8 @@ function openOverlay(tab, gameId){
 }
 function closeOverlay(){
   const o = $('ogOv'); if (!o) return;
+  // Opened from the player menu → closing goes back to it.
+  if (OG.from === 'player' && o.classList.contains('open')){ OG.from = null; setTimeout(() => window.npOpenPlayerPanel && window.npOpenPlayerPanel(), 200); }
   if (OG.unsubChat){ OG.unsubChat(); OG.unsubChat = null; OG.chatFor = null; }
   o.classList.remove('open'); document.body.style.overflow = '';
   if (location.hash.startsWith('#og=')) history.replaceState(null, '', location.pathname + location.search);
@@ -606,8 +608,8 @@ document.addEventListener('click', (e) => {
     case 'leave': leave(); break;
     case 'keep': keep(el.dataset.id); break;
     case 'cancel': cancelGame(el.dataset.id); break;
-    case 'login': closeOverlay(); setTimeout(() => $('playerBtn') && $('playerBtn').click(), 250); break;
-    case 'book': closeOverlay(); setTimeout(() => $('ctaBtn') && $('ctaBtn').click(), 250); break;
+    case 'login': OG.from = null; closeOverlay(); setTimeout(() => $('playerBtn') && $('playerBtn').click(), 250); break;
+    case 'book': OG.from = null; closeOverlay(); setTimeout(() => $('ctaBtn') && $('ctaBtn').click(), 250); break;
   }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('ogOv') && $('ogOv').classList.contains('open')) closeOverlay(); });
@@ -714,7 +716,7 @@ window.npOG = {
   openByMonth(ym, court){ const o = {}; OG.games.filter(g => (g.date || '').startsWith(ym) && g.court === court && g.status === 'open').forEach(g => { o[g.date] = (o[g.date] || 0) + 1; }); return o; },
   count: playerCount,
   open: (id) => openOverlay('open', id),
-  show: (tab) => openOverlay(tab || 'open'),
+  show: (tab, from) => { openOverlay(tab || 'open'); OG.from = from || null; },
   openCount: () => openGames().length,
   unread: () => unreadCount(),
   refreshUser(){ watchNotes(); paintFormBox(); maybeDecisionToast(); },

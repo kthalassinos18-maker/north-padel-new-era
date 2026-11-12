@@ -273,8 +273,10 @@ function paintTabs(u){
 /* ---- wizard ---- */
 const W = { step: 0, level: 1, hand: '', side: '', mode: '', days: new Set(), times: new Set(), alertOn: true, busy: false };
 const STEPS = 5;
-function openWizard(){
+let WIZ_FROM = null;
+function openWizard(from){
   const u = window.currentUser && window.currentUser(); if (!u) return;
+  WIZ_FROM = typeof from === 'string' ? from : null;
   const av = u.availability || {};
   Object.assign(W, { step: 0, level: lv10(u), hand: P.hand || u.hand || '', side: P.side || u.side || '', mode: P.mode || u.playMode || '',
     days: new Set(av.days || []), times: new Set(av.times || []), alertOn: P.alertOn || !P.uid ? true : P.alertOn, busy: false });
@@ -285,9 +287,11 @@ function openWizard(){
   requestAnimationFrame(() => o.classList.add('open'));
   document.body.style.overflow = 'hidden';
 }
-function closeWizard(markDone){
+function closeWizard(markDone, goingOn){
   const o = $('pwOv'); if (o) o.classList.remove('open');
   document.body.style.overflow = '';
+  if (WIZ_FROM === 'player' && !goingOn) setTimeout(() => window.npOpenPlayerPanel && window.npOpenPlayerPanel(), 200);
+  WIZ_FROM = null;
   const u = window.currentUser && window.currentUser();
   if (markDone && u && !u.onboarded){ u.onboarded = true; window.npFB.updateProfile(u.uid, { onboarded: true }).catch(() => {}); }
   if (u && $('profileFull') && $('profileFull').children.length){ paintAll(u); paintTabs(u); }
@@ -402,9 +406,14 @@ document.addEventListener('click', async (e) => {
       try { await wizardSave(W.step); W.step++; }
       catch(err){ alert(t('Δεν αποθηκεύτηκε', 'Not saved', 'Nicht gespeichert') + ': ' + err.message); }
       W.busy = false; paintWizard(); break;
-    case 'finish': closeWizard(true);
-      if (typeof window.renderFullProfile === 'function'){ TAB = 'stats'; try { window.renderFullProfile(); } catch(_) {} }
-      break;
+    case 'finish': {
+      const back = WIZ_FROM === 'player';
+      closeWizard(true, true);
+      // «Δες την κάρτα μου» → the profile (stats tab); its back arrow returns to the player menu.
+      TAB = 'stats';
+      const sp = $('stepProfile'); if (sp && back) sp.dataset.openedFrom = 'player';
+      const b = $('fullProfileBtn'); if (b) b.click();
+      break; }
   }
 });
 document.addEventListener('click', (e) => {

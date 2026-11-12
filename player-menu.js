@@ -38,8 +38,11 @@ function rankOf(games){
 const M = { trophies: null, uid: null, photo: null, timer: null };
 
 function closePanel(){ const p = $('authPanel'); if (p){ p.classList.remove('open'); p.setAttribute('aria-hidden', 'true'); } }
+// Screens opened from this menu go back to it (not to the home page).
+const fromPlayer = (el) => { if (el) el.dataset.openedFrom = 'player'; };
 function openProfileTab(tab){
   if (window.npProfile && window.npProfile.setTab) window.npProfile.setTab(tab);
+  fromPlayer($('stepProfile'));
   const b = $('fullProfileBtn'); if (b) b.click();
 }
 function countdown(ms){
@@ -155,16 +158,20 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-gm]'); if (!el || !$('gmRoot') || !$('gmRoot').contains(el)) return;
   const sheet = $('gmSheet');
   switch (el.dataset.gm){
-    case 'book': closePanel(); setTimeout(() => { const b = $('ctaBtn'); if (b) b.click(); }, 250); break;
-    case 'find': closePanel(); setTimeout(() => { if (window.npOG && window.npOG.show) window.npOG.show('open'); }, 250); break;
-    case 'notes': closePanel(); setTimeout(() => { if (window.npOG && window.npOG.show) window.npOG.show('notes'); }, 250); break;
+    case 'book': closePanel(); setTimeout(() => {
+        const b = $('ctaBtn'); if (b) b.click();
+        // whichever booking step opened first → its back arrow returns here
+        setTimeout(() => document.querySelectorAll('.step-panel.open').forEach(fromPlayer), 450);
+      }, 250); break;
+    case 'find': closePanel(); setTimeout(() => { if (window.npOG && window.npOG.show) window.npOG.show('open', 'player'); }, 250); break;
+    case 'notes': closePanel(); setTimeout(() => { if (window.npOG && window.npOG.show) window.npOG.show('notes', 'player'); }, 250); break;
     case 'mygames': openProfileTab('book'); break;
     case 'card': openProfileTab('stats'); break;
     case 'offers': openProfileTab('book'); break;
     case 'edit': openProfileTab('info'); break;
     case 'settings': if (sheet) sheet.classList.add('open'); break;
     case 'sheetclose': if (sheet) sheet.classList.remove('open'); break;
-    case 'wizard': if (sheet) sheet.classList.remove('open'); closePanel(); if (window.npProfile && window.npProfile.openWizard) setTimeout(() => window.npProfile.openWizard(), 250); break;
+    case 'wizard': if (sheet) sheet.classList.remove('open'); closePanel(); if (window.npProfile && window.npProfile.openWizard) setTimeout(() => window.npProfile.openWizard('player'), 250); break;
     case 'pw': if (sheet) sheet.classList.remove('open'); { const b = $('changePwBtn'); if (b) b.click(); } break;
     case 'verify': { const b = $('resendVerifyBtn'); if (b) b.click(); } break;
     case 'logout': if (sheet) sheet.classList.remove('open'); { const b = $('authLogout'); if (b) b.click(); } break;
