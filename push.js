@@ -53,15 +53,22 @@ async function saveToken(u){
 }
 
 /* ---------- actions ---------- */
-async function enable(){
-  const u = me(); if (!u) return;
-  const msg = (txt, ok) => { const m = $('pushMsg'); if (m){ m.style.color = ok ? '#b7ff4a' : '#ffc14a'; m.innerHTML = txt; } };
-  if (isIOS && !standalone()){ msg(iosHelp()); return; }
-  if (!(await supported())){ msg(t('Αυτή η συσκευή ή ο browser δεν υποστηρίζει ειδοποιήσεις.', 'This device/browser does not support notifications.', 'Dieses Gerät unterstützt keine Benachrichtigungen.')); return; }
-  const perm = await Notification.requestPermission();
-  if (perm !== 'granted'){ msg(t('Δεν δόθηκε άδεια. Μπορείς να την ενεργοποιήσεις από τις ρυθμίσεις του browser για το site.', 'Permission was not granted. You can allow it in the browser’s site settings.', 'Keine Erlaubnis. In den Website-Einstellungen des Browsers erlauben.')); return; }
-  try { msg(t('Ενεργοποίηση...', 'Enabling...', 'Aktivieren...'), true); await saveToken(u); render(); flash(t('✅ Θα σε ειδοποιούμε στο κινητό!', '✅ We’ll notify you on your phone!', '✅ Wir benachrichtigen dich auf dem Handy!')); }
-  catch(e){ msg(t('Δεν ενεργοποιήθηκε', 'Could not enable', 'Nicht aktiviert') + ': ' + e.message); }
+/** Turn phone notifications on. `msgId`: where to show the result (profile or setup wizard). Returns true when on. */
+async function enable(msgId){
+  const u = me(); if (!u) return false;
+  const msg = (txt, ok) => { const m = $(msgId || 'pushMsg'); if (m){ m.style.color = ok ? '#b7ff4a' : '#ffc14a'; m.innerHTML = txt; } };
+  if (isIOS && !standalone()){ msg(iosHelp()); return false; }
+  if (!VAPID_KEY || !('Notification' in window) || !('serviceWorker' in navigator)){ msg(t('Αυτή η συσκευή ή ο browser δεν υποστηρίζει ειδοποιήσεις.', 'This device/browser does not support notifications.', 'Dieses Gerät unterstützt keine Benachrichtigungen.')); return false; }
+  // Ask for permission FIRST, right inside the tap — browsers ignore the
+  // request if anything is awaited before it.
+  const permP = Notification.permission === 'granted' ? Promise.resolve('granted') : Notification.requestPermission();
+  if (!(await supported())){ msg(t('Αυτή η συσκευή ή ο browser δεν υποστηρίζει ειδοποιήσεις.', 'This device/browser does not support notifications.', 'Dieses Gerät unterstützt keine Benachrichtigungen.')); return false; }
+  const perm = await permP;
+  if (perm !== 'granted'){ msg(perm === 'denied'
+      ? t('Οι ειδοποιήσεις είναι μπλοκαρισμένες για αυτό το site. Πάτα το 🔒 δίπλα στη διεύθυνση → Ειδοποιήσεις → Επιτρέπεται, και ξαναδοκίμασε.', 'Notifications are blocked for this site. Tap the 🔒 next to the address → Notifications → Allow, then try again.', 'Benachrichtigungen sind blockiert. Tippe auf 🔒 neben der Adresse → Benachrichtigungen → Zulassen.')
+      : t('Δεν δόθηκε άδεια — πάτα «Να επιτρέπεται» όταν το ζητήσει ο browser.', 'Permission was not given — tap “Allow” when the browser asks.', 'Keine Erlaubnis — bei der Abfrage „Zulassen“ wählen.')); return false; }
+  try { msg(t('Ενεργοποίηση...', 'Enabling...', 'Aktivieren...'), true); await saveToken(u); render(); msg('✅ ' + t('Ενεργές σε αυτή τη συσκευή', 'On for this device', 'Auf diesem Gerät aktiv'), true); flash(t('✅ Θα σε ειδοποιούμε στο κινητό!', '✅ We’ll notify you on your phone!', '✅ Wir benachrichtigen dich auf dem Handy!')); return true; }
+  catch(e){ msg(t('Δεν ενεργοποιήθηκε', 'Could not enable', 'Nicht aktiviert') + ': ' + e.message); return false; }
 }
 async function disable(){
   const tok = lsGet();
@@ -96,7 +103,7 @@ async function render(){
 }
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-push]'); if (!b) return;
-  if (b.dataset.push === 'on') enable(); else disable();
+  if (b.dataset.push === 'on') enable('pushMsg'); else disable();
 });
 
 /* ---------- public ---------- */

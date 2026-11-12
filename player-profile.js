@@ -325,7 +325,7 @@ function paintWizard(){
     const pushOn = window.npPush && window.npPush.isOn && window.npPush.isOn();
     body = `<button type="button" class="pwz-toggle ${W.alertOn ? 'on' : ''}" data-pw="alert"><span class="sw2"></span><span><b>🎾 ${t('Όταν ψάχνουν παίχτη για εμένα', 'When a game needs a player like me', 'Wenn ein Spiel mich sucht')}</b><small>${t('Στο επίπεδό σου, τις μέρες και ώρες που διάλεξες.', 'At your level, on the days and times you picked.', 'Auf deinem Niveau, zu deinen Zeiten.')}</small></span></button>
       ${window.npPush ? `<button type="button" class="pwz-toggle ${pushOn ? 'on' : ''}" data-pw="push" ${pushOn ? 'disabled' : ''}><span class="sw2"></span><span><b>📲 ${t('Ειδοποιήσεις στο κινητό', 'Phone notifications', 'Handy-Benachrichtigungen')}</b><small>${pushOn ? t('Ενεργές σε αυτή τη συσκευή ✓', 'On for this device ✓', 'Auf diesem Gerät aktiv ✓') : t('Για να τις βλέπεις ακόμα κι αν το site είναι κλειστό.', 'See them even with the site closed.', 'Auch bei geschlossener Seite.')}</small></span></button>` : ''}
-      <div class="pw-msg" id="pushMsg"></div>`;
+      <div class="pw-msg" id="pwPushMsg"></div>`;
   } else {
     title = '🎉 ' + t('Έτοιμο!', 'All set!', 'Fertig!'); sub = t('Το προφίλ σου είναι στημένο. Τα λέμε στο γήπεδο!', 'Your profile is ready. See you on court!', 'Dein Profil ist fertig. Bis auf dem Platz!');
     body = `<div class="pw-done"><div class="pw-photo big" style="${P.photo ? `background-image:url('${P.photo}')` : ''}">${P.photo ? '' : '🎾'}</div>
@@ -388,7 +388,12 @@ document.addEventListener('click', async (e) => {
   switch (d.pw){
     case 'photo': { const f = $('pwFile'); if (f) f.click(); break; }
     case 'alert': W.alertOn = !W.alertOn; paintWizard(); break;
-    case 'push': if (window.npPush && window.npPush.enable){ await window.npPush.enable(); paintWizard(); } break;
+    case 'push': if (window.npPush && window.npPush.enable && !el.disabled){
+      el.classList.add('on'); el.querySelector('small').textContent = t('Περίμενε...', 'One moment...', 'Moment...');
+      const ok = await window.npPush.enable('pwPushMsg');
+      const keep = $('pwPushMsg') ? $('pwPushMsg').innerHTML : '';
+      if (ok) paintWizard(); else { el.classList.remove('on'); paintWizard(); const m = $('pwPushMsg'); if (m){ m.innerHTML = keep; } }
+    } break;
     case 'close': closeWizard(true); break;
     case 'back': W.step = Math.max(0, W.step - 1); paintWizard(); break;
     case 'skip': if (W.step === STEPS - 1){ W.alertOn = P.alertOn; } W.step++; if (W.step >= STEPS) await wizardSave(4).catch(() => {}); paintWizard(); break;
