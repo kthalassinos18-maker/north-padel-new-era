@@ -709,7 +709,7 @@ window.npOG = {
       levelMin: Math.max(1, lv - FORM.range), levelMax: Math.min(10, lv + FORM.range),
     };
   },
-  afterCreate(gameId){ if (window.npPush) window.npPush.suggest(); FORM.on = false; FORM.friendNames = []; paintFormBox(); setTimeout(() => openOverlay('mine', gameId), 600); sendAlerts(gameId).catch(e => console.warn('alerts', e)); },
+  afterCreate(gameId){ if (window.npPush) window.npPush.suggest(); FORM.on = false; FORM.friendNames = []; paintFormBox(); setTimeout(() => openOverlay('mine', gameId), 600); sendAlerts(gameId).catch(e => console.warn('alerts', e)); fetch('/api/notify-game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameId }) }).catch(() => {}); },
   /** {time: game} for open games on a date (court 1) — the booking calendar shows them as joinable. */
   forDate(iso, court){ const o = {}; OG.games.filter(g => g.date === iso && g.court === court && g.status === 'open' && isUpcoming(g)).forEach(g => { o[g.time] = g; }); return o; },
   /** {date: n} open games per day in a month — they don't count as taken. */
