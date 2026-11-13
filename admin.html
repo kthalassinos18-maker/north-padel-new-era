@@ -423,6 +423,15 @@
         </table></div>
       </div>
 
+      <div class="panel" id="optOutPanel" style="display:none">
+        <h3>🚫 ΔΕΝ ΘΕΛΟΥΝ EMAIL ΓΙΑ ΑΝΟΙΧΤΑ ΠΑΙΧΝΙΔΙΑ (<span id="optOutCount">0</span>)</h3>
+        <p style="margin:0 0 10px;font-size:12px;color:rgba(244,249,255,0.55)">Μόνο για ενημέρωση — η πλατφόρμα δεν τους ξαναστέλνει αυτόματα.</p>
+        <div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th>Όνομα</th><th>Email</th><th>Τηλέφωνο</th><th>Επίπεδο</th><th>Πότε</th></tr></thead>
+          <tbody id="tblOptOut"></tbody>
+        </table></div>
+      </div>
+
       <div class="panel">
         <h3>ΕΝΕΡΓΑ ΜΕΛΗ</h3>
         <div class="tbl-scroll"><table class="tbl" id="tblMembersTable">
@@ -1515,6 +1524,16 @@ function renderMembers(){
       renderMembers();
     } catch(e){ alert('Αποτυχία: '+e.message); btn.disabled = false; btn.textContent = '✗ ΑΠΟΡΡΙΨΗ'; }
   }));
+  const opted = users.filter(m => m.emailOptOut).sort((a, b) => String(b.emailOptOutAt || '').localeCompare(String(a.emailOptOutAt || '')));
+  const optPanel = document.getElementById('optOutPanel');
+  if (optPanel){
+    optPanel.style.display = opted.length ? '' : 'none';
+    document.getElementById('optOutCount').textContent = opted.length;
+    document.getElementById('tblOptOut').innerHTML = opted.map(m => `<tr>
+      <td>${esc((m.name||'') + ' ' + (m.surname||''))}</td><td>${esc(m.email)}</td><td>${esc(m.phone)}</td>
+      <td>${esc(window.npLvLabel(window.npLv10(m)))}</td>
+      <td>${esc(m.emailOptOutAt ? new Date(m.emailOptOutAt).toLocaleDateString('el-GR') : '—')}</td></tr>`).join('');
+  }
   document.getElementById('tblMembers').innerHTML = users.map(m => {
     const isOwner = isAdminEmail(m.email);
     const lvLabel = window.npLvLabel(window.npLv10(m));
