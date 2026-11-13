@@ -7,7 +7,7 @@ async function handle({ request, env }){
     if (!/^[\w-]{1,128}$/.test(uid) || !env.FIREBASE_SERVICE_ACCOUNT) return page('Ο σύνδεσμος δεν είναι σωστός.', 400);
     const sa = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT);
     if (t !== await sign(await hmacKey(sa.private_key_id || sa.client_email), uid)) return page('Ο σύνδεσμος δεν είναι σωστός.', 400);
-    await firestore(sa.project_id, await accessToken(sa)).patch('users/' + uid, { emailOptOut: true });
+    await firestore(sa.project_id, await accessToken(sa)).patch('users/' + uid, { emailOptOut: true, emailOptOutAt: new Date().toISOString() });
     return page('Έγινε ✓<br>Δεν θα σου ξαναστείλουμε email για ανοιχτά παιχνίδια.');
   } catch (e){ return page('Κάτι πήγε στραβά. Δοκίμασε ξανά σε λίγο.', 500); }
 }

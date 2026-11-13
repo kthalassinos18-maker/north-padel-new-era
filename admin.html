@@ -1519,11 +1519,12 @@ function renderMembers(){
     const isOwner = isAdminEmail(m.email);
     const lvLabel = window.npLvLabel(window.npLv10(m));
     const marketing = m.consent && m.consent.marketing ? '<span class="pill ok">ΝΑΙ</span>' : '<span class="pill canc">ΟΧΙ</span>';
+    const optOut = m.emailOptOut ? ` <span class="pill canc" style="margin-left:4px;white-space:nowrap" title="Πάτησε «Δεν θέλω άλλα email»${m.emailOptOutAt ? ' στις ' + esc(String(m.emailOptOutAt).slice(0,10)) : ''} — δεν του στέλνουμε email για ανοιχτά παιχνίδια">🚫 ΟΧΙ EMAIL</span>` : '';
     const noteBadge = m.adminNote ? ` <span title="${esc(m.adminNote)}" style="cursor:help;color:#ffc14a">📝</span>` : '';
     return `
     <tr${isOwner?' style="background:rgba(183,255,74,0.06)"':''}>
       <td>${esc((m.name||'') + ' ' + (m.surname||''))}${isOwner?' <span class="pill ok" style="margin-left:6px">👑 OWNER</span>':''}${noteBadge}</td>
-      <td>${esc(m.email)}</td>
+      <td>${esc(m.email)}${optOut}</td>
       <td>${esc(m.phone)}</td>
       <td style="white-space:nowrap">${esc(lvLabel)}</td>
       <td>${+m.bookingsCount||0}</td>

@@ -1,7 +1,7 @@
 /**
  * POST /api/notify-game {gameId}
  * Μόλις ανοίξει γήπεδο «Ψάχνω παίχτες», στέλνει email (Brevo) σε μέλη με επίπεδο ±2 από τον διοργανωτή.
- * Secrets: FIREBASE_SERVICE_ACCOUNT, BREVO_API_KEY. Προαιρετικά: MAIL_FROM, EMAIL_AUDIENCE ('consent' | 'all').
+ * Secrets: FIREBASE_SERVICE_ACCOUNT, BREVO_API_KEY. Προαιρετικά: MAIL_FROM, EMAIL_AUDIENCE ('all' (default) | 'consent').
  * 'consent' = μόνο όσοι το έχουν αποδεχτεί · 'all' = όλοι, εκτός όσων πάτησαν «Δεν θέλω άλλα».
  */
 const RANGE = 2, MAX = 200, FRESH_MS = 30 * 60 * 1000;
@@ -27,7 +27,7 @@ export async function onRequestPost({ request, env }){
     if (!lv) return json({ ok: true, sent: 0, skipped: 'no-level' });
     const lo = Math.max(1, lv - RANGE), hi = Math.min(10, lv + RANGE);
 
-    const audience = env.EMAIL_AUDIENCE === 'all' ? 'all' : 'consent';
+    const audience = env.EMAIL_AUDIENCE === 'consent' ? 'consent' : 'all';
     const [users, alerts] = await Promise.all([
       fs.levelRange(lo, hi, 1000),
       audience === 'consent' ? fs.listOn('og_alerts') : Promise.resolve(new Set()),
