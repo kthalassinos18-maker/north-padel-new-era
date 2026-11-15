@@ -390,7 +390,7 @@
         </div>
       </div>
 
-      <h2 style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.25em;color:rgba(244,249,255,0.45);margin:28px 4px 10px">⏮ ΕΚΚΡΕΜΟΤΗΤΕΣ & ΠΑΛΙΕΣ</h2>
+      <h2 style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.25em;color:rgba(244,249,255,0.45);margin:28px 4px 10px">⚠️ ΕΚΚΡΕΜΟΤΗΤΕΣ</h2>
       <div class="panel" id="unpaidPanel" style="display:none;border:1px solid rgba(255,180,60,0.4);background:rgba(255,180,60,0.05)">
         <h3 style="color:#ffb43c">⚠️ ΕΚΚΡΕΜΟΤΗΤΕΣ ΠΛΗΡΩΜΗΣ <span class="actions"><span class="pill" style="background:rgba(255,180,60,0.2);color:#ffb43c" id="unpaidCount">0</span></span></h3>
         <p style="color:rgba(244,249,255,0.55);font-size:12px;margin:0 0 10px">Παλιές κρατήσεις που δεν έχει καταχωρηθεί τρόπος πληρωμής. Δεν μπαίνουν στο ιστορικό μέχρι να τις κλείσεις.</p>
@@ -399,6 +399,8 @@
           <tbody id="tblUnpaid"></tbody>
         </table></div>
       </div>
+
+      <h2 style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.25em;color:rgba(244,249,255,0.45);margin:28px 4px 10px">🕓 ΠΑΛΙΕΣ ΚΡΑΤΗΣΕΙΣ</h2>
 
       <div class="panel" id="pastPanel" style="opacity:0.9">
         <h3 style="color:rgba(244,249,255,0.7)">🕓 ΠΑΛΙΕΣ ΚΡΑΤΗΣΕΙΣ <span class="actions"><span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)" id="pastCount">0</span></span></h3>
@@ -1268,7 +1270,7 @@ function renderBookings(){
   pastList = pastList.filter(b => !(b.status === 'ok' && (!b.payMethod || b.payMethod === 'pending')));
   const unpaidPanel = document.getElementById('unpaidPanel');
   const unpaidCountEl = document.getElementById('unpaidCount');
-  if (unpaidPanel) unpaidPanel.style.display = (BOOKINGS_FILTER_DATE || !unpaidList.length) ? 'none' : '';
+  if (unpaidPanel) unpaidPanel.style.display = BOOKINGS_FILTER_DATE ? 'none' : '';
   if (unpaidCountEl) unpaidCountEl.textContent = unpaidList.length;
   const futureCount = document.getElementById('futureCount');
   const pastCount   = document.getElementById('pastCount');
@@ -1344,7 +1346,7 @@ function renderBookings(){
   const tblUnpaid = document.getElementById('tblUnpaid');
   const tblFuture = document.getElementById('tblFuture');
   const tblPast   = document.getElementById('tblPast');
-  if (tblUnpaid) tblUnpaid.innerHTML = unpaidList.map(b => rowHtml(b, false)).join('');
+  if (tblUnpaid) tblUnpaid.innerHTML = unpaidList.map(b => rowHtml(b, false)).join('') || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.45);padding:20px">Καμία εκκρεμότητα πληρωμής ✓</td></tr>';
   if (tblFuture) tblFuture.innerHTML = futureList.map(b => rowHtml(b, false)).join('') || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία μελλοντική κράτηση.</td></tr>';
   // Month tabs for the past list (newest first); the table shows only the picked month.
   const pastMonthsEl = document.getElementById('pastMonths');
