@@ -587,6 +587,54 @@
   .submenu .sub-item:hover{color:#b7ff4a}
   @media(min-width:700px){.submenu .sub-item{font-size:28px}}
 </style>
+<script>
+/* ============ PHONE CHECK — Greek mobiles 69XXXXXXXX, foreign numbers with +country code ============ */
+(function(){
+  const tr = (k, el) => (window.L ? window.L(k, el) : el);
+  function check(raw){
+    let s = String(raw || '').trim().replace(/[\s\-.()\/]/g, '');
+    if (!s) return { ok: false, msg: tr('ph_empty', 'Συμπλήρωσε το κινητό σου.') };
+    if (s.startsWith('00')) s = '+' + s.slice(2);
+    if (s.startsWith('+30')) s = s.slice(3);
+    if (s.startsWith('+')){
+      if (/^\+[1-9]\d{7,14}$/.test(s)) return { ok: true, value: s };
+      return { ok: false, msg: tr('ph_intl', 'Ο ξένος αριθμός δεν φαίνεται σωστός. Γράψ’ τον με + και τον κωδικό χώρας (π.χ. +44 7700 900123).') };
+    }
+    if (/^69\d{8}$/.test(s)) return { ok: true, value: s };
+    return { ok: false, msg: tr('ph_gr', 'Βάλε σωστό κινητό: 10 ψηφία που ξεκινούν από 69 (π.χ. 6912345678). Για ξένο αριθμό γράψε + και τον κωδικό χώρας.') };
+  }
+  /** Live hint under an input: red border + message while wrong, nothing while typing the first digits. */
+  function attach(input){
+    if (!input || input.dataset.phoneAttached) return;
+    input.dataset.phoneAttached = '1';
+    input.setAttribute('inputmode', 'tel'); input.setAttribute('autocomplete', 'tel');
+    const hint = document.createElement('div');
+    hint.className = 'np-ph-hint';
+    hint.style.cssText = 'display:none;margin-top:6px;font-size:12px;line-height:1.4;color:#ff8a8a';
+    input.insertAdjacentElement('afterend', hint);
+    const paint = (force) => {
+      const v = input.value.trim(), r = check(v);
+      const show = !r.ok && v && (force || v.replace(/\D/g, '').length >= 10 || document.activeElement !== input);
+      hint.textContent = show ? r.msg : ''; hint.style.display = show ? '' : 'none';
+      input.style.borderColor = show ? '#ff4a6b' : (r.ok ? 'rgba(183,255,74,0.6)' : '');
+    };
+    input.addEventListener('input', () => paint(false));
+    input.addEventListener('blur', () => paint(true));
+    input._npPaint = paint;
+  }
+  /** Validate + normalise an input; shows the hint and focuses it on error. Returns the clean number or null. */
+  function take(input, allowEmpty){
+    const v = input.value.trim();
+    if (!v && allowEmpty) return '';
+    const r = check(v);
+    if (!r.ok){ attach(input); input._npPaint(true); if (!v){ const h = input.nextElementSibling; if (h && h.classList.contains('np-ph-hint')){ h.textContent = r.msg; h.style.display = ''; } } input.focus(); return null; }
+    input.value = r.value; if (input._npPaint) input._npPaint(false);
+    return r.value;
+  }
+  window.npPhone = { check, attach, take };
+  document.addEventListener('DOMContentLoaded', () => ['fPhone', 'si_phone'].forEach(id => attach(document.getElementById(id))));
+})();
+</script>
 </head>
 <body>
 
@@ -754,7 +802,7 @@
       <div class="form-field"><label data-i18n="auth_name">ΟΝΟΜΑ</label><input type="text" id="si_name" required></div>
       <div class="form-field"><label data-i18n="auth_surname">ΕΠΙΘΕΤΟ</label><input type="text" id="si_surname" required></div>
     </div>
-    <div class="form-field"><label data-i18n="auth_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="si_phone" required></div>
+    <div class="form-field"><label data-i18n="auth_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="si_phone" placeholder="69XXXXXXXX" required></div>
     <div class="form-field"><label data-i18n="auth_email">EMAIL</label><input type="email" id="si_email" required></div>
     <div class="form-field pw-wrap"><label data-i18n="auth_pass_hint">ΚΩΔΙΚΟΣ (τουλάχιστον 6 χαρακτήρες)</label>
       <input type="password" id="si_pass" required minlength="6">
@@ -1003,7 +1051,7 @@
       <span style="color:rgba(244,249,255,0.6)">Αν κάνεις <button type="button" id="guestSignIn" style="background:none;border:0;color:#b7ff4a;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">σύνδεση/εγγραφή</button>, παίρνεις −10% στην πρώτη κράτηση.</span>
     </div>
     <div class="form-field"><label data-i18n="form_name">ΟΝΟΜΑ</label><input type="text" id="fName" placeholder="Το όνομά σου" data-i18n-ph="form_name_ph" required></div>
-    <div class="form-field"><label data-i18n="form_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="fPhone" placeholder="6XX XXX XXXX" required></div>
+    <div class="form-field"><label data-i18n="form_phone">ΤΗΛΕΦΩΝΟ</label><input type="tel" id="fPhone" placeholder="69XXXXXXXX" required></div>
     <div class="form-field">
       <label data-i18n="form_players">ΠΑΙΚΤΕΣ</label>
       <div class="segment" id="fPlayers">
@@ -2298,11 +2346,13 @@
       err.textContent = L('signup_pw_mismatch','Οι δύο κωδικοί δεν ταιριάζουν.');
       return;
     }
+    const siPhone = window.npPhone.take(document.getElementById('si_phone'));
+    if (siPhone === null){ err.textContent = window.npPhone.check(document.getElementById('si_phone').value).msg; return; }
     const email = document.getElementById('si_email').value.trim().toLowerCase();
     const payload = {
       name:    document.getElementById('si_name').value.trim(),
       surname: document.getElementById('si_surname').value.trim(),
-      phone:   document.getElementById('si_phone').value.trim(),
+      phone:   siPhone,
       email,
       password: pass1,
       level:   +document.getElementById('si_level').value,
@@ -2516,6 +2566,7 @@
     if (window.npProfile) window.npProfile.render(u);
     if (window.npPush) window.npPush.render();
 
+    window.npPhone.attach(document.getElementById('p_phone'));
     // Chip toggles
     document.querySelectorAll('#profileFull .pf-chip').forEach(c => {
       c.addEventListener('click', () => c.classList.toggle('active'));
@@ -2524,6 +2575,8 @@
     // Save
     document.getElementById('saveProfileBtn').addEventListener('click', async () => {
       const msg = document.getElementById('saveProfileMsg');
+      const pPhoneEl = document.getElementById('p_phone');
+      if (pPhoneEl && window.npPhone.take(pPhoneEl, true) === null){ msg.textContent = window.npPhone.check(pPhoneEl.value).msg; msg.style.color = '#ff8a8a'; return; }
       msg.textContent = L('saving','Αποθήκευση...');
       msg.style.color = 'rgba(244,249,255,0.6)';
       const days  = [...document.querySelectorAll('#profileFull [data-day]')].filter(c => c.classList.contains('active')).map(c => +c.dataset.day);
@@ -3434,7 +3487,9 @@
   document.getElementById('bookingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('fName').value.trim();
-    const phone = document.getElementById('fPhone').value.trim();
+    const phoneEl = document.getElementById('fPhone');
+    if (name && phoneEl.value.trim() && !window.npPhone.take(phoneEl)) return;
+    const phone = phoneEl.value.trim();
     const customerNote = document.getElementById('fNote').value.trim().slice(0, 200);
     if (!name || !phone){ alert(L('need_name_phone','Συμπλήρωσε όνομα και τηλέφωνο.')); return; }
     if (!selectedDate || !selectedSession){
@@ -4244,6 +4299,11 @@ T.en['lvl_current']         = 'Current';                                       T
 T.en['lvl_change_fail']     = 'Failed to change';                              T.de['lvl_change_fail']     = 'Änderung fehlgeschlagen';
 
 // Booking flow
+T.en['ph_empty'] = 'Enter your mobile number.'; T.de['ph_empty'] = 'Gib deine Handynummer ein.';
+T.en['ph_gr'] = 'Enter a valid Greek mobile: 10 digits starting with 69 (e.g. 6912345678). For a foreign number, start with + and the country code.';
+T.de['ph_gr'] = 'Gib eine gültige griechische Handynummer ein: 10 Ziffern, beginnend mit 69 (z. B. 6912345678). Ausländische Nummer: mit + und Ländervorwahl.';
+T.en['ph_intl'] = 'This foreign number looks wrong. Write it with + and the country code (e.g. +44 7700 900123).';
+T.de['ph_intl'] = 'Diese ausländische Nummer sieht falsch aus. Schreib sie mit + und Ländervorwahl (z. B. +49 151 23456789).';
 T.en['need_name_phone']     = 'Fill in name and phone.';                       T.de['need_name_phone']     = 'Name und Telefon ausfüllen.';
 T.en['need_date_time']      = 'Pick a date and time first.';                   T.de['need_date_time']      = 'Zuerst Datum und Uhrzeit wählen.';
 T.en['need_verify_email']   = 'You need to verify your email first. Check your inbox or tap "Resend email" in your profile.'; T.de['need_verify_email']   = 'Du musst zuerst deine E-Mail bestätigen. Prüfe dein Postfach oder tippe „E-Mail erneut senden" im Profil.';
