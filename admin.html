@@ -356,11 +356,7 @@
 
     <!-- =========== BOOKINGS =========== -->
     <section class="section" id="sec-bookings">
-      <!-- Search & stats by month / day / range (logic in bookings-stats.js) -->
-      <div id="bksRoot"></div>
-      <!-- Open games «Βρες παίχτη» (logic in admin-open-games.js) -->
-      <div id="ogAdminRoot"></div>
-
+      <h2 style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.25em;color:rgba(244,249,255,0.45);margin:28px 4px 10px">▶ ΕΠΟΜΕΝΕΣ ΚΡΑΤΗΣΕΙΣ</h2>
       <div class="panel" id="todayPanel" style="border-color:rgba(183,255,74,0.4);background:linear-gradient(180deg,rgba(183,255,74,0.05) 0%,rgba(15,37,64,0) 40%)">
         <h3 style="color:#b7ff4a">🎾 ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ <span class="actions"><span class="pill ok" id="todayCount">0</span></span></h3>
         <div class="tbl-scroll"><table class="tbl">
@@ -382,6 +378,19 @@
         </table></div>
       </div>
 
+      <div class="panel">
+        <h3>ΝΕΑ ΚΡΑΤΗΣΗ (ΧΕΙΡΟΚΙΝΗΤΗ) <span class="actions"><button class="btn solid" id="addBookingBtn2">+ ΠΡΟΣΘΗΚΗ</button></span></h3>
+        <div class="form-grid">
+          <div class="field"><label>ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="bkDate2"></div>
+          <div class="field"><label>ΩΡΑ</label><select id="bkTime2"><option value="">— Επίλεξε ημερομηνία πρώτα —</option></select></div>
+          <div class="field"><label>ΓΗΠΕΔΟ</label><select id="bkCourt2"><option>Γήπεδο 1</option><option>Γήπεδο 2</option></select></div>
+          <div class="field"><label>ΠΑΙΚΤΕΣ</label><select id="bkPlayers2"><option value="4">4άδα · 44€</option><option value="2">2άδα · 30€</option></select></div>
+          <div class="field"><label>ΟΝΟΜΑ ΠΑΙΚΤΗ</label><input type="text" id="bkName2" placeholder="π.χ. Γιάννης Παπαδόπουλος"></div>
+          <div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input type="tel" id="bkPhone2" placeholder="69XXXXXXXX"></div>
+        </div>
+      </div>
+
+      <h2 style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.25em;color:rgba(244,249,255,0.45);margin:28px 4px 10px">⏮ ΕΚΚΡΕΜΟΤΗΤΕΣ & ΠΑΛΙΕΣ</h2>
       <div class="panel" id="unpaidPanel" style="display:none;border:1px solid rgba(255,180,60,0.4);background:rgba(255,180,60,0.05)">
         <h3 style="color:#ffb43c">⚠️ ΕΚΚΡΕΜΟΤΗΤΕΣ ΠΛΗΡΩΜΗΣ <span class="actions"><span class="pill" style="background:rgba(255,180,60,0.2);color:#ffb43c" id="unpaidCount">0</span></span></h3>
         <p style="color:rgba(244,249,255,0.55);font-size:12px;margin:0 0 10px">Παλιές κρατήσεις που δεν έχει καταχωρηθεί τρόπος πληρωμής. Δεν μπαίνουν στο ιστορικό μέχρι να τις κλείσεις.</p>
@@ -399,17 +408,14 @@
         </table></div>
       </div>
 
-      <div class="panel">
-        <h3>ΝΕΑ ΚΡΑΤΗΣΗ (ΧΕΙΡΟΚΙΝΗΤΗ) <span class="actions"><button class="btn solid" id="addBookingBtn2">+ ΠΡΟΣΘΗΚΗ</button></span></h3>
-        <div class="form-grid">
-          <div class="field"><label>ΗΜΕΡΟΜΗΝΙΑ</label><input type="date" id="bkDate2"></div>
-          <div class="field"><label>ΩΡΑ</label><select id="bkTime2"><option value="">— Επίλεξε ημερομηνία πρώτα —</option></select></div>
-          <div class="field"><label>ΓΗΠΕΔΟ</label><select id="bkCourt2"><option>Γήπεδο 1</option><option>Γήπεδο 2</option></select></div>
-          <div class="field"><label>ΠΑΙΚΤΕΣ</label><select id="bkPlayers2"><option value="4">4άδα · 44€</option><option value="2">2άδα · 30€</option></select></div>
-          <div class="field"><label>ΟΝΟΜΑ ΠΑΙΚΤΗ</label><input type="text" id="bkName2" placeholder="π.χ. Γιάννης Παπαδόπουλος"></div>
-          <div class="field"><label>ΤΗΛΕΦΩΝΟ</label><input type="tel" id="bkPhone2" placeholder="69XXXXXXXX"></div>
-        </div>
-      </div>
+
+      <h2 style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.25em;color:rgba(244,249,255,0.45);margin:28px 4px 10px">🎾 ΑΝΟΙΧΤΑ ΠΑΙΧΝΙΔΙΑ</h2>
+      <!-- Open games «Βρες παίχτη» (logic in admin-open-games.js) -->
+      <div id="ogAdminRoot"></div>
+
+      <h2 style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:0.25em;color:rgba(244,249,255,0.45);margin:28px 4px 10px">📊 ΣΤΑΤΙΣΤΙΚΑ</h2>
+      <!-- Search & stats by month / day / range (logic in bookings-stats.js) -->
+      <div id="bksRoot"></div>
     </section>
 
     <!-- =========== MEMBERS =========== -->
