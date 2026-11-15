@@ -402,6 +402,7 @@
 
       <div class="panel" id="pastPanel" style="opacity:0.9">
         <h3 style="color:rgba(244,249,255,0.7)">🕓 ΠΑΛΙΕΣ ΚΡΑΤΗΣΕΙΣ <span class="actions"><span class="pill" style="background:rgba(255,255,255,0.08);color:rgba(244,249,255,0.6)" id="pastCount">0</span></span></h3>
+        <div id="pastMonths" style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;-webkit-overflow-scrolling:touch"></div>
         <div class="tbl-scroll"><table class="tbl">
           <thead><tr><th>Ημέρα</th><th>Ώρα</th><th>Γήπεδο</th><th>Παίκτης</th><th>Τηλ.</th><th>Πακέτο</th><th>Σύνολο</th><th>Πληρωμή</th><th>Κατάσταση</th><th></th></tr></thead>
           <tbody id="tblPast"></tbody>
@@ -1128,6 +1129,7 @@ function renderDashboard(){
 }
 
 let BOOKINGS_FILTER_DATE = '';
+let PAST_MONTH = ''; // 'YYYY-MM' tab in «Παλιές κρατήσεις» ('' = most recent month)
 // A booking "has ended" once its session end time is in the past — even
 // if its `date` is still today. Used to pull finished today's courts out
 // of ΚΡΑΤΗΣΕΙΣ ΣΗΜΕΡΑ and into the payment-pending / past flow the
@@ -1335,6 +1337,20 @@ function renderBookings(){
   const tblPast   = document.getElementById('tblPast');
   if (tblUnpaid) tblUnpaid.innerHTML = unpaidList.map(b => rowHtml(b, false)).join('');
   if (tblFuture) tblFuture.innerHTML = futureList.map(b => rowHtml(b, false)).join('') || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία μελλοντική κράτηση.</td></tr>';
+  // Month tabs for the past list (newest first); the table shows only the picked month.
+  const pastMonthsEl = document.getElementById('pastMonths');
+  const MONTHS_EL = ['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+  const monthKeys = [...new Set(pastList.map(b => (b.date || '').slice(0, 7)).filter(Boolean))].sort().reverse();
+  if (!monthKeys.includes(PAST_MONTH)) PAST_MONTH = monthKeys[0] || '';
+  if (pastMonthsEl){
+    const thisYear = String(new Date().getFullYear());
+    pastMonthsEl.innerHTML = monthKeys.map(k => {
+      const [y, m] = k.split('-'), on = k === PAST_MONTH, n = pastList.filter(b => (b.date || '').startsWith(k)).length;
+      return `<button type="button" data-past-month="${k}" style="flex:none;padding:8px 14px;border-radius:999px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;border:1px solid ${on ? '#b7ff4a' : 'rgba(255,255,255,0.12)'};background:${on ? '#b7ff4a' : 'rgba(255,255,255,0.04)'};color:${on ? '#0a1929' : '#f4f9ff'}">${MONTHS_EL[+m - 1]}${y !== thisYear ? ' ' + y : ''} <span style="opacity:.6">${n}</span></button>`;
+    }).join('');
+    pastMonthsEl.querySelectorAll('[data-past-month]').forEach(b => b.addEventListener('click', () => { PAST_MONTH = b.dataset.pastMonth; renderBookings(); }));
+  }
+  pastList = pastList.filter(b => (b.date || '').startsWith(PAST_MONTH));
   if (tblPast)   tblPast.innerHTML   = pastList.map(b => rowHtml(b, true)).join('')   || '<tr><td colspan="10" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Καμία παλιά κράτηση.</td></tr>';
   document.querySelectorAll('[data-del-bk]').forEach(btn => btn.addEventListener('click', async () => {
     if (!confirm('Διαγραφή κράτησης;')) return;
