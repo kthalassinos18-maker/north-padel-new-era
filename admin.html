@@ -315,7 +315,7 @@
     <button class="nav-item" data-section="prices"><span class="nav-ico">💶</span><span>Τιμές</span></button>
     <button class="nav-item" data-section="hours"><span class="nav-ico">🕒</span><span>Sessions</span></button>
     <button class="nav-item" data-section="messages"><span class="nav-ico">💬</span><span>Μηνύματα</span><span class="nav-badge" id="msgNavBadge" style="display:none">0</span></button>
-    <button class="nav-item" data-section="partners"><span class="nav-ico">🤝</span><span>Συνεργάτες</span></button>
+    <button class="nav-item" data-section="partners"><span class="nav-ico">🤝</span><span>Συνεργάτες</span><span class="nav-badge" id="ptNavBadge" style="display:none">0</span></button>
     <button class="nav-item" data-section="americano"><span class="nav-ico">🏆</span><span>Americano</span></button>
     <div class="sidebar-foot">
       <button class="logout" id="logout">ΑΠΟΣΥΝΔΕΣΗ</button>
@@ -605,9 +605,10 @@
           <button type="button" class="btn solid" id="addPartnerBtn">+ ΝΕΟΣ ΣΥΝΕΡΓΑΤΗΣ</button>
         </span></h3>
         <p style="color:rgba(244,249,255,0.5);font-size:12px;margin:0 0 14px">Ιδιωτικές επαφές — villas, agencies, concierge, προπονητές, προμηθευτές. Μόνο εσύ βλέπεις αυτή τη λίστα.</p>
+        <div id="ptAlerts"></div>
         <div class="tbl-scroll"><table class="tbl">
-          <thead><tr><th>Όνομα</th><th>Τύπος</th><th>Επαφή</th><th>Συμφωνία</th><th>Σημειώσεις</th><th></th></tr></thead>
-          <tbody id="tblPartners"><tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Φόρτωση...</td></tr></tbody>
+          <thead><tr><th>Όνομα</th><th>Τύπος</th><th>Επαφή</th><th>Συμφωνία</th><th>💶 Πληρωμές / Λήξη</th><th>Σημειώσεις</th><th></th></tr></thead>
+          <tbody id="tblPartners"><tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Φόρτωση...</td></tr></tbody>
         </table></div>
       </div>
     </section>
@@ -646,6 +647,11 @@
       <div class="field" style="margin-top:14px">
         <label>🎁 ΣΥΜΦΩΝΙΑ / ΠΟΣΟΣΤΟ / ΔΩΡΑ <span style="color:rgba(244,249,255,0.4);font-weight:400">(π.χ. κωδικός −15% στους πελάτες τους, 2 δωρεάν κρατήσεις/χρόνο σε εκείνους)</span></label>
         <textarea id="pt_deal" rows="2" placeholder="π.χ. Κωδικός VILLA15 → -15% στους επισκέπτες τους. Σε αντάλλαγμα: 2 δωρεάν κρατήσεις/έτος για τον ιδιοκτήτη." style="padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:14px;resize:vertical;min-width:100%;max-width:100%"></textarea>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>💶 ΠΛΗΡΩΜΕΣ / ΣΥΝΔΡΟΜΕΣ <span style="color:rgba(244,249,255,0.4);font-weight:400">(π.χ. 130€ για banner, με λήξη συνδρομής)</span></label>
+        <div id="pt_pays"></div>
+        <button type="button" class="btn" id="pt_addPay" style="margin-top:8px">+ ΠΡΟΣΘΗΚΗ ΠΛΗΡΩΜΗΣ</button>
       </div>
       <div class="field" style="margin-top:14px">
         <label>📝 ΣΗΜΕΙΩΣΕΙΣ <span style="color:rgba(244,249,255,0.4);font-weight:400">(μόνο εσύ βλέπεις)</span></label>
@@ -2027,6 +2033,7 @@ async function refreshAll(){
   bulkPopulateSlots();
   refreshManualTimeSlots();
   if (typeof startMessagesInboxWatcher === 'function') startMessagesInboxWatcher();
+  if (!window.__ptBoot){ window.__ptBoot = true; renderPartners().catch(() => {}); } // nav badge for renewals
 }
 
 // Re-render just the bookings tables every minute (no network fetch) so a
@@ -2308,6 +2315,77 @@ let PARTNERS_CACHE = [];
 let EDITING_PARTNER_ID = null;
 const partnerModal = document.getElementById('partnerModal');
 
+/* ---- Partner payments & subscription expiry ---- */
+let PT_PAYS = [];
+const ptToday = () => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); };
+const ptFmt = (iso) => iso ? iso.split('-').reverse().join('/') : '';
+const ptEuro = (n) => (Math.round(n * 100) / 100).toLocaleString('el-GR') + '€';
+/** Subscription status from the latest «λήξη» among the partner's payments. */
+function ptStatus(p){
+  const pays = Array.isArray(p.payments) ? p.payments : [];
+  const total = pays.reduce((s, x) => s + (+x.amount || 0), 0);
+  const withEnd = pays.filter(x => x.until).sort((a, b) => b.until.localeCompare(a.until));
+  if (!withEnd.length) return { total, pays, state: 'none' };
+  const last = withEnd[0];
+  const days = Math.round((new Date(last.until + 'T00:00:00') - new Date(ptToday() + 'T00:00:00')) / 86400000);
+  return { total, pays, last, days, state: days < 0 ? 'expired' : days <= 30 ? 'soon' : 'active' };
+}
+function ptBadge(st){
+  if (st.state === 'expired') return `<span class="pill canc">⛔ Έληξε ${ptFmt(st.last.until)}</span>`;
+  if (st.state === 'soon')    return `<span class="pill" style="background:rgba(255,180,60,0.2);color:#ffb43c">⏳ Λήγει σε ${st.days} ${st.days === 1 ? 'μέρα' : 'μέρες'} (${ptFmt(st.last.until)})</span>`;
+  if (st.state === 'active')  return `<span class="pill ok">✅ Έως ${ptFmt(st.last.until)}</span>`;
+  return '';
+}
+function ptPayCell(p){
+  const st = ptStatus(p);
+  if (!st.pays.length) return '<span style="color:rgba(244,249,255,0.35)">—</span>';
+  const last = [...st.pays].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+  return `<b>${ptEuro(st.total)}</b> <span style="font-size:11px;color:rgba(244,249,255,0.5)">σύνολο</span>
+    <div style="font-size:11px;color:rgba(244,249,255,0.6);margin:3px 0">τελευταία: ${ptEuro(+last.amount || 0)}${last.what ? ' · ' + esc(last.what) : ''}${last.date ? ' · ' + ptFmt(last.date) : ''}</div>${ptBadge(st)}`;
+}
+function ptWhatsApp(p, st){
+  let d = String(p.phone || '').replace(/[^\d+]/g, '');
+  if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (/^69\d{8}$/.test(d)) d = '30' + d;
+  if (!d) return '';
+  const what = st.last.what ? ` (${st.last.what})` : '';
+  const txt = st.state === 'expired'
+    ? `Γεια σας! Η συνεργασία σας${what} με το North Padel έληξε στις ${ptFmt(st.last.until)}. Θέλετε να την ανανεώσουμε; 🎾`
+    : `Γεια σας! Η συνεργασία σας${what} με το North Padel λήγει στις ${ptFmt(st.last.until)}. Θέλετε να την ανανεώσουμε; 🎾`;
+  return `<a class="btn" href="https://wa.me/${d}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener" style="text-decoration:none">💬 WhatsApp</a>`;
+}
+function renderPartnerAlerts(){
+  const list = PARTNERS_CACHE.map(p => ({ p, st: ptStatus(p) })).filter(x => x.st.state === 'expired' || x.st.state === 'soon')
+    .sort((a, b) => a.st.days - b.st.days);
+  const badge = document.getElementById('ptNavBadge');
+  if (badge){ badge.textContent = list.length; badge.style.display = list.length ? 'inline-flex' : 'none'; }
+  const box = document.getElementById('ptAlerts'); if (!box) return;
+  box.innerHTML = list.length ? `<div style="border:1px solid rgba(255,180,60,0.4);background:rgba(255,180,60,0.06);border-radius:12px;padding:12px;margin:0 0 14px">
+    <div style="font-weight:800;color:#ffb43c;font-size:13px;letter-spacing:0.08em;margin-bottom:8px">🔔 ΑΝΑΝΕΩΣΕΙΣ — ΕΝΗΜΕΡΩΣΕ ΤΟΥΣ</div>
+    ${list.map(({ p, st }) => `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06)">
+      <b>${esc(p.name || '—')}</b>${st.last.what ? `<span style="color:rgba(244,249,255,0.6);font-size:12px">${esc(st.last.what)}</span>` : ''}${ptBadge(st)}
+      <span style="margin-left:auto;display:flex;gap:6px">${ptWhatsApp(p, st)}${p.phone ? `<a class="btn" href="tel:${esc(p.phone)}" style="text-decoration:none">📞</a>` : ''}</span></div>`).join('')}
+  </div>` : '';
+}
+function ptPaysRender(){
+  const box = document.getElementById('pt_pays'); if (!box) return;
+  const inp = 'padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(10,25,41,0.6);color:#f4f9ff;font-family:inherit;font-size:13px;min-width:0';
+  box.innerHTML = PT_PAYS.length ? PT_PAYS.map((x, i) => `<div style="display:grid;grid-template-columns:80px 1fr;gap:6px;padding:10px;margin-top:8px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;position:relative">
+      <input type="number" min="0" step="1" data-pp="${i}" data-k="amount" value="${esc(x.amount ?? '')}" placeholder="€" style="${inp}">
+      <input type="text" data-pp="${i}" data-k="what" value="${esc(x.what || '')}" placeholder="Για τι; π.χ. Banner διαφήμιση" style="${inp};margin-right:30px">
+      <label style="font-size:10px;letter-spacing:0.1em;color:rgba(244,249,255,0.5);align-self:center">ΠΛΗΡΩΘΗΚΕ</label><input type="date" data-pp="${i}" data-k="date" value="${esc(x.date || '')}" style="${inp}">
+      <label style="font-size:10px;letter-spacing:0.1em;color:rgba(244,249,255,0.5);align-self:center">ΛΗΞΗ</label><input type="date" data-pp="${i}" data-k="until" value="${esc(x.until || '')}" style="${inp}">
+      <button type="button" data-pp-del="${i}" title="Αφαίρεση" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,107,107,0.4);background:transparent;color:#ff6b6b;cursor:pointer">×</button>
+    </div>`).join('') : '<div style="font-size:12px;color:rgba(244,249,255,0.4);padding:6px 0">Καμία πληρωμή ακόμα.</div>';
+  box.querySelectorAll('[data-pp]').forEach(el => el.addEventListener('input', () => { const x = PT_PAYS[+el.dataset.pp]; x[el.dataset.k] = el.dataset.k === 'amount' ? (el.value === '' ? '' : +el.value) : el.value; }));
+  box.querySelectorAll('[data-pp-del]').forEach(el => el.addEventListener('click', () => { PT_PAYS.splice(+el.dataset.ppDel, 1); ptPaysRender(); }));
+}
+document.getElementById('pt_addPay')?.addEventListener('click', () => {
+  const d = new Date(), y = new Date(d); y.setFullYear(d.getFullYear() + 1);
+  const iso = (x) => x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0');
+  PT_PAYS.push({ amount: '', what: '', date: iso(d), until: iso(y) }); ptPaysRender();
+  const all = document.querySelectorAll('#pt_pays [data-k="amount"]'); if (all.length) all[all.length - 1].focus();
+});
+
 async function renderPartners(){
   const tbody = document.getElementById('tblPartners');
   if (!tbody) return;
@@ -2315,7 +2393,7 @@ async function renderPartners(){
   try {
     PARTNERS_CACHE = await window.npFB.listPartners();
   } catch(e){
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ff6b6b;padding:20px">Αποτυχία φόρτωσης: ${esc(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#ff6b6b;padding:20px">Αποτυχία φόρτωσης: ${esc(e.message)}</td></tr>`;
     return;
   }
   document.getElementById('partnersCount').textContent = PARTNERS_CACHE.length;
@@ -2325,12 +2403,14 @@ async function renderPartners(){
       <td>${esc(PARTNER_TYPE_LABELS[p.type] || p.type || '—')}</td>
       <td>${[esc(p.contactPerson||''), esc(p.phone||''), esc(p.email||'')].filter(Boolean).join('<br>') || '—'}</td>
       <td style="max-width:220px;white-space:pre-wrap">${esc(p.dealNotes||'') || '<span style="color:rgba(244,249,255,0.35)">—</span>'}</td>
+      <td style="white-space:nowrap">${ptPayCell(p)}</td>
       <td style="max-width:180px;white-space:pre-wrap;color:rgba(244,249,255,0.6)">${esc(p.notes||'') || '—'}</td>
       <td style="text-align:right;white-space:nowrap">
         <button class="btn" data-edit-partner="${esc(p.id)}" style="margin-right:4px">✎ Edit</button>
         <button class="btn danger" data-del-partner="${esc(p.id)}">Διαγραφή</button>
       </td>
-    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν έχεις προσθέσει συνεργάτες ακόμα.</td></tr>';
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:rgba(244,249,255,0.4);padding:20px">Δεν έχεις προσθέσει συνεργάτες ακόμα.</td></tr>';
+  renderPartnerAlerts();
   document.querySelectorAll('[data-edit-partner]').forEach(btn => btn.addEventListener('click', () => {
     const p = PARTNERS_CACHE.find(x => x.id === btn.dataset.editPartner);
     if (p) openPartnerEditor(p);
@@ -2356,6 +2436,8 @@ function openPartnerEditor(p){
   document.getElementById('pt_email').value   = p ? (p.email||'') : '';
   document.getElementById('pt_deal').value    = p ? (p.dealNotes||'') : '';
   document.getElementById('pt_notes').value   = p ? (p.notes||'') : '';
+  PT_PAYS = p && Array.isArray(p.payments) ? p.payments.map(x => ({ ...x })) : [];
+  ptPaysRender();
   document.getElementById('partnerMsg').textContent = '';
   partnerModal.classList.add('open');
   partnerModal.setAttribute('aria-hidden','false');
@@ -2383,6 +2465,8 @@ document.getElementById('partnerSaveBtn')?.addEventListener('click', async () =>
     email:         document.getElementById('pt_email').value.trim(),
     dealNotes:     document.getElementById('pt_deal').value.trim().slice(0, 1000),
     notes:         document.getElementById('pt_notes').value.trim().slice(0, 1000),
+    payments:      PT_PAYS.filter(x => x.amount !== '' || x.what || x.until)
+                     .map(x => ({ amount: +x.amount || 0, what: String(x.what || '').trim().slice(0, 120), date: x.date || '', until: x.until || '' })),
   };
   try {
     await window.npFB.savePartner(EDITING_PARTNER_ID, patch);
